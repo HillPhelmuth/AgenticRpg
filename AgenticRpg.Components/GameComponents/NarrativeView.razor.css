@@ -1,0 +1,207 @@
+.narrative-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
+    border: 2px solid rgba(77, 208, 225, 0.4);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgba(77, 208, 225, 0.3);
+}
+
+.narrative-tabs {
+    display: flex;
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+    border-bottom: 2px solid #4dd0e1;
+}
+
+.narrative-tabs button {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.6) 0%, rgba(10, 14, 26, 0.8) 100%);
+    color: #4dd0e1;
+    border: none;
+    border-right: 1px solid rgba(77, 208, 225, 0.3);
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.narrative-tabs button:last-child {
+    border-right: none;
+}
+
+.narrative-tabs button:hover {
+    background: linear-gradient(135deg, rgba(77, 208, 225, 0.2) 0%, rgba(38, 198, 218, 0.1) 100%);
+}
+
+.narrative-tabs button.active {
+    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+    color: #0a0e1a;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+}
+
+.narrative-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.narrative-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.narrative-content::-webkit-scrollbar-track {
+    background: #e8dbc5;
+}
+
+.narrative-content::-webkit-scrollbar-thumb {
+    background: #8b7355;
+    border-radius: 4px;
+}
+
+.narrative-entry {
+    background: #fff9ed;
+    border: 2px solid #d4c4a8;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.narrative-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #d4c4a8;
+}
+
+.speaker-name {
+    font-weight: bold;
+    color: #6f5a44;
+    font-size: 1rem;
+}
+
+.narrative-type {
+    font-size: 0.75rem;
+    color: #8b7355;
+    text-transform: uppercase;
+    background: #f4e8d4;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.narrative-timestamp {
+    font-size: 0.75rem;
+    color: #8b7355;
+    font-style: italic;
+    margin-left: auto;
+}
+
+.narrative-body {
+    color: #3a2f26;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.narrative-body p {
+    margin: 0 0 0.5rem 0;
+}
+
+.narrative-body p:last-child {
+    margin-bottom: 0;
+}
+
+.narrative-body code {
+    background: #f4e8d4;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.narrative-body pre {
+    background: #f4e8d4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    border: 1px solid #d4c4a8;
+}
+
+.narrative-body pre code {
+    background: none;
+    padding: 0;
+}
+
+.narrative-body blockquote {
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+    border-left: 4px solid #d4a574;
+    color: #6f5a44;
+    font-style: italic;
+}
+
+.narrative-body ul,
+.narrative-body ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.narrative-body li {
+    margin-bottom: 0.25rem;
+}
+
+.narrative-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #d4c4a8;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: #e8dbc5;
+    color: #6f5a44;
+    border: 1px solid #d4c4a8;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.narrative-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #8b7355;
+    font-style: italic;
+}
+
+/* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
+@media (max-width: 480px) {
+    .narrative-header { padding: 0.75rem; }
+    .narrative-header h2 { font-size: 1.1rem; }
+    .narrative-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab-btn { flex: 0 0 auto; min-width: 90px; padding: 0.5rem; font-size: 0.85rem; }
+    .narrative-content { padding: 0.75rem; }
+    .narrative-entry { padding: 0.75rem; font-size: 0.9rem; }
+}
+@media (hover: none) and (pointer: coarse) {
+    .tab-btn { min-height: 44px; touch-action: manipulation; }
+}

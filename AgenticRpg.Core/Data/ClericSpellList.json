@@ -1,0 +1,598 @@
+[
+	{
+		"Id": "spell_cleric_light_healing_light",
+		"Name": "Healing Light",
+		"Description": "Channel warm radiance to close wounds and steady an ally.",
+		"Level": 1,
+		[
+			{
+				"Id": "spell_cleric_healing_word",
+				"Name": "Healing Word",
+				"Description": "Speak a holy word that knits wounds from afar.",
+				"Level": 1,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 bonus action",
+				"Range": "60 feet",
+				"Duration": "Instantaneous",
+				"Components": ["V"],
+				"EffectText": "Target regains 1d6 + caster level HP.",
+				"Effect": {
+					"EffectType": "Healing",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": "1d6"
+				}
+			},
+			{
+				"Id": "spell_cleric_cure_wounds",
+				"Name": "Cure Wounds",
+				"Description": "Lay hands upon a creature to restore vitality.",
+				"Level": 1,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 action",
+				"Range": "Touch",
+				"Duration": "Instantaneous",
+				"Components": ["V", "S"],
+				"EffectText": "Target regains 2d8 + caster level HP.",
+				"Effect": {
+					"EffectType": "Healing",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": "2d8"
+				}
+			},
+			{
+				"Id": "spell_cleric_bless",
+				"Name": "Bless",
+				"Description": "Imbue allies with divine favor.",
+				"Level": 1,
+				"School": "Divine (Enchantment)",
+				"CastingTime": "1 action",
+				"Range": "30 feet",
+				"Duration": "1 minute",
+				"Components": ["V", "S"],
+				"EffectText": "Up to three allies gain +1d4 to attack rolls and saving throws.",
+				"Effect": {
+					"EffectType": "Buff",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 10,
+					"EffectDice": "1d4"
+				}
+			},
+			{
+				"Id": "spell_cleric_sanctuary",
+				"Name": "Sanctuary",
+				"Description": "Ward a creature against attacks.",
+				"Level": 1,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 bonus action",
+				"Range": "30 feet",
+				"Duration": "3 rounds",
+				"Components": ["V", "S", "M"],
+				"EffectText": "Attackers must succeed a Wits save (DC 12 + caster level) or choose a new target.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": "Wits",
+					"EffectMagnitude": 0,
+					"EffectDuration": 3,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_guiding_bolt",
+				"Name": "Guiding Bolt",
+				"Description": "Strike with radiant light that reveals the target.",
+				"Level": 1,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 action",
+				"Range": "120 feet",
+				"Duration": "1 round",
+				"Components": ["V", "S"],
+				"EffectText": "Ranged spell attack deals 4d6 radiant damage; next attack against target gains advantage.",
+				"Effect": {
+					"EffectType": "Damage",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 1,
+					"EffectDice": "4d6"
+				}
+			},
+			{
+				"Id": "spell_cleric_turn_undead",
+				"Name": "Turn Undead",
+				"Description": "Channel divine energy to repel undead.",
+				"Level": 2,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 action",
+				"Range": "30 feet",
+				"Duration": "2 rounds",
+				"Components": ["V"],
+				"EffectText": "Undead must make a Presence save (DC 13 + caster level) or flee for 2 rounds; damaged undead save again.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": "Presence",
+					"EffectMagnitude": 0,
+					"EffectDuration": 2,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_prayer_of_healing",
+				"Name": "Prayer of Healing",
+				"Description": "Invoke a sustained prayer to mend several allies.",
+				"Level": 2,
+				"School": "Divine (Evocation)",
+				"CastingTime": "10 minutes",
+				"Range": "30 feet",
+				"Duration": "Instantaneous",
+				"Components": ["V"],
+				"EffectText": "Up to six allies regain 3d8 + caster level HP.",
+				"Effect": {
+					"EffectType": "Healing",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": "3d8"
+				}
+			},
+			{
+				"Id": "spell_cleric_spiritual_weapon",
+				"Name": "Spiritual Weapon",
+				"Description": "Summon a floating spectral weapon to strike foes.",
+				"Level": 2,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 bonus action",
+				"Range": "60 feet",
+				"Duration": "1 minute",
+				"Components": ["V", "S"],
+				"EffectText": "Create weapon that can attack each round dealing 1d8 + caster level force damage; moves 20 feet per round.",
+				"Effect": {
+					"EffectType": "Damage",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 10,
+					"EffectDice": "1d8"
+				}
+			},
+			{
+				"Id": "spell_cleric_lesser_restoration",
+				"Name": "Lesser Restoration",
+				"Description": "Cure minor ailments and conditions.",
+				"Level": 2,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 action",
+				"Range": "Touch",
+				"Duration": "Instantaneous",
+				"Components": ["V", "S"],
+				"EffectText": "End one disease or one of: blinded, deafened, paralyzed, poisoned.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_revivify",
+				"Name": "Revivify",
+				"Description": "Return a fallen ally to life moments after death.",
+				"Level": 3,
+				"School": "Divine (Necromancy)",
+				"CastingTime": "1 action",
+				"Range": "Touch",
+				"Duration": "Instantaneous",
+				"Components": ["V", "S", "M"],
+				"EffectText": "Restore life to a creature dead less than 1 minute; returns with 1 HP and suffers 1 level of exhaustion.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_spirit_guardians",
+				"Name": "Spirit Guardians",
+				"Description": "Summon spirits that protect you and scour enemies.",
+				"Level": 3,
+				"School": "Divine (Conjuration)",
+				"CastingTime": "1 action",
+				"Range": "Self (15-foot radius)",
+				"Duration": "5 rounds",
+				"Components": ["V", "S"],
+				"EffectText": "Enemies entering or starting turn in area take 3d8 radiant damage and have speed halved; allies are unaffected.",
+				"Effect": {
+					"EffectType": "Damage",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 5,
+					"EffectDice": "3d8"
+				}
+			},
+			{
+				"Id": "spell_cleric_mass_heal",
+				"Name": "Mass Heal",
+				"Description": "Pour divine energy into many allies at once.",
+				"Level": 9,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 action",
+				"Range": "60 feet",
+				"Duration": "Instantaneous",
+				"Components": ["V", "S"],
+				"EffectText": "Up to six allies regain 8d8 + caster level HP and are cured of blindness and deafness.",
+				"Effect": {
+					"EffectType": "Healing",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": "8d8"
+				}
+			},
+			{
+				"Id": "spell_cleric_divine_smite",
+				"Name": "Divine Smite",
+				"Description": "Channel holy power into a weapon strike.",
+				"Level": 2,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 action",
+				"Range": "Melee",
+				"Duration": "Instantaneous",
+				"Components": ["V"],
+				"EffectText": "Next melee hit deals +2d8 radiant damage (+1d8 vs undead/demons).",
+				"Effect": {
+					"EffectType": "Damage",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": "2d8"
+				}
+			},
+			{
+				"Id": "spell_cleric_holy_light",
+				"Name": "Holy Light",
+				"Description": "Radiate a burst of holy illumination.",
+				"Level": 1,
+				"School": "Divine (Evocation)",
+				"CastingTime": "1 action",
+				"Range": "30 feet",
+				"Duration": "1 minute",
+				"Components": ["V", "S"],
+				"EffectText": "Bright light in a 20-foot radius; undead in light take 1d6 radiant damage each round.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 10,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_divine_shield",
+				"Name": "Divine Shield",
+				"Description": "Summon a protective barrier of faith.",
+				"Level": 2,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 action",
+				"Range": "Self",
+				"Duration": "3 rounds",
+				"Components": ["V", "S"],
+				"EffectText": "Gain +2 AC and reduce incoming damage by 1d4 for 3 rounds.",
+				"Effect": {
+					"EffectType": "Buff",
+					"AffectedAttribute": "AC",
+					"EffectMagnitude": 2,
+					"EffectDuration": 3,
+					"EffectDice": "1d4"
+				}
+			},
+			{
+				"Id": "spell_cleric_purify_food_and_drink",
+				"Name": "Purify Food and Drink",
+				"Description": "Cleanse food and water of poison and disease.",
+				"Level": 1,
+				"School": "Divine (Transmutation)",
+				"CastingTime": "1 action",
+				"Range": "10 feet",
+				"Duration": "Instantaneous",
+				"Components": ["V", "S"],
+				"EffectText": "Render nonmagical food and drink within 10 feet free of poison and disease.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_shield_of_faith",
+				"Name": "Shield of Faith",
+				"Description": "A shimmering field bolsters a creature's defenses.",
+				"Level": 1,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 bonus action",
+				"Range": "60 feet",
+				"Duration": "1 minute",
+				"Components": ["V", "S", "M"],
+				"EffectText": "Target gains +2 AC for 1 minute (concentration).",
+				"Effect": {
+					"EffectType": "Buff",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 2,
+					"EffectDuration": 10,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_spirit_link",
+				"Name": "Spirit Link",
+				"Description": "Bind allies together so wounds are shared.",
+				"Level": 3,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 action",
+				"Range": "30 feet",
+				"Duration": "5 rounds",
+				"Components": ["V", "S"],
+				"EffectText": "Up to four allies share damage; half damage taken by one is distributed evenly to others as radiant.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 5,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_divine_fortress",
+				"Name": "Divine Fortress",
+				"Description": "Erect a bastion of radiant protection.",
+				"Level": 6,
+				"School": "Divine (Abjuration)",
+				"CastingTime": "1 action",
+				"Range": "Self (20-foot radius)",
+				"Duration": "10 rounds",
+				"Components": ["V", "S", "M"],
+				"EffectText": "Allies in aura gain +3 AC and heal 2d6 HP at start of turn; enemies take 2d6 radiant when entering.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 10,
+					"EffectDice": null
+				}
+			},
+			{
+				"Id": "spell_cleric_divine_intervention",
+				"Name": "Divine Intervention",
+				"Description": "Plea for a deity's immediate aid.",
+				"Level": 9,
+				"School": "Divine (Miracle)",
+				"CastingTime": "1 action",
+				"Range": "Special",
+				"Duration": "Instantaneous",
+				"Components": ["V"],
+				"EffectText": "Request a miracle; the GM chooses an appropriate divine effect based on your deity and need.",
+				"Effect": {
+					"EffectType": "Utility",
+					"AffectedAttribute": null,
+					"EffectMagnitude": 0,
+					"EffectDuration": 0,
+					"EffectDice": null
+				}
+			}
+		]
+		"Range": "30 feet",
+		"Duration": "3 rounds",
+		"Components": ["V", "S"],
+		"Effect": "Target gains damage reduction 1d4 for 3 rounds; reduction scales to 1d6 at caster level 6."
+	},
+	{
+		"Id": "spell_cleric_shadow_despair",
+		"Name": "Despair",
+		"Description": "Siphon courage from nearby foes.",
+		"Level": 2,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "30 feet",
+		"Duration": "1 minute",
+		"Components": ["V", "S"],
+		"Effect": "Up to three enemies suffer -1 to attack and defense rolls for 1 minute (Will save negates)."
+	},
+	{
+		"Id": "spell_cleric_shadow_invoke_terror",
+		"Name": "Invoke Terror",
+		"Description": "Unleash nightmarish whispers that shatter morale.",
+		"Level": 2,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "30 feet",
+		"Duration": "2 rounds",
+		"Components": ["V", "S"],
+		"Effect": "Creatures must pass a Will save (DC 10 + caster level) or flee in panic for 2 rounds."
+	},
+	{
+		"Id": "spell_cleric_shadow_void_lash",
+		"Name": "Void Lash",
+		"Description": "Manifest a whip of hungry darkness.",
+		"Level": 1,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "30 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Deals 1d8 necrotic damage, increasing by 1d8 every two caster levels above 1."
+	},
+	{
+		"Id": "spell_cleric_shadow_sow_sickness",
+		"Name": "Sow Sickness",
+		"Description": "Imbue a victim with virulent blight.",
+		"Level": 2,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "60 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S", "M"],
+		"Effect": "Target must save (DC 12 + caster level) or suffer poisoned condition and 1d4 immediate necrotic damage."
+	},
+	{
+		"Id": "spell_cleric_shadow_veil_of_dread",
+		"Name": "Veil of Dread",
+		"Description": "Shroud an ally in terrifying shadow.",
+		"Level": 2,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 bonus action",
+		"Range": "30 feet",
+		"Duration": "3 rounds",
+		"Components": ["V", "S"],
+		"Effect": "Enemies must succeed a Will save (DC 12 + caster level) to target the warded ally; failure forces a different target."
+	},
+	{
+		"Id": "spell_cleric_shadow_shadowstorm",
+		"Name": "Shadowstorm",
+		"Description": "Explode a storm of necrotic shards.",
+		"Level": 4,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "60 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Enemies in a 20-foot radius take 3d8 necrotic damage (save DC 14 + caster level for half)."
+	},
+	{
+		"Id": "spell_cleric_shadow_soul_siphon",
+		"Name": "Soul Siphon",
+		"Description": "Drain life from a foe to heal yourself.",
+		"Level": 4,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "60 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Deal 4d6 + caster level necrotic damage; caster regains health equal to damage dealt."
+	},
+	{
+		"Id": "spell_cleric_shadow_cloak_of_shadows",
+		"Name": "Cloak of Shadows",
+		"Description": "Wrap an ally in obscuring gloom.",
+		"Level": 3,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "30 feet",
+		"Duration": "5 rounds",
+		"Components": ["V", "S"],
+		"Effect": "Target gains +2 AC for 5 rounds and can attempt Stealth even when observed."
+	},
+	{
+		"Id": "spell_cleric_shadow_command_undead",
+		"Name": "Command Undead",
+		"Description": "Bend undead wills through dread oaths.",
+		"Level": 3,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "30 feet",
+		"Duration": "5 rounds",
+		"Components": ["V", "S", "Unholy Symbol"],
+		"Effect": "Dominate up to three lesser undead for 5 rounds; disobedience deals 2d6 necrotic backlash to them."
+	},
+	{
+		"Id": "spell_cleric_shadow_death_pulse",
+		"Name": "Death Pulse",
+		"Description": "Radiate a surge of negative energy.",
+		"Level": 4,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "Self (30-foot aura)",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Living enemies take 2d8 necrotic damage (save for half) while undead allies heal the same amount."
+	},
+	{
+		"Id": "spell_cleric_shadow_dark_bargain",
+		"Name": "Dark Bargain",
+		"Description": "Appeal to a shadow patron for fleeting power.",
+		"Level": 5,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "Self",
+		"Duration": "1 minute",
+		"Components": ["V", "S", "Blood Offering"],
+		"Effect": "On success (DC 15 + caster level) gain advantage on all rolls for 1 minute; spell ends with 1d6 psychic damage as payment."
+	},
+	{
+		"Id": "spell_cleric_shadow_raise_revenant",
+		"Name": "Raise Revenant",
+		"Description": "Return a soul bound to undeath.",
+		"Level": 6,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 hour",
+		"Range": "Touch",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S", "Black Candle"],
+		"Effect": "Revive a fallen ally as a sentient undead with 50% health; if within 1 hour, they return fully healed but gain radiant vulnerability."
+	},
+	{
+		"Id": "spell_cleric_shadow_nightmare_stalker",
+		"Name": "Nightmare Stalker",
+		"Description": "Summon an assassin of shadow.",
+		"Level": 7,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "60 feet",
+		"Duration": "5 rounds",
+		"Components": ["V", "S"],
+		"Effect": "Summoned stalker attacks twice per round for 2d10 necrotic damage and may become incorporeal to intercept one attack per round."
+	},
+	{
+		"Id": "spell_cleric_shadow_ray_of_void",
+		"Name": "Ray of Void",
+		"Description": "Fire a beam of annihilating darkness.",
+		"Level": 6,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "120 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Deals 6d8 necrotic damage and dispels magical light within 60 feet."
+	},
+	{
+		"Id": "spell_cleric_shadow_tendrils_of_the_abyss",
+		"Name": "Tendrils of the Abyss",
+		"Description": "Summon crushing limbs of darkness.",
+		"Level": 7,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "90 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Create three tendrils that each deal 4d10 bludgeoning and necrotic damage; targets may make a Dex save for half."
+	},
+	{
+		"Id": "spell_cleric_shadow_desecrated_ground",
+		"Name": "Desecrated Ground",
+		"Description": "Corrupt the battlefield with entropy.",
+		"Level": 8,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "60 feet",
+		"Duration": "1 minute",
+		"Components": ["V", "S", "Bone Dust"],
+		"Effect": "Enemies in a 20-foot radius suffer -3 AC and 2d6 necrotic damage per round; undead gain advantage on attacks while inside."
+	},
+	{
+		"Id": "spell_cleric_shadow_doom",
+		"Name": "Doom",
+		"Description": "Invoke inevitable demise on a single foe.",
+		"Level": 8,
+		"School": "Theurgy (Shadow)",
+		"CastingTime": "1 action",
+		"Range": "90 feet",
+		"Duration": "Instantaneous",
+		"Components": ["V", "S"],
+		"Effect": "Deal 8d10 necrotic damage (save DC 18 + caster level for half); if the target dies, their soul is trapped and cannot be resurrected for 24 hours."
+	}
+]

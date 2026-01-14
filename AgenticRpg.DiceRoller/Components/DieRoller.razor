@@ -1,0 +1,14 @@
+﻿<div style="height:12rem; position:relative; padding:1rem">
+    <div class="@($"dice{DieVal}content")">
+        <div class="@($"die{DieVal} {_diceClass}")" @onclick="ManualRoll" data-face="@_currentFace">
+            @for (var i = 1; i <= DieVal; i++)
+            {
+                <figure class="@($"face face-{i}")" data-face="@i"></figure>
+            }
+        </div>
+    </div>
+</div>
+
+@* <RadzenCard>
+    Value: @CurrentValue
+</RadzenCard> *@

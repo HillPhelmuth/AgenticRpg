@@ -1,0 +1,196 @@
+@using AgenticRpg.Core.Models
+@namespace AgenticRpg.Components.GameComponents
+
+<div class="world-details @CssClass">
+    @if (World == null)
+    {
+        <div class="world-empty">
+            <p>No world information available</p>
+        </div>
+    }
+    else
+    {
+        <div class="world-header">
+            <h2>@World.Name</h2>
+        </div>
+
+        <div class="world-content">
+            <!-- World Description -->
+            <details class="world-section" open>
+                <summary><h3>World Description</h3></summary>
+                <div class="section-content">
+                    <p>@World.Description</p>
+                    @if (!string.IsNullOrEmpty(World.Theme))
+                    {
+                        <p><strong>Theme:</strong> @World.Theme</p>
+                    }
+                </div>
+            </details>
+
+            <!-- Locations -->
+            <details class="world-section">
+                <summary><h3>Locations (@World.Locations.Count)</h3></summary>
+                <div class="section-content">
+                    @if (World.Locations.Any())
+                    {
+                        <div class="locations-grid">
+                            @foreach (var location in World.Locations)
+                            {
+                                <div class="location-card" @onclick="() => SelectLocation(location)">
+                                    <h4>@location.Name</h4>
+                                    <p class="location-type">@location.Type</p>
+                                    <p class="location-desc">@location.Description</p>
+                                    @if (location.Tags.Any())
+                                    {
+                                        <div class="tags">
+                                            @foreach (var tag in location.Tags)
+                                            {
+                                                <span class="tag">@tag</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </details>
+
+            <!-- NPCs -->
+            <details class="world-section">
+                <summary><h3>NPCs (@World.NPCs.Count)</h3></summary>
+                <div class="section-content">
+                    @if (World.NPCs.Any())
+                    {
+                        <div class="npc-grid">
+                            @foreach (var npc in World.NPCs)
+                            {
+                                <div class="npc-card">
+                                    <div class="npc-header">
+                                        <h4>@npc.Name</h4>
+                                        <span class="disposition @npc.Disposition.ToString().ToLower()">@npc.Disposition</span>
+                                    </div>
+                                    <p class="npc-role">@npc.Role</p>
+                                    <p class="npc-desc">@npc.Description</p>
+                                    <div class="npc-status">
+                                        <span class="status @npc.Status.ToLower()">@npc.Status</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </details>
+
+            <!-- Quests -->
+            <details class="world-section">
+                <summary><h3>Quests (@World.Quests.Count)</h3></summary>
+                <div class="section-content">
+                    @if (World.Quests.Any())
+                    {
+                        <div class="quest-list">
+                            @foreach (var quest in World.Quests)
+                            {
+                                <div class="quest-card">
+                                    <div class="quest-header">
+                                        <h4>@quest.Name</h4>
+                                        <span class="quest-status @quest.Status.ToString().ToLower()">@quest.Status</span>
+                                    </div>
+                                    <p class="quest-giver">Quest Giver: @quest.QuestGiver</p>
+                                    <p class="quest-desc">@quest.Description</p>
+                                    @if (quest.Reward != null && quest.Reward.Gold > 0)
+                                    {
+                                        <div class="quest-reward">
+                                            Reward: @quest.Reward.Gold GP
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </details>
+
+            <!-- Events -->
+            <details class="world-section">
+                <summary><h3>Events (@World.Events.Count)</h3></summary>
+                <div class="section-content">
+                    @if (World.Events.Any())
+                    {
+                        <div class="event-list">
+                            @foreach (var evt in World.Events)
+                            {
+                                <div class="event-card @(evt.Status == "Lore" ? "lore-entry" : "")">
+                                    <div class="event-header">
+                                        <h4>@evt.Name</h4>
+                                        <span class="event-status @evt.Status.ToLower()">@evt.Status</span>
+                                    </div>
+                                    <p class="event-desc">@evt.Description</p>
+                                    @if (evt.Status != "Lore")
+                                    {
+                                        <div class="event-timing">
+                                            <span class="timing-label">Started:</span>
+                                            <span class="timing-value">@evt.StartTime.ToString("MMM dd, yyyy")</span>
+                                        </div>
+                                    }
+                                    @if (evt.AffectedLocationIds.Any() || evt.AffectedNPCIds.Any())
+                                    {
+                                        <div class="event-affected">
+                                            @if (evt.AffectedLocationIds.Any())
+                                            {
+                                                <div class="affected-section">
+                                                    <strong>Locations:</strong>
+                                                    @foreach (var locId in evt.AffectedLocationIds)
+                                                    {
+                                                        var loc = World.Locations.FirstOrDefault(l => l.Id == locId);
+                                                        if (loc != null)
+                                                        {
+                                                            <span class="affected-item">@loc.Name</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                            @if (evt.AffectedNPCIds.Any())
+                                            {
+                                                <div class="affected-section">
+                                                    <strong>NPCs:</strong>
+                                                    @foreach (var npcId in evt.AffectedNPCIds)
+                                                    {
+                                                        var npc = World.NPCs.FirstOrDefault(n => n.Id == npcId);
+                                                        if (npc != null)
+                                                        {
+                                                            <span class="affected-item">@npc.Name</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    @if (evt.Tags.Any())
+                                    {
+                                        <div class="tags">
+                                            @foreach (var tag in evt.Tags)
+                                            {
+                                                <span class="tag">@tag</span>
+                                            }
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(evt.Notes))
+                                    {
+                                        <div class="event-notes">
+                                            <em>@evt.Notes</em>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-message">No events recorded</p>
+                    }
+                </div>
+            </details>
+        </div>
+    }
+</div>

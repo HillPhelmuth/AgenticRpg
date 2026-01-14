@@ -1,0 +1,240 @@
+[
+  {
+    "$type": "armor",
+    "Id": "item_armor_padded",
+    "Name": "Padded Armor",
+    "Description": "Layered cloth armor for basic protection.",
+    "Quantity": 1,
+    "Weight": 8,
+    "Value": 5,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 1,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 0
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_leather",
+    "Name": "Leather Armor",
+    "Description": "Boiled leather armor favored by scouts and rogues.",
+    "Quantity": 1,
+    "Weight": 10,
+    "Value": 10,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 1,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 0
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_studded_leather",
+    "Name": "Studded Leather Armor",
+    "Description": "Leather reinforced with metal studs for improved defense.",
+    "Quantity": 1,
+    "Weight": 13,
+    "Value": 45,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 2,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 0
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_hide",
+    "Name": "Hide Armor",
+    "Description": "Thick hides and furs stitched into rugged protection.",
+    "Quantity": 1,
+    "Weight": 12,
+    "Value": 10,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 2,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 0
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_chain",
+    "Name": "Chain Shirt",
+    "Description": "Interlocking metal links offering solid defense.",
+    "Quantity": 1,
+    "Weight": 20,
+    "Value": 50,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 3,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 10
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_ring_mail",
+    "Name": "Ring Mail",
+    "Description": "Leather armor with heavy metal rings.",
+    "Quantity": 1,
+    "Weight": 30,
+    "Value": 30,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 4,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 10
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_scale_mail",
+    "Name": "Scale Mail",
+    "Description": "Overlapping plates that balance mobility with protection.",
+    "Quantity": 1,
+    "Weight": 30,
+    "Value": 75,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 4,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 12
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_breastplate",
+    "Name": "Breastplate",
+    "Description": "A fitted metal chest piece worn with lighter padding.",
+    "Quantity": 1,
+    "Weight": 20,
+    "Value": 90,
+    "ItemType": "Armor",
+    "Rarity": "Uncommon",
+    "ArmorClassBonus": 4,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 12
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_half_plate",
+    "Name": "Half Plate Armor",
+    "Description": "Partial plate coverage that offers strong protection.",
+    "Quantity": 1,
+    "Weight": 40,
+    "Value": 120,
+    "ItemType": "Armor",
+    "Rarity": "Uncommon",
+    "ArmorClassBonus": 5,
+    "AllowAgilityBonus": false,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 13
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_chain_mail",
+    "Name": "Chain Mail",
+    "Description": "Heavy interlocking rings that provide excellent coverage.",
+    "Quantity": 1,
+    "Weight": 55,
+    "Value": 100,
+    "ItemType": "Armor",
+    "Rarity": "Common",
+    "ArmorClassBonus": 6,
+    "AllowAgilityBonus": false,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 15
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_splint",
+    "Name": "Splint Armor",
+    "Description": "Metal strips over a padded backing for superior defense.",
+    "Quantity": 1,
+    "Weight": 60,
+    "Value": 150,
+    "ItemType": "Armor",
+    "Rarity": "Uncommon",
+    "ArmorClassBonus": 7,
+    "AllowAgilityBonus": false,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 15
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_armor_plate",
+    "Name": "Plate Armor",
+    "Description": "Full metal harness providing elite protection.",
+    "Quantity": 1,
+    "Weight": 40,
+    "Value": 300,
+    "ItemType": "Armor",
+    "Rarity": "Uncommon",
+    "ArmorClassBonus": 8,
+    "AllowAgilityBonus": false,
+    "Properties": {
+      "Stealth": "Disadvantage",
+      "StrengthRequirement": 15
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_shield_basic",
+    "Name": "Shield",
+    "Description": "Sturdy shield that pairs with melee weapons.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 10,
+    "ItemType": "Shield",
+    "Rarity": "Common",
+    "ArmorClassBonus": 1,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 0
+    }
+  },
+  {
+    "$type": "armor",
+    "Id": "item_shield_large",
+    "Name": "Large Shield",
+    "Description": "Sturdy shield that pairs with melee weapons.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 10,
+    "ItemType": "Shield",
+    "Rarity": "Common",
+    "ArmorClassBonus": 2,
+    "AllowAgilityBonus": true,
+    "Properties": {
+      "Stealth": "No penalty",
+      "StrengthRequirement": 0
+    }
+  }
+]

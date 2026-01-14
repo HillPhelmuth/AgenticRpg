@@ -1,0 +1,196 @@
+$transitionDuration: 0.5s;
+$animationDuration: 3s;
+
+$angle: 90deg;
+$sideAngle: 360deg/6;
+$side: 1;
+
+
+.dice4content {
+    height: 180px;
+    width: 180px;
+    /*display: flex;
+    justify-content: center;
+    align-items: center;*/
+    perspective: 1500px;
+    margin: auto auto;
+    position: relative;
+    transform: scale(0.5);
+}
+
+//d4 variables
+$rotateY: 120deg;
+$rotateX: 20deg;
+$setZ: 22px;
+$width: 140px;
+$height: 122px;
+
+
+$opacity: 0.87;
+$color: rgba(30, 180, 20, $opacity);
+.die4 {
+    position: relative;
+    width: 61px;
+    height: 57px;
+    transform-style: preserve-3d;
+    transition: transform $transitionDuration ease-out;
+    cursor: pointer;
+
+    &.reset {
+        transition: transform 0.1s ease-out;
+    }
+
+    &.rolling {
+        animation: roll4 $animationDuration linear;
+    }
+    // Modified .stopped class with higher specificity to override data-face
+    &.stopped[data-face="1"] {
+        transform: rotateX(90deg) rotateY(180deg) translate3d(-25px, -75px, 105px);
+    }
+
+    &.stopped[data-face="2"] {
+        transform: rotateX(-20deg) rotateY(120deg) translate3d(0,0,0);
+    }
+
+    &.stopped[data-face="3"] {
+        transform: rotateX(-20deg) rotateY(-120deg) translate3d(0,0,0);
+    }
+
+    &.stopped[data-face="4"] {
+        transform: rotateX(-20deg) rotateY(0deg) translate3d(0,0,0);
+    }
+    // Original data-face selectors (unchanged)
+    @for $i from 1 through 4 {
+        &[data-face="#{$i}"] {
+            @if $i == 1 {
+                // Face 1 rotation remains the same as it works correctly
+                transform: rotateX(90deg) rotateY(180deg);
+            }
+            @else if $i == 2 {
+                // Adjust face 2 to show proper side
+                transform: rotateY(120deg) rotateX(20deg);
+            }
+            @else if $i == 3 {
+                // Adjust face 3 to show proper side
+                transform: rotateY(-120deg) rotateX(20deg);
+            }
+            @else if $i == 4 {
+                // Face 4 rotation remains the same as it works correctly
+                transform: rotateX(20deg) rotateY(0deg);
+            }
+        }
+    }
+
+    [class*="face"] {
+        position: absolute;
+        width: 0;
+        height: 0;
+        color: white;
+        font-size: 100px;
+        text-align: center;
+        line-height: 200px;
+        text-indent: -30px;
+        border-left: 100px solid transparent;
+        border-right: 100px solid transparent;
+        border-bottom: 173.2px solid $color;
+        top: 0;
+        left: 50%;
+        margin-left: -86.6px;
+        opacity: $opacity;
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+
+        &::before {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            text-align: center;
+            font-weight: bold;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    .face-1 {
+        transform: rotateX(90deg) rotateY(180deg) translateY(-60px) translateX(0px) translateZ(50px);
+
+        &::after {
+            content: "1";
+            transform: translate(-50%, -50%) translateZ(40px);
+        }
+    }
+
+    .face-2 {
+        transform: rotateY(-120deg) translateY(-30px) translateX(-25px) translateZ(43.35px) rotateX(20deg);
+
+        &::after {
+            content: "2";
+            transform: translate(-50%, -50%) translateZ(40px);
+        }
+    }
+
+    .face-3 {
+        transform: rotateY(120deg) translateX(25px) translateY(-30px) translateZ(43.3px) rotateX(20deg);
+
+        &::after {
+            content: "3";
+            transform: translate(-50%, -50%) translateZ(40px);
+        }
+    }
+
+    .face-4 {
+        transform: rotateX(20deg) translateZ(9px) translateY(-29px) translateX(0);
+
+        &::after {
+            content: "4";
+            transform: translate(-50%, -50%) translateZ(40px);
+        }
+    }
+}
+@keyframes roll4 {
+    10% {
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    }
+
+    30% {
+        transform: rotateX(120deg) rotateY(240deg) rotateZ(0deg) translateX(40px) translateY(40px);
+    }
+
+    50% {
+        transform: rotateX(240deg) rotateY(480deg) rotateZ(0deg) translateX(-40px) translateY(-40px);
+    }
+
+    70% {
+        transform: rotateX(360deg) rotateY(720deg) rotateZ(0deg);
+    }
+
+    90% {
+        transform: rotateX(480deg) rotateY(960deg) rotateZ(0deg);
+    }
+}
+@keyframes spin {
+    10% {
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg)
+    }
+
+    30% {
+        transform: rotateX(120deg) rotateY(240deg) rotateZ(0deg) translateX(40px) translateY(40px)
+    }
+
+    50% {
+        transform: rotateX(240deg) rotateY(480deg) rotateZ(0deg) translateX(-40px) translateY(-40px)
+    }
+
+    70% {
+        transform: rotateX(360deg) rotateY(720deg) rotateZ(0deg)
+    }
+
+    90% {
+        transform: rotateX(480deg) rotateY(960deg) rotateZ(0deg)
+    }
+}

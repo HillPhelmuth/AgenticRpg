@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Repositories\InMemoryCampaignRepository.cs" />
+    <Compile Remove="Repositories\InMemoryCharacterRepository.cs" />
+    <Compile Remove="Repositories\InMemoryNarrativeRepository.cs" />
+    <Compile Remove="Repositories\InMemoryWorldRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Data\ClericSpellList.json" />
+    <None Remove="Data\ItemList.json" />
+    <None Remove="Data\SkillsList.json" />
+    <None Remove="Data\WizardSpellsList.json" />
+    <None Remove="RulesDocuments\AlignmentSystem.md" />
+    <None Remove="RulesDocuments\AttributeSystem.md" />
+    <None Remove="RulesDocuments\CharacterClasses.md" />
+    <None Remove="RulesDocuments\CharacterRaces.md" />
+    <None Remove="RulesDocuments\CombatSystem.md" />
+    <None Remove="RulesDocuments\EquipmentSystem.md" />
+    <None Remove="RulesDocuments\MagicSystems.md" />
+    <None Remove="RulesDocuments\SkillSystem.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\*.json" />
+    <EmbeddedResource Include="RulesDocuments\*.md" />
+    
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251219.1" />
+    <PackageReference Include="Microsoft.Extensions.AI" Version="10.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.56.0" />
+    <PackageReference Include="OpenTelemetry" Version="1.14.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.14.0" />
+    <PackageReference Include="System.Memory.Data" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgenticRpg.DiceRoller\AgenticRpg.DiceRoller.csproj" />
+  </ItemGroup>
+
+</Project>

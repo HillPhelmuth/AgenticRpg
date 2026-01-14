@@ -1,0 +1,156 @@
+// Reverse-engineered SCSS for the provided CSS
+
+@keyframes roll {
+    10% {
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    }
+
+    30% {
+        transform: rotateX(120deg) rotateY(240deg) rotateZ(0deg) translateX(40px) translateY(40px);
+    }
+
+    50% {
+        transform: rotateX(240deg) rotateY(480deg) rotateZ(0deg) translateX(-40px) translateY(-40px);
+    }
+
+    70% {
+        transform: rotateX(360deg) rotateY(720deg) rotateZ(0deg);
+    }
+
+    90% {
+        transform: rotateX(480deg) rotateY(960deg) rotateZ(0deg);
+    }
+}
+
+// Dimensions & colors
+$size: 200px;
+$perspective: 1500px;
+$scale: 0.7;
+
+$tri-w: 35px; // half-width of the top triangle
+$tri-h: 70px; // height of the top triangle
+$cap-h: 10px; // height of the small cap triangle
+$z: 24.5px;
+
+$face-color: rgba(30, 180, 20, 0.75);
+$num-color: #fff;
+$num-shadow: #000;
+$num-size: 42px;
+
+$odd-top-offset: 70px;
+$even-ty: 2px;
+$odd-ty: -2px;
+
+// Angle sequences for face transforms
+$angles-odd: 60deg, 120deg, 180deg, 240deg, 300deg, 360deg; // faces 1,3,5,7,9,11
+$angles-even: -60deg, -120deg, -180deg, -240deg, -300deg, -360deg; // faces 2,4,6,8,10,12
+
+.dice12content {
+    margin: auto auto;
+    position: relative;
+    width: $size;
+    height: $size;
+    perspective: $perspective;
+    transform: scale($scale);
+}
+
+.die12 {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease-out;
+    cursor: pointer;
+    transform: rotateX(-55deg);
+
+    &.reset {
+        transition: transform 0.1s ease-out;
+        transform: rotateX(0);
+    }
+
+    &.rolling {
+        animation: roll 3s linear;
+    }
+
+    &.stopped {
+        transform: translate(50%, 50%);
+    }
+
+    .face {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        margin: 0 -$tri-w;
+        border-left: $tri-w solid transparent;
+        border-right: $tri-w solid transparent;
+        border-bottom: $tri-h solid $face-color;
+        width: 0;
+        height: 0;
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        counter-increment: steps 1;
+
+        &::before {
+            content: counter(steps);
+            position: absolute;
+            top: 14px;
+            left: -$tri-w;
+            color: $num-color;
+            text-shadow: 1px 1px 3px $num-shadow;
+            font-size: $num-size;
+            text-align: center;
+            line-height: $tri-h;
+            width: #{2 * $tri-w}; // 70px
+            height: $tri-h; // 70px
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            bottom: -80px;
+            left: -$tri-w;
+            border-left: $tri-w solid transparent;
+            border-right: $tri-w solid transparent;
+            border-top: $cap-h solid $face-color;
+            width: 0;
+            height: 0;
+        }
+    }
+    // Facing orientations for data-face="1".."12"
+    // Odd faces: 1,3,5,7,9,11 => rotateX(-235deg) & rotateY(-60deg * n)
+    @for $n from 1 through 6 {
+        $i: (2 * $n) - 1;
+
+        &[data-face="#{$i}"] {
+            transform: rotateX(-235deg) rotateY(-#{60 * $n}deg);
+        }
+    }
+    // Even faces: 2,4,6,8,10,12 => rotateX(-55deg) & rotateY(60deg * n)
+    @for $n from 1 through 6 {
+        $i: 2 * $n;
+
+        &[data-face="#{$i}"] {
+            transform: rotateX(-55deg) rotateY(#{60 * $n}deg);
+        }
+    }
+    // Geometry placements for each labeled face
+    // Odd-labeled faces (1,3,5,7,9,11)
+    @for $n from 1 through 6 {
+        $idx: (2 * $n) - 1;
+        $ang: nth($angles-odd, $n);
+
+        .face.face-#{$idx} {
+            top: $odd-top-offset;
+            transform: rotateY($ang) translateZ(-$z) translateY($odd-ty) rotateZ(180deg) rotateY(180deg) rotateX(55deg);
+        }
+    }
+    // Even-labeled faces (2,4,6,8,10,12)
+    @for $n from 1 through 6 {
+        $idx: 2 * $n;
+        $ang: nth($angles-even, $n);
+
+        .face.face-#{$idx} {
+            transform: rotateY($ang) translateZ($z) translateY($even-ty) rotateX(55deg);
+        }
+    }
+}

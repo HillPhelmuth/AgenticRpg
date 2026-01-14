@@ -1,0 +1,63 @@
+@using AgenticRpg.Components.ChatComponents
+@namespace AgenticRpg.Components.ChatComponents
+
+<div class="user-input @CssClass">
+    <div class="input-container">
+        @if (_isTextArea)
+        {
+            <textarea class="input-field @(IsProcessing ? "disabled" : "")"
+                      placeholder="@Placeholder"
+                      @bind="_inputValue"
+                      @onkeydown="HandleKeyDown"
+                      @bind:event="oninput"
+                      rows="@Rows"
+                      disabled="@IsProcessing">
+                    </textarea>
+        }
+        else
+        {
+            <input class="input-field @(IsProcessing ? "disabled" : "")"
+                   placeholder="@Placeholder"
+                   @bind="_inputValue"
+                   @onkeydown="HandleKeyDown"
+                   @bind:event="oninput"
+                   disabled="@IsProcessing" />
+        }
+        <button class="input-toggle-button" @onclick="@(() => _isTextArea = !_isTextArea)">
+            @if (_isTextArea)
+            {
+                <i class="bi bi-arrows-collapse"></i>
+            }
+            else
+            {
+                <i class="bi bi-arrows-expand"></i>
+            }
+        </button>
+        <div class="input-actions">
+            @if (IsProcessing)
+            {
+                <button class="btn-cancel" @onclick="CancelProcessing">
+                    <span class="spinner"></span>
+                    Cancel
+                </button>
+            }
+            else
+            {
+                <button class="btn-submit"
+                        @onclick="SubmitMessage"
+                        disabled="@(string.IsNullOrWhiteSpace(_inputValue))">
+                    Send
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(HintText))
+    {
+        <div class="input-hint">
+            @HintText
+        </div>
+    }
+</div>
+
+

@@ -1,0 +1,198 @@
+[
+	{
+		"Id": "item_gear_backpack",
+		"Name": "Backpack",
+		"Description": "Canvas pack that redistributes weight for long treks.",
+		"Quantity": 1,
+		"Weight": 5,
+		"Value": 2,
+		"ItemType": "Container",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Increase carrying capacity by 10 lb before encumbrance.",
+			"BaseCost": "2 gp"
+		}
+	},
+	{
+		"Id": "item_gear_bedroll",
+		"Name": "Bedroll",
+		"Description": "Simple bedding that keeps adventurers warm outdoors.",
+		"Quantity": 1,
+		"Weight": 5,
+		"Value": 1,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Grants advantage on Endurance checks to avoid exhaustion while camping.",
+			"BaseCost": "1 gp"
+		}
+	},
+	{
+		"Id": "item_consumable_rations",
+		"Name": "Rations (1 day)",
+		"Description": "Preserved trail food for one traveler.",
+		"Quantity": 1,
+		"Weight": 2,
+		"Value": 1,
+		"ItemType": "Consumable",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Sustains one creature for a day; counts toward Survival checks.",
+			"BaseCost": "5 sp"
+		}
+	},
+	{
+		"Id": "item_consumable_torch",
+		"Name": "Torch",
+		"Description": "Oil-soaked torch that lights the dark.",
+		"Quantity": 1,
+		"Weight": 1,
+		"Value": 0,
+		"ItemType": "Consumable",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Burns for 1 hour, illuminating 20 feet of bright light and 20 feet of dim light.",
+			"BaseCost": "1 cp"
+		}
+	},
+	{
+		"Id": "item_tool_lantern",
+		"Name": "Lantern",
+		"Description": "Metal lantern that shields flame from wind.",
+		"Quantity": 1,
+		"Weight": 2,
+		"Value": 5,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Provides bright light for 6 hours on a flask of oil.",
+			"BaseCost": "5 gp"
+		}
+	},
+	{
+		"Id": "item_tool_rope",
+		"Name": "Hemp Rope (50 ft)",
+		"Description": "Durable rope for climbing or securing loads.",
+		"Quantity": 1,
+		"Weight": 10,
+		"Value": 1,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Supports up to 300 lb before breaking.",
+			"BaseCost": "1 gp"
+		}
+	},
+	{
+		"Id": "item_tool_climbers_kit",
+		"Name": "Climber's Kit",
+		"Description": "Harness, pitons, and gloves designed for scaling cliffs.",
+		"Quantity": 1,
+		"Weight": 12,
+		"Value": 25,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Grants advantage on Athletics checks made to climb.",
+			"BaseCost": "25 gp"
+		}
+	},
+	{
+		"Id": "item_container_waterskin",
+		"Name": "Waterskin",
+		"Description": "Leather skin that keeps water cool during travel.",
+		"Quantity": 1,
+		"Weight": 4,
+		"Value": 1,
+		"ItemType": "Container",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Holds enough water for one creature for a day.",
+			"BaseCost": "5 sp"
+		}
+	},
+	{
+		"Id": "item_tool_flint_steel",
+		"Name": "Flint & Steel",
+		"Description": "Spark kit for lighting torches or campfires.",
+		"Quantity": 1,
+		"Weight": 1,
+		"Value": 1,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Allows fire starting without a check in dry conditions.",
+			"BaseCost": "1 gp"
+		}
+	},
+	{
+		"Id": "item_consumable_healing_potion",
+		"Name": "Healing Potion",
+		"Description": "Ruby liquid that hastens recovery when imbibed.",
+		"Quantity": 1,
+		"Weight": 1,
+		"Value": 50,
+		"ItemType": "Consumable",
+		"Rarity": "Uncommon",
+		"Properties": {
+			"Effect": "Drink to restore 2d4 + 2 hit points.",
+			"BaseCost": "50 gp"
+		}
+	},
+	{
+		"Id": "item_tool_thieves_tools",
+		"Name": "Thieves' Tools",
+		"Description": "Delicate picks and probes for locks and traps.",
+		"Quantity": 1,
+		"Weight": 1,
+		"Value": 25,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Required for lockpicking; grants +2 bonus to related Crafting or Stealth checks.",
+			"BaseCost": "25 gp"
+		}
+	},
+	{
+		"Id": "item_tool_herbalism_kit",
+		"Name": "Herbalism Kit",
+		"Description": "Mortar, pestle, and poultice supplies for field medics.",
+		"Quantity": 1,
+		"Weight": 3,
+		"Value": 10,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Allows crafting of basic antidotes or poultices during rests.",
+			"BaseCost": "10 gp"
+		}
+	},
+	{
+		"Id": "item_tool_spyglass",
+		"Name": "Spyglass",
+		"Description": "Brass telescope ideal for scouting sea or land.",
+		"Quantity": 1,
+		"Weight": 1,
+		"Value": 100,
+		"ItemType": "Tool",
+		"Rarity": "Uncommon",
+		"Properties": {
+			"Effect": "Magnifies distant objects; gain +5 to Perception checks at long range.",
+			"BaseCost": "100 gp"
+		}
+	},
+	{
+		"Id": "item_tool_grappling_hook",
+		"Name": "Grappling Hook",
+		"Description": "Metal hook that secures rope to ledges or battlements.",
+		"Quantity": 1,
+		"Weight": 4,
+		"Value": 5,
+		"ItemType": "Tool",
+		"Rarity": "Common",
+		"Properties": {
+			"Effect": "Thrown up to 20 feet; grants +2 to subsequent climbing attempts.",
+			"BaseCost": "5 gp"
+		}
+	}
+]

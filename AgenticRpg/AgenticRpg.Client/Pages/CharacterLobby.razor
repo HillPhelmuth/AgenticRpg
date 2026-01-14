@@ -1,0 +1,121 @@
+@page "/lobby"
+@using AgenticRpg.Core.Models
+@inherits RpgPageBase
+<div class="lobby-container">
+    <div class="lobby-header">
+        <div class="campaign-info">
+            <h1>@(Campaign?.Name ?? "Loading...")</h1>
+            <p class="campaign-description">@Campaign?.Description</p>
+        </div>
+        <button class="btn-back" @onclick="GoBack" disabled="@IsProcessing">
+            ← Back to Menu
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-error">
+            @ErrorMessage
+        </div>
+    }
+
+    @if (Campaign != null)
+    {
+        <div class="lobby-content">
+            <div class="status-section">
+                <h2>Party Members</h2>
+                <p class="status-text">
+                    @ReadyCount / @TotalPlayers players ready
+                </p>
+            </div>
+
+            <div class="party-grid">
+                @foreach (var character in Characters)
+                {
+                    var isReady = ReadyStatuses.TryGetValue(character.PlayerId, out var readyValue) && readyValue.IsReady;
+                    var isCurrentPlayer = character.PlayerId == CurrentUserId;
+
+                    <div class="character-card @(isReady ? "ready" : "waiting") @(isCurrentPlayer ? "current-player" : "")">
+                        <div class="character-portrait">
+                            @if (!string.IsNullOrEmpty(character.PortraitUrl))
+                            {
+                                <img src="@character.PortraitUrl" alt="@character.Name" />
+                            }
+                            else
+                            {
+                                <div class="portrait-placeholder">
+                                    @character.Name.Substring(0, 1).ToUpper()
+                                </div>
+                            }
+                        </div>
+
+                        <div class="character-info">
+                            <h3>@character.Name</h3>
+                            <p class="character-details">
+                                Level @character.Level @character.Race @character.Class
+                            </p>
+                            <p class="player-name">
+                                Player: @(isCurrentPlayer ? "You" : character.PlayerId)
+                            </p>
+                        </div>
+
+                        <div class="ready-indicator">
+                            @if (isReady)
+                            {
+                                <span class="ready-badge">✓ READY</span>
+                            }
+                            else
+                            {
+                                <span class="waiting-badge">⏳ WAITING</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="action-section">
+                @if (CurrentCharacter != null)
+                {
+                    <button class="btn-ready @(IsReady ? "active" : "")" 
+                            @onclick="ToggleReady" 
+                            disabled="@IsProcessing">
+                        @if (IsReady)
+                        {
+                            <span class="icon">✓</span>
+                            <span>Ready!</span>
+                        }
+                        else
+                        {
+                            <span class="icon">○</span>
+                            <span>Click when Ready</span>
+                        }
+                    </button>
+
+                    @if (AllPlayersReady && IsStarting)
+                    {
+                        <div class="all-ready-message">
+                            <span class="icon">🎲</span>
+                            All players are ready! The game will start soon...
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-character-message">
+                        <p>You don't have a character in this campaign yet.</p>
+                        <button class="btn-create" @onclick="CreateCharacter">
+                            Create Character
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="loading-section">
+            <div class="loading-spinner"></div>
+            <p>Loading campaign...</p>
+        </div>
+    }
+</div>

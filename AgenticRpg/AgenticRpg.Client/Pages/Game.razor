@@ -1,0 +1,135 @@
+@page "/game"
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Components.ChatComponents
+@using AgenticRpg.Components.GameComponents
+@inherits RpgPageBase
+<div class="game-container">
+    <div class="game-header">
+        <div class="campaign-title">
+            <h1>@(Campaign?.Name ?? "Loading...")</h1>
+            <div class="turn-indicator" hidden="@(CurrentTurnCharacter == null)">
+                <span class="icon">⚔️</span>
+                <span>@CurrentTurnCharacter?.Name's Turn</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-party" @onclick="TogglePartyView">
+                <span class="icon">👥</span>
+                Party
+            </button>
+            <button class="btn-leave" @onclick="LeaveCampaign">
+                <span class="icon">🚪</span>
+                Leave
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-error">
+            @ErrorMessage
+        </div>
+    }
+
+    @if (Campaign != null && CurrentCharacter != null && GameState != null)
+    {
+        <!-- Mobile View Toggle (visible only on mobile/tablet) -->
+        <div class="mobile-view-toggle">
+            <button class="toggle-btn @(CurrentMobileView == MobileView.Game ? "active" : "")" 
+                    @onclick='() => SetMobileView(MobileView.Game)'>
+                📖 Game
+            </button>
+            <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")" 
+                    @onclick='() => SetMobileView(MobileView.Chat)'>
+                💬 Chat
+            </button>
+        </div>
+
+        <div class="game-layout">
+            <!-- Left Panel: Game Information Tabs -->
+            <div class="info-panel @(CurrentMobileView == MobileView.Game ? "mobile-visible" : "mobile-hidden")">
+                <div class="tab-header">
+                    <button class="tab-button @(ActiveTab == "story" ? "active" : "")" 
+                            @onclick='() => SetActiveTab("story")'>
+                        📖 Story
+                    </button>
+                    <button class="tab-button @(ActiveTab == "character" ? "active" : "")" 
+                            @onclick='() => SetActiveTab("character")'>
+                        👤 Character
+                    </button>
+                    <button class="tab-button @(ActiveTab == "world" ? "active" : "")" 
+                            @onclick='() => SetActiveTab("world")'>
+                        🗺️ World
+                    </button>
+                    @if (IsInCombat)
+                    {
+                        <button class="tab-button combat-tab @(ActiveTab == "combat" ? "active" : "")" 
+                                @onclick='() => SetActiveTab("combat")'>
+                            ⚔️ Combat
+                        </button>
+                    }
+                </div>
+
+                <div class="tab-content">
+                    @if (ActiveTab == "story")
+                    {
+                        <NarrativeView Narratives="@GameState.RecentNarratives.DistinctBy(x => x.Id).ToList()"
+                                      CurrentCharacterId="@CurrentCharacter?.Id" />
+                    }
+                    else if (ActiveTab == "character")
+                    {
+                        <CharacterSheetView Character="@CurrentCharacter" />
+                    }
+                    else if (ActiveTab == "world")
+                    {
+                        <WorldDetails World="@GameState.World" />
+                    }
+                    else if (ActiveTab == "combat" && GameState?.CurrentCombat != null)
+                    {
+                        <CombatEncounterDetails Encounter="@GameState.CurrentCombat" />
+                    }
+                </div>
+            </div>
+
+            <!-- Right Panel: Game Master Chat -->
+            <div class="chat-panel @(CurrentMobileView == MobileView.Chat ? "mobile-visible" : "mobile-hidden")">
+                <div class="panel-header">
+                   
+                    <div class="connection-status">
+                        <span class="@(IsConnected ? "status-connected" : "status-disconnected")"></span>
+                        @(IsConnected ? "Connected" : "Disconnected")
+                    </div>
+                </div>
+
+                <div class="chat-container">
+                    <ChatView Messages="@ChatMessages" 
+                             OnMessageDeleted="HandleMessageDeleted"
+                             OnMessageEdited="HandleMessageEdited"
+                             OnSuggestedActionInvoked="SendMessage" />
+
+                    <UserInput @ref="UserInputRef"
+                              OnSubmit="SendMessage"
+                              IsProcessing="@IsProcessing"
+                              Placeholder="Describe your actions, talk to NPCs, ask questions..." />
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="loading-section">
+            <div class="loading-spinner"></div>
+            <p>Loading game...</p>
+        </div>
+    }
+
+    <!-- Party View Modal -->
+    @if (ShowPartyView && GameState != null)
+    {
+        <div class="modal-overlay" @onclick="TogglePartyView">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <PartyView Characters="@GameState.Characters" OnClose="TogglePartyView" />
+            </div>
+        </div>
+    }
+</div>

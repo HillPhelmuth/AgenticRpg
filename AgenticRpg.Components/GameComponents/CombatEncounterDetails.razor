@@ -1,0 +1,238 @@
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Enums
+@using AgenticRpg.Core.Models.Game
+@namespace AgenticRpg.Components.GameComponents
+
+<div class="combat-encounter-details @CssClass">
+    @if (Encounter == null)
+    {
+        <div class="combat-empty">
+            <p>No active combat encounter</p>
+        </div>
+    }
+    else
+    {
+        <div class="combat-header">
+            <h2>Combat - Round @Encounter.Round</h2>
+            <div class="combat-status @Encounter.Status.ToString().ToLower()">
+                @Encounter.Status
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Encounter.Terrain))
+        {
+            <div class="terrain-info">
+                <strong>Environment:</strong> @Encounter.Terrain
+            </div>
+        }
+
+        <!-- Initiative Order -->
+        <details class="combat-section" open>
+            <summary>
+                <h3>Initiative Order</h3>
+            </summary>
+            <div class="section-content">
+                <div class="initiative-list">
+                    @foreach (var combatantId in Encounter.InitiativeOrder)
+                    {
+                        var pc = Encounter.PartyCharacters.FirstOrDefault(c => c.Id == combatantId);
+                        var monster = Encounter.EnemyMonsters.FirstOrDefault(m => string.Equals(m.Name, combatantId, StringComparison.OrdinalIgnoreCase));
+                        var isEnemy = monster != null;
+                        var name = pc?.Name ?? monster?.Name ?? combatantId;
+                        var isCurrent = string.Equals(Encounter.GetCurrentTurnId(), combatantId, StringComparison.OrdinalIgnoreCase);
+                        var init = Encounter.InitiativeRolls.TryGetValue(combatantId, out var roll) ? roll : 0;
+
+                        <div class="initiative-item @(isCurrent ? "current" : "")">
+                            @if (isCurrent)
+                            {
+                                <span class="current-marker">→</span>
+                            }
+                            <span class="init-name @(isEnemy ? "enemy" : "ally")">@name</span>
+                            <span class="init-value">@init</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </details>
+
+        <!-- Combatants -->
+        <details class="combat-section" open>
+            <summary>
+                <h3>Combatants</h3>
+            </summary>
+            <div class="section-content">
+                <!-- Party Members -->
+                <div class="combatants-group">
+                    <h4>Party</h4>
+                    <div class="combatants-grid">
+                        @foreach (var combatant in Encounter.PartyCharacters)
+                        {
+                            <div class="combatant-card ally @(!combatant.IsAlive ? "defeated" : "")">
+                                <div class="combatant-header">
+                                    <span class="combatant-name">@combatant.Name</span>
+                                    @if (!combatant.IsAlive)
+                                    {
+                                        <span class="status-badge defeated">Defeated</span>
+                                    }
+                                </div>
+                                <div class="combatant-stats">
+                                    <div class="stat-row">
+                                        <span class="stat-label">HP:</span>
+                                        <div class="hp-bar">
+                                            <div class="hp-fill" style="width: @(combatant.MaxHP > 0 ? (combatant.CurrentHP * 100.0 / combatant.MaxHP) : 0)%"></div>
+                                            <span class="hp-text">@combatant.CurrentHP / @combatant.MaxHP</span>
+                                        </div>
+                                    </div>
+                                    @if (combatant.CurrentHP > 0)
+                                    {
+                                        <div class="stat-row">
+                                            <span class="stat-label">Temp HP:</span>
+                                            <span class="stat-value">@combatant.CurrentHP</span>
+                                        </div>
+                                    }
+                                    <div class="stat-row">
+                                        <span class="stat-label">AC:</span>
+                                        <span class="stat-value">@combatant.ArmorClass</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Enemies -->
+                <div class="combatants-group">
+                    <h4>Enemies</h4>
+                    <div class="combatants-grid">
+                        @foreach (var combatant in Encounter.EnemyMonsters)
+                        {
+                            <div class="combatant-card enemy @(combatant.CurrentHP <= 0 ? "defeated" : "")" @onclick="() => SelectMonster(combatant)">
+                                <div class="combatant-header">
+                                    <span class="combatant-name">@combatant.Name</span>
+                                    @if (combatant.ChallengeRating > 0)
+                                    {
+                                        <span class="cr-badge">CR @combatant.ChallengeRating</span>
+                                    }
+                                    @if (combatant.CurrentHP <= 0)
+                                    {
+                                        <span class="status-badge defeated">Defeated</span>
+                                    }
+                                </div>
+                                <div class="combatant-stats">
+                                    <div class="stat-row">
+                                        <span class="stat-label">HP:</span>
+                                        <div class="hp-bar">
+                                            <div class="hp-fill enemy" style="width: @(combatant.MaxHP > 0 ? (combatant.CurrentHP * 100.0 / combatant.MaxHP) : 0)%"></div>
+                                            <span class="hp-text">@combatant.CurrentHP / @combatant.MaxHP</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span class="stat-label">AC:</span>
+                                        <span class="stat-value">@combatant.ArmorClass</span>
+                                    </div>
+                                </div>
+
+                                <div class="abilities-hint">
+                                    Click for attacks
+                                </div>
+
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <!-- Combat Log -->
+        <details class="combat-section">
+            <summary>
+                <h3>Combat Log</h3>
+            </summary>
+            <div class="section-content">
+                <div class="combat-log">
+                    @if (Encounter.CombatLog.Any())
+                    {
+                        @foreach (var entry in Encounter.CombatLog.OrderByDescending(e => e.Timestamp).Take(20))
+                        {
+                            <div class="log-entry @(entry.IsCritical ? "critical" : "")">
+                                <span class="log-round">Round @entry.Round:</span>
+                                <span class="log-description">@entry.Description</span>
+                                @if (entry.RollResult.HasValue)
+                                {
+                                    <span class="log-roll">[@entry.RollResult]</span>
+                                }
+                                @if (entry.IsCritical)
+                                {
+                                    <span class="crit-indicator">CRIT!</span>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="log-empty">No combat actions yet</p>
+                    }
+                </div>
+            </div>
+        </details>
+    }
+</div>
+
+@if (ShowMonsterModal && SelectedMonster != null)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@SelectedMonster.Name</h3>
+                <button class="modal-close" @onclick="CloseModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="monster-stats">
+                    <div class="stat-row">
+                        <strong>Challenge Rating:</strong> @SelectedMonster.ChallengeRating
+                    </div>
+                    <div class="stat-row">
+                        <strong>HP:</strong> @SelectedMonster.CurrentHP / @SelectedMonster.MaxHP
+                    </div>
+                    <div class="stat-row">
+                        <strong>AC:</strong> @SelectedMonster.ArmorClass
+                    </div>
+                    <div class="stat-row">
+                        <strong>Speed:</strong> @SelectedMonster.Speed ft
+                    </div>
+                </div>
+                @if (SelectedMonster.SpecialAttacks.Any() || !string.IsNullOrEmpty(SelectedMonster.DefaultAttack.Name))
+                {
+                    <div class="special-abilities">
+                        <h4>Attacks</h4>
+                        @foreach (var attack in SelectedMonster.SpecialAttacks)
+                        {
+                            <div class="ability-item">
+                                <div class="ability-header">
+                                    <strong>@attack.Name</strong>
+                                    <span class="ability-type">[@attack.WeaponType]</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(attack.Description))
+                                {
+                                    <p>@attack.Description</p>
+                                }
+                                <span class="damage-type">Damage: @attack.DamageDice @attack.DamageType</span>
+                            </div>
+                        }
+                        <div class="abilty-item">
+                            <div class="ability-header">
+                                <strong>@SelectedMonster.DefaultAttack.Name</strong>
+                                <span class="ability-type">[@SelectedMonster.DefaultAttack.WeaponType]</span>
+                                @if (!string.IsNullOrEmpty(SelectedMonster.DefaultAttack.Description))
+                                {
+                                    <p>@SelectedMonster.DefaultAttack.Description</p>
+                                }
+                                <span class="damage-type">Damage: @SelectedMonster.DefaultAttack.DamageDice @SelectedMonster.DefaultAttack.DamageType</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

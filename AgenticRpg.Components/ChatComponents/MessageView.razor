@@ -1,0 +1,62 @@
+@using AgenticRpg.Components.ChatComponents
+@using AgenticRpg.Core.Messaging
+@using Markdig
+@namespace AgenticRpg.Components.ChatComponents
+
+<div class="message-view @(Message.IsUser ? "user-message" : "ai-message") @(Message.IsEditing ? "editing" : "")">
+    <div class="message-header">
+        <div class="message-author-block">
+            @if (Message.IsUser && !string.IsNullOrEmpty(Message.PlayerName))
+            {
+                <span class="message-author">@Message.PlayerName</span>
+            }
+            else if (!Message.IsUser)
+            {
+                <span class="message-author">@Message.PlayerName</span>
+            }
+        </div>
+        <div class="message-meta">
+            @if (Message is { IsUser: true, Status: not null })
+            {
+                var status = Message.Status.Value;
+                var supplement = GetStatusSupplement();
+                var tooltip = GetStatusTooltip();
+                <span class="message-status-badge @GetStatusCss(status)" title="@tooltip">
+                    @GetStatusLabel(status)
+                    @if (!string.IsNullOrEmpty(supplement))
+                    {
+                        <span class="message-status-supplement">@supplement</span>
+                    }
+                </span>
+            }
+            <span class="message-timestamp">@Message.Timestamp.ToString("hh:mm tt")</span>
+        </div>
+    </div>
+
+    <div class="message-content">
+        @if (Message.IsEditing)
+        {
+            <textarea class="message-edit-input" @bind="_editContent" rows="3"></textarea>
+            <div class="message-edit-actions">
+                <button class="btn-save" @onclick="SaveEdit">Save</button>
+                <button class="btn-cancel" @onclick="CancelEdit">Cancel</button>
+            </div>
+        }
+        else
+        {
+            @((MarkupString)ConvertMarkdownToHtml(Message.Content))
+
+            @if (Message.ImageUrls != null && Message.ImageUrls.Any())
+            {
+                <div class="message-images">
+                    @foreach (var imageUrl in Message.ImageUrls)
+                    {
+                        <img src="@imageUrl" alt="Message image" class="message-image" />
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+

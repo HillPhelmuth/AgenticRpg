@@ -1,0 +1,80 @@
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Enums
+@using AgenticRpg.Core.Models.Game
+@namespace AgenticRpg.Components.GameComponents
+
+<div class="party-view @CssClass">
+    <div class="party-header">
+        <h2>Party Members</h2>
+        @if (OnClose.HasDelegate)
+        {
+            <button class="close-button" @onclick="HandleClose">×</button>
+        }
+    </div>
+
+    <div class="party-content">
+        @if (Characters != null && Characters.Any())
+        {
+            @foreach (var character in Characters)
+            {
+                <div class="party-member-card">
+                    <div class="member-header">
+                        <h3>@character.Name</h3>
+                        <span class="level-badge">Level @character.Level</span>
+                    </div>
+                    <div class="member-info">
+                        <div class="info-row">
+                            <span>@character.Race @character.Class</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="player-id">Player: @character.PlayerId</span>
+                        </div>
+                    </div>
+                    <div class="member-stats">
+                        <div class="stat-row">
+                            <span>HP:</span>
+                            <div class="hp-bar">
+                                <div class="hp-fill" style="width: @(character.MaxHP > 0 ? (character.CurrentHP * 100.0 / character.MaxHP) : 0)%"></div>
+                                <span class="hp-text">@character.CurrentHP / @character.MaxHP</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="member-attributes">
+                        @foreach (var attr in character.Attributes)
+                        {
+                            <div class="attr-compact">
+                                <span class="attr-name">@attr.Key</span>
+                                <span class="attr-value">@attr.Value</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="party-empty">
+                <p>No party members</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<Character>? Characters { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task HandleClose()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

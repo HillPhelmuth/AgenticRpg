@@ -1,0 +1,11 @@
+@using AgenticRpg.DiceRoller.Models
+
+@foreach (var window in _activeWindows)
+{
+    <RollDiceWindow @key="window.Key" 
+                    ModalId="window.Value.ModalId"
+                    ComponentType="window.Value.Type"
+                    Parameters="window.Value.Parameters"
+                    Options="window.Value.Options">
+    </RollDiceWindow>
+}

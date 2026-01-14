@@ -1,0 +1,520 @@
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Enums
+@using AgenticRpg.Core.Models.Game
+@namespace AgenticRpg.Components.GameComponents
+
+<div class="character-sheet-view @CssClass">
+    @if (Character == null)
+    {
+        <div class="sheet-empty">
+            <p>No character loaded</p>
+        </div>
+    }
+    else
+    {
+        <div class="sheet-header">
+            <h2>@Character.Name</h2>
+            <div class="sheet-navigation">
+                <button class="@(CurrentPage == 1 ? "active" : "")" @onclick="() => SetPage(1)">
+                    Stats
+                </button>
+                <button class="@(CurrentPage == 2 ? "active" : "")" @onclick="() => SetPage(2)">
+                    Abilities
+                </button>
+                <button class="@(CurrentPage == 3 ? "active" : "")" @onclick="() => SetPage(3)">
+                    Portrait
+                </button>
+            </div>
+        </div>
+
+        <div class="sheet-content">
+            @if (CurrentPage == 1)
+            {
+                <div class="page page-1">
+                    <!-- Basic Info -->
+                    <div class="basic-info">
+                        <div class="info-row">
+                            <div class="info-field">
+                                <label>Player</label>
+                                <span>@Character.PlayerId</span>
+                            </div>
+                            <div class="info-field">
+                                <label>Race</label>
+                                <span>@Character.Race</span>
+                            </div>
+                            <div class="info-field">
+                                <label>Class</label>
+                                <span>@Character.Class</span>
+                            </div>
+                            <div class="info-field">
+                                <label>Level</label>
+                                <span>@Character.Level</span>
+                            </div>
+                            <div class="info-field">
+                                <label>Experience</label>
+                                <span>@Character.Experience XP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attributes -->
+                    <div class="attributes-section">
+                        <h3>Attributes</h3>
+                        <div class="attributes-grid">
+                            @foreach (var attr in Character.Attributes)
+                            {
+                                var modifier = Character.GetAttributeModifier(attr.Key);
+                                <div class="attribute-box">
+                                    <div class="attr-name">@attr.Key</div>
+                                    <div class="attr-score">@attr.Value</div>
+                                    <div class="attr-modifier">@(modifier >= 0 ? "+" : "")@modifier</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Combat Stats -->
+                    <div class="combat-stats">
+                        <h3>Combat Stats</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <label>Hit Points</label>
+                                <div class="hp-bar">
+                                    <div class="hp-fill" style="width: @(Character.MaxHP > 0 ? (Character.CurrentHP * 100.0 / Character.MaxHP) : 0)%"></div>
+                                    <span>@Character.CurrentHP / @Character.MaxHP</span>
+                                </div>
+                                @if (Character.CurrentHP > 0)
+                                {
+                                    <div class="temp-hp">
+                                        <small>+@Character.CurrentHP Temp HP</small>
+                                    </div>
+                                }
+                            </div>
+                            <div class="stat-box">
+                                <label>Magic Points</label>
+                                <div class="mp-bar">
+                                    <div class="mp-fill" style="width: @(Character.MaxMP > 0 ? (Character.CurrentMP * 100.0 / Character.MaxMP) : 0)%"></div>
+                                    <span>@Character.CurrentMP / @Character.MaxMP</span>
+                                </div>
+                            </div>
+                            <div class="stat-box">
+                                <label>Armor Class</label>
+                                <span class="stat-value">@Character.ArmorClass</span>
+                            </div>
+                            <div class="stat-box">
+                                <label>Initiative</label>
+                                <span class="stat-value">@(Character.Initiative >= 0 ? "+" : "")@Character.Initiative</span>
+                            </div>
+                            <div class="stat-box">
+                                <label>Speed</label>
+                                <span class="stat-value">@Character.Speed ft</span>
+                            </div>
+                        </div>
+                        
+                        @* Death Saves (if character is unconscious) *@
+                        @if (Character.IsUnconscious)
+                        {
+                            <div class="death-saves">
+                                <h4>Death Saves</h4>
+                                <div class="death-save-tracker">
+                                    <div class="save-type">
+                                        <label>Successes</label>
+                                        <div class="save-dots">
+                                            @for (int i = 0; i < 3; i++)
+                                            {
+                                                <span class="save-dot @(i < Character.DeathSaveSuccesses ? "filled success" : "empty")"></span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="save-type">
+                                        <label>Failures</label>
+                                        <div class="save-dots">
+                                            @for (int i = 0; i < 3; i++)
+                                            {
+                                                <span class="save-dot @(i < Character.DeathSaveFailures ? "filled failure" : "empty")"></span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Weapons -->
+                    @if (Character.Equipment.MainHand != null || Character.Equipment.OffHand != null)
+                    {
+                        <div class="weapons-section">
+                            <h3>Weapons</h3>
+                            <table class="weapons-table">
+                                <thead>
+                                    <tr>
+                                        <th>Weapon</th>
+                                        <th>Attack Bonus</th>
+                                        <th>Damage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Character.Equipment.MainHand != null)
+                                    {
+                                        <tr>
+                                            <td>@Character.Equipment.MainHand.Name</td>
+                                            <td>+@(Character.GetAttributeModifier(AttributeType.Might) + Character.Level / 2)</td>
+                                            <td>@Character.Equipment.MainHand.DamageDice (@Character.Equipment.MainHand.DamageType)</td>
+                                        </tr>
+                                    }
+                                    @if (Character.Equipment.OffHand != null && Character.Equipment.OffHand.ItemType == ItemType.Weapon)
+                                    {
+                                        var offhandWeapon = Character.Equipment.OffHand as WeaponItem;
+                                        <tr>
+                                            <td>@Character.Equipment.OffHand.Name</td>
+                                            <td>+@(Character.GetAttributeModifier(AttributeType.Might) + Character.Level / 2)</td>
+                                            <td>
+                                                @if (offhandWeapon != null)
+                                                {
+                                                    @offhandWeapon.DamageDice <text>(@offhandWeapon.DamageType)</text>
+                                                }
+                                                else
+                                                {
+                                                    <text>—</text>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <!-- Skills -->
+                    @if (Character.Skills.Any())
+                    {
+                        <div class="skills-section">
+                            <h3>Skills</h3>
+                            <div class="skills-list">
+                                @foreach (var skill in Character.Skills.OrderBy(s => s.Key))
+                                {
+                                    <div class="skill-item">
+                                        <span class="skill-name">@skill.Key</span>
+                                        <span class="skill-bonus">+@skill.Value</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Spellcasting -->
+                    @if (Character.KnownSpells.Any() || Character.MaxSpellSlots.Any())
+                    {
+                        <div class="spellcasting-section">
+                            <h3>Spellcasting</h3>
+                            
+                            @* Spell Slots *@
+                            @if (Character.MaxSpellSlots.Any())
+                            {
+                                <div class="spell-slots">
+                                    <h4>Spell Slots</h4>
+                                    @foreach (var slot in Character.MaxSpellSlots.OrderBy(s => s.Key))
+                                    {
+                                        var current = Character.CurrentSpellSlots.ContainsKey(slot.Key) ? Character.CurrentSpellSlots[slot.Key] : 0;
+                                        <div class="slot-level">
+                                            <label>Level @slot.Key</label>
+                                            <div class="slot-tracker">
+                                                <span class="slot-count">@current / @slot.Value</span>
+                                                @for (int i = 0; i < slot.Value; i++)
+                                                {
+                                                    <span class="slot-dot @(i < current ? "available" : "used")"></span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            
+                            @* Known Spells *@
+                            @if (Character.KnownSpells.Any())
+                            {
+                                <div class="known-spells">
+                                    <h4>Known Spells (@Character.KnownSpells.Count)</h4>
+                                    @foreach (var level in Character.KnownSpells.GroupBy(s => s.Level).OrderBy(g => g.Key))
+                                    {
+                                        <div class="spell-level-group">
+                                            <h5>@(level.Key == 0 ? "Cantrips" : $"Level {level.Key}")</h5>
+                                            <div class="spell-list">
+                                                @foreach (var spell in level.OrderBy(s => s.Name))
+                                                {
+                                                    <div class="spell-item">
+                                                        <div class="spell-header">
+                                                            <strong>@spell.Name</strong>
+                                                            @if (!string.IsNullOrWhiteSpace(spell.School))
+                                                            {
+                                                                <span class="spell-school">@spell.School</span>
+                                                            }
+                                                        </div>
+                                                        @if (!string.IsNullOrWhiteSpace(spell.Description))
+                                                        {
+                                                            <p class="spell-description">@spell.Description</p>
+                                                        }
+                                                        <div class="spell-details">
+                                                            @if (!string.IsNullOrWhiteSpace(spell.CastingTime))
+                                                            {
+                                                                <span><strong>Cast:</strong> @spell.CastingTime</span>
+                                                            }
+                                                            @if (!string.IsNullOrWhiteSpace(spell.Range))
+                                                            {
+                                                                <span><strong>Range:</strong> @spell.Range</span>
+                                                            }
+                                                            @if (!string.IsNullOrWhiteSpace(spell.Duration))
+                                                            {
+                                                                <span><strong>Duration:</strong> @spell.Duration</span>
+                                                            }
+                                                            @if (spell.Components.Any())
+                                                            {
+                                                                <span><strong>Components:</strong> @string.Join(", ", spell.Components)</span>
+                                                            }
+                                                        </div>
+                                                        @if (spell.Effect != null)
+                                                        {
+                                                            <p class="spell-effect"><strong>Effect:</strong> @spell.Effect</p>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (CurrentPage == 2)
+            {
+                <div class="page page-2">
+                    <!-- Currency -->
+                    <div class="currency-section">
+                        <div class="currency-display">
+                            <span class="gold-amount">Currency: 💰 @Character.Gold GP</span>
+                        </div>
+                    </div>
+
+                    <!-- Equipped Items -->
+                    <div class="equipment-section">
+                        <h3>Equipped Items</h3>
+                        <div class="equipment-grid">
+                            <div class="equip-slot @(Character.Equipment.MainHand != null ? "filled" : "empty")">
+                                <label>Main Hand</label>
+                                <span>@(Character.Equipment.MainHand?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.MainHand != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.MainHand.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.MainHand.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.OffHand != null ? "filled" : "empty")">
+                                <label>Off Hand</label>
+                                <span>@(Character.Equipment.OffHand?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.OffHand != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.OffHand.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.OffHand.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Armor != null ? "filled" : "empty")">
+                                <label>Armor</label>
+                                <span>@(Character.Equipment.Armor?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Armor != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Armor.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Armor.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Head != null ? "filled" : "empty")">
+                                <label>Head</label>
+                                <span>@(Character.Equipment.Head?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Head != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Head.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Head.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Hands != null ? "filled" : "empty")">
+                                <label>Hands</label>
+                                <span>@(Character.Equipment.Hands?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Hands != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Hands.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Hands.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Feet != null ? "filled" : "empty")">
+                                <label>Feet</label>
+                                <span>@(Character.Equipment.Feet?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Feet != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Feet.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Feet.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Ring1 != null ? "filled" : "empty")">
+                                <label>Ring 1</label>
+                                <span>@(Character.Equipment.Ring1?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Ring1 != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Ring1.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Ring1.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Ring2 != null ? "filled" : "empty")">
+                                <label>Ring 2</label>
+                                <span>@(Character.Equipment.Ring2?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Ring2 != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Ring2.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Ring2.Rarity
+                                    </small>
+                                }
+                            </div>
+                            <div class="equip-slot @(Character.Equipment.Neck != null ? "filled" : "empty")">
+                                <label>Neck</label>
+                                <span>@(Character.Equipment.Neck?.Name ?? "Empty")</span>
+                                @if (Character.Equipment.Neck != null)
+                                {
+                                    <small class="item-rarity @Character.Equipment.Neck.Rarity.ToString().ToLower()">
+                                        @Character.Equipment.Neck.Rarity
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory -->
+                    <div class="inventory-section">
+                        <h3>Inventory</h3>
+                        @if (Character.Inventory.Any())
+                        {
+                            <table class="inventory-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Type</th>
+                                        <th>Qty</th>
+                                        <th>Weight</th>
+                                        <th>Value</th>
+                                        <th>Rarity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Character.Inventory.OrderBy(i => i.ItemType).ThenBy(i => i.Name))
+                                    {
+                                        <tr class="item-row">
+                                            <td>
+                                                <strong>@item.Name</strong>
+                                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                                {
+                                                    <br/>
+                                                    <small class="item-description">@item.Description</small>
+                                                }
+                                            </td>
+                                            <td>@item.ItemType</td>
+                                            <td>@item.Quantity</td>
+                                            <td>@item.Weight lb</td>
+                                            <td>@item.Value gp</td>
+                                            <td>
+                                                <span class="item-rarity @item.Rarity.ToString().ToLower()">
+                                                    @item.Rarity
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2"><strong>Total</strong></td>
+                                        <td>@Character.Inventory.Sum(i => i.Quantity)</td>
+                                        <td>@Character.Inventory.Sum(i => i.Weight * i.Quantity) lb</td>
+                                        <td>@Character.Inventory.Sum(i => i.Value * i.Quantity) gp</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        }
+                        else
+                        {
+                            <p class="empty-message">No items in inventory</p>
+                        }
+                    </div>
+
+                    <!-- Background -->
+                    <div class="background-section">
+                        <h3>Background</h3>
+                        <div class="background-text">
+                            @if (!string.IsNullOrWhiteSpace(Character.Background))
+                            {
+                                <p>@Character.Background</p>
+                            }
+                            else
+                            {
+                                <p class="empty-message">No background information</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (CurrentPage == 3)
+            {
+                <div class="page page-3">
+                    <div class="portrait-section">
+                        
+                        @if (!string.IsNullOrWhiteSpace(Character.PortraitUrl))
+                        {
+                            <img src="@Character.PortraitUrl" alt="@Character.Name portrait" class="portrait-image" />
+                        }
+                        else
+                        {
+                            <div class="portrait-placeholder">
+                                <div class="placeholder-icon">👤</div>
+                                <span>No portrait available</span>
+                            </div>
+                        }
+                    </div>
+                    
+                    <!-- Character Status -->
+                    <div class="character-status">
+                        <h3>Character Status</h3>
+                        <div class="status-info">
+                            <div class="status-item">
+                                <label>Status:</label>
+                                <span class="status-badge @(Character.IsAlive ? "alive" : Character.IsUnconscious ? "unconscious" : "dead")">
+                                    @(Character.IsAlive ? "Alive" : Character.IsUnconscious ? "Unconscious" : "Dead")
+                                </span>
+                            </div>
+                            <div class="status-item">
+                                <label>Character ID:</label>
+                                <span class="monospace">@Character.Id</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Campaign ID:</label>
+                                <span class="monospace">@Character.CampaignId</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Created:</label>
+                                <span>@Character.CreatedAt.ToLocalTime().ToString("g")</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Last Updated:</label>
+                                <span>@Character.UpdatedAt.ToLocalTime().ToString("g")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

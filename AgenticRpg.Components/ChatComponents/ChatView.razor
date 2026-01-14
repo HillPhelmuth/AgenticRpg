@@ -1,0 +1,59 @@
+@using AgenticRpg.Components.ChatComponents
+@namespace AgenticRpg.Components.ChatComponents
+
+<div class="chat-view @CssClass">
+    <div class="chat-messages" @ref="_messagesContainer">
+        @if (Messages != null && Messages.Any())
+        {
+            var lastMessageId = Messages.LastOrDefault()?.Id;
+            @foreach (var message in Messages)
+            {
+                <MessageView 
+                    Message="@message" 
+                    OnEdit="@HandleEdit"
+                    OnDelete="@HandleDelete" />
+
+                @if (!string.IsNullOrEmpty(lastMessageId)
+                     && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase)
+                     && message.SuggestedActions is { Count: > 0 })
+                {
+                    var actions = message.SuggestedActions
+                        .Where(a => !string.IsNullOrWhiteSpace(a))
+                        .Select(a => a.Trim())
+                        .Distinct(StringComparer.Ordinal)
+                        .ToList();
+
+                    if (actions.Count > 0)
+                    {
+                        <div class="suggested-actions" role="group" aria-label="Suggested actions">
+                            @foreach (var action in actions)
+                            {
+                                <button type="button" class="suggested-action-btn" @onclick="() => HandleSuggestedAction(action)">
+                                    @action
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+            }
+        }
+        else
+        {
+            <div class="chat-empty">
+                <p>No messages yet. Start a conversation!</p>
+            </div>
+        }
+    </div>
+
+    @if (!_isAtBottom)
+    {
+        <button class="scroll-to-bottom-btn" @onclick="ScrollToBottom">
+            <span>↓</span>
+            <span>New Messages</span>
+        </button>
+    }
+</div>
+
+@* @inject IJSRuntime JS *@
+
+

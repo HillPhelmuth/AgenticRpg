@@ -1,0 +1,35 @@
+@using AgenticRpg.DiceRoller.Models
+@using AgenticRpg.DiceRoller.Components
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick=OutClick>
+        <div class="window @($"{Enum.GetName(Options.Location)?.ToLower()} {Options.CssClasses}")" style="@Options.Style" @onclick:stopPropagation>
+
+            @if (Options.ShowCloseButton || !string.IsNullOrEmpty(Options.Title))
+            {
+                <div class="modal-header">
+                    <div class="text-center title">
+                        @((MarkupString)AsHtml(Options.Title))
+                    </div>
+                    <div>
+                        @if (Options.ShowCloseButton)
+                        {
+                            <button class="close" @onclick="Close"><i class="fas fa-times"></i></button>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (_componentType != null)
+            {
+                <DynamicComponent Type="_componentType" Parameters="_normalizedParameters"></DynamicComponent>
+            }
+            @if (ChildContent != null)
+            {
+                @ChildContent
+            }
+
+        </div>
+    </div>
+}

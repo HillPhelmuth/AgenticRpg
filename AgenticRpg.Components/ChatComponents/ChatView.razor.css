@@ -1,0 +1,148 @@
+.chat-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.8) 0%, rgba(10, 14, 26, 0.9) 100%);
+    border: 2px solid rgba(77, 208, 225, 0.4);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(77, 208, 225, 0.2);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    scroll-behavior: smooth;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: rgba(26, 31, 46, 0.6);
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #4dd0e1;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(77, 208, 225, 0.5);
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #26c6da;
+}
+
+.chat-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #90caf9;
+    font-style: italic;
+}
+
+.scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
+    color: #0a0e1a;
+    border: 2px solid #4dd0e1;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(77, 208, 225, 0.6);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.scroll-to-bottom-btn:hover {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(77, 208, 225, 0.8);
+}
+
+.scroll-to-bottom-btn:active {
+    transform: translateY(0);
+}
+
+.suggested-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
+    padding: 0.75rem;
+    border: 1px solid rgba(77, 208, 225, 0.25);
+    border-radius: 8px;
+    background: rgba(26, 31, 46, 0.35);
+}
+
+.suggested-action-btn {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.85rem;
+    line-height: 1.1;
+    color: #90caf9;
+    background: rgba(10, 14, 26, 0.6);
+    border: 1px solid rgba(77, 208, 225, 0.4);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.suggested-action-btn:hover {
+    background: rgba(10, 14, 26, 0.85);
+    border-color: rgba(77, 208, 225, 0.75);
+    box-shadow: 0 0 16px rgba(77, 208, 225, 0.25);
+}
+
+.suggested-action-btn:active {
+    transform: translateY(1px);
+}
+
+/* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .chat-messages {
+        padding: 0.75rem;
+    }
+
+    .suggested-actions {
+        padding: 0.6rem;
+    }
+
+    .suggested-action-btn {
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .scroll-to-bottom-btn {
+        bottom: 0.5rem;
+        right: 0.5rem;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+        min-height: 44px;
+    }
+}
+
+/* Touch Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .scroll-to-bottom-btn {
+        min-height: 48px;
+        padding: 0.6rem 1rem;
+        touch-action: manipulation;
+    }
+
+    .chat-messages {
+        -webkit-overflow-scrolling: touch;
+    }
+}

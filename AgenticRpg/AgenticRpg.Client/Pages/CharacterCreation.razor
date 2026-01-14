@@ -1,0 +1,92 @@
+@page "/character-creation/{campaignId?}"
+@page "/character-creation"
+
+
+@inherits RpgPageBase
+<AuthorizeView>
+    <Authorized>
+        <div class="character-creation-container">
+            <div class="header-section">
+                <h2>Character Creation</h2>
+                <div class="button-group">
+                    <button class="btn-secondary" @onclick="TriggerRoll">
+                        <span class="icon">📋</span> Roll
+                    </button>
+                    <button class="btn-secondary" @onclick="GoBack" disabled="@IsProcessing">
+                        <span class="icon">←</span> Back
+                    </button>
+                    <button class="btn-primary" @onclick="SaveCharacter" disabled="@(!CanSaveCharacter || IsProcessing)">
+                        <span class="icon">💾</span> Save Character
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(SaveMessage))
+            {
+                <div class="@(IsSaveError ? "alert alert-error" : "alert alert-success")">
+                    @SaveMessage
+                </div>
+            }
+
+            <!-- Mobile View Toggle (visible only on mobile/tablet) -->
+            <div class="mobile-view-toggle">
+                <button class="toggle-btn @(CurrentMobileView == MobileView.Character ? "active" : "")"
+                        @onclick='() => SetMobileView(MobileView.Character)'>
+                    📋 Character
+                </button>
+                <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")"
+                        @onclick='() => SetMobileView(MobileView.Chat)'>
+                    💬 Chat
+                </button>
+            </div>
+
+            <div class="split-container">
+                <!-- Left Panel: Character Sheet Preview -->
+                <div class="left-panel @(CurrentMobileView == MobileView.Character ? "mobile-visible" : "mobile-hidden")">
+                    <div class="panel-header">
+                        <h3>Character Sheet</h3>
+                        <p class="help-text">Your character updates as you discuss with the AI</p>
+                    </div>
+
+                    @if (CurrentCharacter != null)
+                    {
+                        <CharacterSheetView Character="@CurrentCharacter" />
+                    }
+                    else
+                    {
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">👤</div>
+                            <p>Start chatting with the Character Creation AI to build your character!</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Right Panel: AI Chat -->
+                <div class="right-panel @(CurrentMobileView == MobileView.Chat ? "mobile-visible" : "mobile-hidden")">
+                    <div class="panel-header">
+                        @*  <h3>Character Creation Assistant</h3> *@
+                        <div class="connection-status">
+                            <span class="@(IsConnected ? "status-connected" : "status-disconnected")"></span>
+                            @(IsConnected ? "Connected" : "Disconnected")
+                        </div>
+                    </div>
+
+                    <div class="chat-container">
+                        <ChatView Messages="@ChatMessages"
+                                  OnMessageDeleted="HandleMessageDeleted"
+                                  OnMessageEdited="HandleMessageEdited"
+                                  OnSuggestedActionInvoked="SendMessage" />
+
+                        <UserInput @ref="UserInputRef"
+                                   OnSubmit="SendMessage"
+                                   IsProcessing="@IsProcessing"
+                                   Placeholder="Press Enter to send, Shift+Enter for new line." />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>

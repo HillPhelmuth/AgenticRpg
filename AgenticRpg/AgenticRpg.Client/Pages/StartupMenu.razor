@@ -1,0 +1,316 @@
+@page "/startup"
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Enums
+@using AgenticRpg.Components.GameComponents
+@inject NavigationManager Navigation
+
+@inherits RpgPageBase
+<PageTitle>AI Agentic RPG - Startup</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="startup-menu">
+            <div class="startup-header">
+                <h1>AI Agentic RPG</h1>
+                <p class="subtitle">Choose your adventure</p>
+
+                @* Model Selection Dropdown *@
+                <div class="model-selector">
+                    <label for="modelSelect">AI Model:</label>
+                    <input type="text"
+                           @bind="_modelFilter"
+                           @bind:event="oninput"
+                           class="model-dropdown"
+                           placeholder="Filter models..."
+                           aria-label="Filter AI models" />
+                    <select id="modelSelect" @bind="_selectedModel" class="model-dropdown">
+                        <option value="">-- Select Model --</option>
+                        @foreach (var model in FilteredModels)
+                        {
+                            <option value="@model">@model</option>
+                        }
+                    </select>
+                    <button @onclick="SelectModel"
+                            disabled="@(!CanApplyModelOverride)"
+                            class="btn-select-model"
+                            title="@(SelectedCampaign == null ? "Apply as default for sessions" : $"Apply to {SelectedCampaign.Name}")">
+                        Set Model
+                    </button>
+                    @if (!string.IsNullOrEmpty(ModelSelectionMessage))
+                    {
+                        <span class="model-selection success">@ModelSelectionMessage</span>
+                    }
+                    else if (!string.IsNullOrEmpty(ModelSelectionError))
+                    {
+                        <span class="model-selection error">@ModelSelectionError</span>
+                    }
+                    <button @onclick="Refresh" class="btn-refresh">Refresh</button>
+                </div>
+            </div>
+
+            @if (IsLoading)
+            {
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Loading campaigns...</p>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="error-message">
+                    <p>@ErrorMessage</p>
+                    <button @onclick="LoadCampaigns" class="btn-retry">Retry</button>
+                </div>
+            }
+            else
+            {
+                <div class="menu-content">
+                    <!-- My Characters Section -->
+                    <div class="menu-section">
+                        <div class="section-header">
+                            <h2>My Characters</h2>
+                            <button @onclick="CreateNewCharacter" class="btn-create">
+                                + New Character
+                            </button>
+                        </div>
+
+                        @if (AllPlayerCharacters.Any())
+                        {
+                            <div class="character-list">
+                                @foreach (var character in AllPlayerCharacters)
+                                {
+                                    <div class="character-card">
+                                        <div class="character-portrait">
+                                            @if (!string.IsNullOrEmpty(character.PortraitUrl))
+                                            {
+                                                <img src="@character.PortraitUrl" alt="@character.Name" />
+                                            }
+                                            else
+                                            {
+                                                <div class="portrait-placeholder">
+                                                    @character.Name.Substring(0, 1)
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="character-info">
+                                            <h4>@character.Name</h4>
+                                            <p>Level @character.Level @character.Race @character.Class</p>
+                                            @if (!string.IsNullOrEmpty(character.CampaignId))
+                                            {
+                                                <p class="campaign-tag">In Campaign</p>
+                                            }
+                                        </div>
+                                        <button class="btn-view-sheet" @onclick="() => ShowCharacterSheet(character)" @onclick:stopPropagation="true" title="View Character Sheet">
+                                            👁️
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <p>No characters yet. Create your first character to begin!</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="divider">
+                        <span>Join a Campaign</span>
+                    </div>
+
+                    <!-- Available Worlds Section -->
+                    <div class="menu-section">
+                        <div class="section-header">
+                            <h2>Available Worlds</h2>
+                        </div>
+
+                        @if (Worlds.Any())
+                        {
+                            <div class="world-list">
+                                @foreach (var world in Worlds)
+                                {
+                                    <div class="world-card @(SelectedWorld?.Id == world.Id ? "selected" : "")"
+                                         @onclick="() => SelectWorld(world)">
+                                        <div class="world-info">
+                                            <h3>@world.Name</h3>
+                                            <p class="world-desc">@world.Description</p>
+                                            <div class="world-meta">
+                                                <span class="world-theme">@world.Theme</span>
+                                                @if (world.IsTemplate)
+                                                {
+                                                    <span class="template-badge">Template</span>
+                                                }
+                                                <span class="world-stats">
+                                                    @world.Locations.Count locations · @world.NPCs.Count NPCs · @world.Quests.Count quests
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <p>No worlds available. Create a campaign to build a new world!</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Campaign Selection -->
+                    <div class="menu-section">
+                        <div class="section-header">
+                            <h2>Available Campaigns</h2>
+                            <button @onclick="CreateNewCampaign" class="btn-create">
+                                + New Campaign
+                            </button>
+                        </div>
+
+                        @if (Campaigns.Any())
+                        {
+                            <div class="campaign-list">
+                                @foreach (var campaign in Campaigns)
+                                {
+                                    <div class="campaign-card @(SelectedCampaign?.Id == campaign.Id ? "selected" : "")"
+                                         @onclick="() => SelectCampaign(campaign)">
+                                        <div class="campaign-info">
+                                            <h3>@campaign.Name</h3>
+                                            <p class="campaign-desc">@campaign.Description</p>
+                                            <div class="campaign-meta">
+                                                <span class="status-badge @campaign.Status.ToString().ToLower()">
+                                                    @campaign.Status
+                                                </span>
+                                                <span class="player-count">
+                                                    @campaign.PlayerIds.Distinct().Count() / @campaign.MaxPlayers players
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <p>No campaigns available. Create one to start an adventure!</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Character Selection for Campaign -->
+                    @if (SelectedCampaign != null)
+                    {
+                        <div class="menu-section">
+                            <div class="section-header">
+                                <h2>Select Character for Campaign</h2>
+                            </div>
+
+                            @if (AvailableCharactersForCampaign.Any())
+                            {
+                                <div class="character-list">
+                                    @foreach (var character in AvailableCharactersForCampaign)
+                                    {
+                                        <div class="character-card @(SelectedCharacter?.Id == character.Id ? "selected" : "")"
+                                             @onclick="() => SelectCharacter(character)">
+                                            <div class="character-portrait">
+                                                @if (!string.IsNullOrEmpty(character.PortraitUrl))
+                                                {
+                                                    <img src="@character.PortraitUrl" alt="@character.Name" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="portrait-placeholder">
+                                                        @character.Name.Substring(0, 1)
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="character-info">
+                                                <h4>@character.Name</h4>
+                                                <p>Level @character.Level @character.Race @character.Class</p>
+                                                @if (character.CampaignId == SelectedCampaign.Id)
+                                                {
+                                                    <p class="status-indicator">Already in this campaign</p>
+                                                }
+                                            </div>
+                                            <button class="btn-view-sheet" @onclick="() => ShowCharacterSheet(character)" @onclick:stopPropagation="true" title="View Character Sheet">
+                                                👁️
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-state">
+                                    <p>No available characters. Create a character to join this campaign!</p>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Action Buttons -->
+                    @if (SelectedCampaign != null && SelectedCharacter != null)
+                    {
+                        <div class="action-section">
+                            @if (SelectedCharacter.CampaignId == SelectedCampaign.Id)
+                            {
+                                @if (SelectedCampaign.Status == CampaignStatus.Setup || SelectedCampaign.Status == CampaignStatus.Lobby)
+                                {
+                                    <button @onclick="JoinLobby" class="btn-primary btn-large">
+                                        Join Lobby
+                                    </button>
+                                }
+                                else if (SelectedCampaign.Status == CampaignStatus.Active)
+                                {
+                                    <button @onclick="JoinGame" class="btn-primary btn-large">
+                                        Continue Adventure
+                                    </button>
+                                }
+                                else
+                                {
+                                    <p class="info-message">This campaign is currently @SelectedCampaign.Status.ToString().ToLower().</p>
+                                }
+                            }
+                            else
+                            {
+                                <button @onclick="JoinCampaignWithCharacter" class="btn-primary btn-large">
+                                    Join Campaign with @SelectedCharacter.Name
+                                </button>
+                            }
+                        </div>
+                    }
+                    else if (SelectedWorld != null)
+                    {
+                        <div class="action-section">
+                            <button @onclick="CreateCampaignFromWorld" class="btn-primary btn-large">
+                                Create Campaign in @SelectedWorld.Name
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@* Character Sheet Modal *@
+@if (ShowCharacterModal && ViewingCharacter != null)
+{
+    <div class="modal-overlay" @onclick="CloseCharacterModal">
+        <div class="modal-content character-sheet-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@ViewingCharacter.Name</h2>
+                <button class="btn-close" @onclick="CloseCharacterModal" title="Close">
+                    ✕
+                </button>
+            </div>
+            <div class="modal-body">
+                <CharacterSheetView Character="@ViewingCharacter" />
+            </div>
+        </div>
+    </div>
+}

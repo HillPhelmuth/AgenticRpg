@@ -1,0 +1,487 @@
+.combat-encounter-details {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
+    border: 2px solid rgba(156, 39, 176, 0.5);
+    border-radius: 8px;
+    overflow: auto;
+    scrollbar-width: thin;
+    box-shadow: 0 0 30px rgba(156, 39, 176, 0.4);
+}
+
+.combat-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #8b7355;
+    font-style: italic;
+}
+
+.combat-header {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    color: #4dd0e1;
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #ce93d8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(156, 39, 176, 0.6);
+}
+
+.combat-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    text-shadow: 0 0 15px rgba(77, 208, 225, 0.5);
+}
+
+.combat-status {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+}
+
+.combat-status.active {
+    background: #d45555;
+}
+
+.combat-status.ended {
+    background: #6f5a44;
+}
+
+.terrain-info {
+    background: #e8dbc5;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #d4c4a8;
+    color: #c3b1a2;
+}
+
+.combat-section {
+    border-bottom: 1px solid #d4c4a8;
+}
+
+.combat-section summary {
+    padding: 1rem 1.5rem;
+    background: #f4e8d4;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.combat-section summary:hover {
+    background: #e8dbc5;
+}
+
+.combat-section summary h3 {
+    margin: 0;
+    color: #6f5a44;
+    font-size: 1.25rem;
+    display: inline;
+}
+
+.section-content {
+    padding: 1rem 1.5rem;
+}
+
+/* Initiative Order */
+.initiative-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.initiative-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #fff9ed;
+    border: 2px solid #d4c4a8;
+    border-radius: 4px;
+}
+
+.initiative-item.current {
+    border-color: #d4a574;
+    background: #fff9ed;
+    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.3);
+}
+
+.initiative-item.taken-turn {
+    opacity: 0.6;
+}
+
+.current-marker {
+    font-size: 1.5rem;
+    color: #d4a574;
+    font-weight: bold;
+}
+
+.init-name {
+    flex: 1;
+    font-weight: bold;
+    color: #c3b1a2;
+}
+
+.init-name.enemy {
+    color: #d45555;
+}
+
+.init-name.ally {
+    color: #5588d4;
+}
+
+.init-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #6f5a44;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Combatants */
+.combatants-group {
+    margin-bottom: 1.5rem;
+}
+
+.combatants-group h4 {
+    margin: 0 0 1rem 0;
+    color: #6f5a44;
+    font-size: 1.125rem;
+    border-bottom: 1px solid #d4c4a8;
+    padding-bottom: 0.5rem;
+}
+
+.combatants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.combatant-card {
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.8) 0%, rgba(10, 14, 26, 0.9) 100%);
+    border: 2px solid rgba(77, 208, 225, 0.3);
+    border-radius: 6px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 15px rgba(77, 208, 225, 0.2);
+}
+
+.combatant-card.enemy {
+    cursor: pointer;
+}
+
+.combatant-card.enemy:hover {
+    border-color: #9c27b0;
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(156, 39, 176, 0.5);
+}
+
+.combatant-card.defeated {
+    opacity: 0.5;
+    background: #e8dbc5;
+}
+
+.combatant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #d4c4a8;
+}
+
+.combatant-name {
+    font-weight: bold;
+    color: #c3b1a2;
+    font-size: 1rem;
+}
+
+.cr-badge,
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.cr-badge {
+    background: #d45555;
+    color: white;
+}
+
+.status-badge.defeated {
+    background: #6f5a44;
+    color: #f4e8d4;
+}
+
+.combatant-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #8b7355;
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.stat-value {
+    font-size: 1rem;
+    color: #c3b1a2;
+    font-weight: bold;
+}
+
+.hp-bar {
+    position: relative;
+    flex: 1;
+    height: 24px;
+    background: #e8dbc5;
+    border: 1px solid #8b7355;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hp-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(to right, #55aa55, #77dd77);
+    transition: width 0.3s ease;
+}
+
+.hp-fill.enemy {
+    background: linear-gradient(to right, #d45555, #e87777);
+}
+
+.hp-text {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #c3b1a2;
+    font-weight: bold;
+    font-size: 0.875rem;
+    z-index: 1;
+}
+
+.effects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.effect-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #e8dbc5;
+    border: 1px solid #d4c4a8;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: #6f5a44;
+}
+
+.abilities-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #8b7355;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Combat Log */
+.combat-log {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.combat-log::-webkit-scrollbar {
+    width: 8px;
+}
+
+.combat-log::-webkit-scrollbar-track {
+    background: #e8dbc5;
+}
+
+.combat-log::-webkit-scrollbar-thumb {
+    background: #8b7355;
+    border-radius: 4px;
+}
+
+.log-entry {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e8dbc5;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.log-entry.critical {
+    background: #fff9ed;
+    border-left: 4px solid #d4a574;
+}
+
+.log-round {
+    font-weight: bold;
+    color: #8b7355;
+    font-size: 0.875rem;
+    min-width: 80px;
+}
+
+.log-description {
+    flex: 1;
+    color: #c3b1a2;
+    font-size: 0.9rem;
+}
+
+.log-roll {
+    font-family: 'Courier New', monospace;
+    color: #6f5a44;
+    font-weight: bold;
+}
+
+.crit-indicator {
+    color: #d4a574;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.log-empty {
+    color: #8b7355;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #4d3719;
+    border: 3px solid #8b7355;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    background: #8b7355;
+    color: #f4e8d4;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #f4e8d4;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.monster-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.special-abilities h4 {
+    color: #6f5a44;
+    margin-bottom: 1rem;
+}
+
+.ability-item {
+    background: #fff9ed;
+    border: 2px solid #d4c4a8;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ability-header {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.ability-type {
+    font-size: 0.75rem;
+    color: #8b7355;
+    background: #f4e8d4;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.ability-item p {
+    margin: 0.5rem 0;
+    color: #c3b1a2;
+    line-height: 1.6;
+}
+
+.damage-type {
+    font-size: 0.875rem;
+    color: #d45555;
+    font-weight: bold;
+}
+
+/* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
+@media (max-width: 480px) {
+    .combat-header { padding: 0.75rem; }
+    .combat-header h2 { font-size: 1.1rem; }
+    .combat-section summary { padding: 0.75rem; font-size: 0.9rem; }
+    .section-content { padding: 0.75rem; }
+    .initiative-item, .combatant-card, .log-entry { padding: 0.5rem; font-size: 0.85rem; }
+    .combatant-stats { flex-direction: column; }
+    .modal-content { max-width: 95vw; }
+}
+@media (hover: none) and (pointer: coarse) {
+    .combat-section summary { min-height: 44px; }
+    .combatant-card { touch-action: manipulation; }
+}

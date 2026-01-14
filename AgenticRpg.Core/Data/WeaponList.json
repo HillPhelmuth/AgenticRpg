@@ -1,0 +1,735 @@
+[
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_dagger",
+    "Name": "Dagger",
+    "Description": "A balanced blade ideal for close quarters or throwing.",
+    "Quantity": 1,
+    "Weight": 1,
+    "Value": 2,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Piercing",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Light",
+      "Finesse",
+      "Thrown (20/60)"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat or Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_shortsword",
+    "Name": "Shortsword",
+    "Description": "A light slashing sword favored by agile duelists.",
+    "Quantity": 1,
+    "Weight": 3,
+    "Value": 8,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Light",
+      "Finesse"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_longsword",
+    "Name": "Longsword",
+    "Description": "A versatile blade capable of one or two-handed strikes.",
+    "Quantity": 1,
+    "Weight": 4,
+    "Value": 15,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Versatile (1d10 two-handed)"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_mace",
+    "Name": "Mace",
+    "Description": "Blunt metal head mounted on a sturdy haft.",
+    "Quantity": 1,
+    "Weight": 5,
+    "Value": 6,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "One-Handed"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_greatsword",
+    "Name": "Greatsword",
+    "Description": "Massive two-handed blade built for cleaving foes.",
+    "Quantity": 1,
+    "Weight": 8,
+    "Value": 25,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "2d6",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_battleaxe",
+    "Name": "Battleaxe",
+    "Description": "A sturdy axe favored by soldiers and adventurers.",
+    "Quantity": 1,
+    "Weight": 4,
+    "Value": 10,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Versatile"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_club",
+    "Name": "Club",
+    "Description": "A simple wooden cudgel.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 1,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_flail",
+    "Name": "Flail",
+    "Description": "A spiked ball on a chain designed to crush armor.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 10,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_glaive",
+    "Name": "Glaive",
+    "Description": "A long polearm with a single-edged blade.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 20,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d10",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed",
+      "Reach"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_greataxe",
+    "Name": "Greataxe",
+    "Description": "A heavy two-handed axe built for devastating chops.",
+    "Quantity": 1,
+    "Weight": 7,
+    "Value": 30,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d12",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_greatclub",
+    "Name": "Greatclub",
+    "Description": "A massive club requiring two hands to swing.",
+    "Quantity": 1,
+    "Weight": 10,
+    "Value": 2,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_halberd",
+    "Name": "Halberd",
+    "Description": "A heavy polearm combining axe and spear.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 20,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d10",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed",
+      "Reach"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_handaxe",
+    "Name": "Handaxe",
+    "Description": "A light axe that can also be thrown.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 5,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Slashing",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Light",
+      "Thrown"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat or Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_javelin",
+    "Name": "Javelin",
+    "Description": "A light throwing spear designed for distance.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 1,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Piercing",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Thrown"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat or Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_lance",
+    "Name": "Lance",
+    "Description": "A long weapon built for mounted charges.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 10,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d12",
+    "DamageType": "Piercing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Reach"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_light_hammer",
+    "Name": "Light hammer",
+    "Description": "A small hammer balanced for quick strikes or throws.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 2,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Light",
+      "Thrown"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat or Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_maul",
+    "Name": "Maul",
+    "Description": "A massive two-handed hammer for crushing blows.",
+    "Quantity": 1,
+    "Weight": 10,
+    "Value": 10,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "2d6",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_morningstar",
+    "Name": "Morningstar",
+    "Description": "A spiked head on a sturdy shaft.",
+    "Quantity": 1,
+    "Weight": 4,
+    "Value": 15,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Piercing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_pike",
+    "Name": "Pike",
+    "Description": "A long spear used to keep foes at bay.",
+    "Quantity": 1,
+    "Weight": 18,
+    "Value": 5,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d10",
+    "DamageType": "Piercing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Two-Handed",
+      "Reach"
+    ],
+    "Properties": {
+      "RelevantSkill": "Might / Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_quarterstaff",
+    "Name": "Quarterstaff",
+    "Description": "A simple staff used for defense and strikes.",
+    "Quantity": 1,
+    "Weight": 4,
+    "Value": 2,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Versatile"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_rapier",
+    "Name": "Rapier",
+    "Description": "A precise dueling blade.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 25,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Piercing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Finesse"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_scimitar",
+    "Name": "Scimitar",
+    "Description": "A curved blade designed for quick slashes.",
+    "Quantity": 1,
+    "Weight": 3,
+    "Value": 25,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Light",
+      "Finesse"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_sickle",
+    "Name": "Sickle",
+    "Description": "A small curved blade often used as a tool.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 1,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Light"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_trident",
+    "Name": "Trident",
+    "Description": "A three-pronged spear suited for thrusting or throwing.",
+    "Quantity": 1,
+    "Weight": 4,
+    "Value": 5,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Piercing",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Thrown",
+      "Versatile"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat or Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_war_pick",
+    "Name": "War pick",
+    "Description": "A sharp pick designed to punch through armor.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 5,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Piercing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_whip",
+    "Name": "Whip",
+    "Description": "A long flexible lash used to strike at reach.",
+    "Quantity": 1,
+    "Weight": 3,
+    "Value": 2,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Slashing",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Finesse",
+      "Reach"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_shortbow",
+    "Name": "Short Bow",
+    "Description": "Compact bow suited for tight quarters and scouting.",
+    "Quantity": 1,
+    "Weight": 2,
+    "Value": 25,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Piercing",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Ranged (80/320)",
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_longbow",
+    "Name": "Long Bow",
+    "Description": "Tall bow requiring strength but delivering serious punch.",
+    "Quantity": 1,
+    "Weight": 3,
+    "Value": 50,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Piercing",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Two-Handed",
+      "Ranged (150/600)",
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_crossbow",
+    "Name": "Crossbow, light",
+    "Description": "A light crossbow with strong piercing force.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 35,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Piercing",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Ranged (80/320)",
+      "Loading",
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_crossbow_hand",
+    "Name": "Crossbow, hand",
+    "Description": "A compact crossbow designed for one-handed use.",
+    "Quantity": 1,
+    "Weight": 3,
+    "Value": 75,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Piercing",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Ranged",
+      "Loading",
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_crossbow_heavy",
+    "Name": "Crossbow, heavy",
+    "Description": "A powerful crossbow built to deliver heavy bolts.",
+    "Quantity": 1,
+    "Weight": 18,
+    "Value": 50,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d10",
+    "DamageType": "Piercing",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Two-Handed",
+      "Loading",
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_blowgun",
+    "Name": "Blowgun",
+    "Description": "A quiet tube for firing small darts.",
+    "Quantity": 1,
+    "Weight": 1,
+    "Value": 10,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d1",
+    "DamageType": "Piercing",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_dart",
+    "Name": "Dart",
+    "Description": "A small thrown missile.",
+    "Quantity": 1,
+    "Weight": 1,
+    "Value": 1,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Piercing",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Thrown"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_sling",
+    "Name": "Sling",
+    "Description": "A simple sling used to hurl stones.",
+    "Quantity": 1,
+    "Weight": 0,
+    "Value": 1,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d4",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Ranged",
+    "WeaponProperties": [
+      "Ammunition"
+    ],
+    "Properties": {
+      "RelevantSkill": "Ranged Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_warhammer",
+    "Name": "Warhammer",
+    "Description": "Heavy hammer with a crushing head and spike back.",
+    "Quantity": 1,
+    "Weight": 6,
+    "Value": 20,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d8",
+    "DamageType": "Bludgeoning",
+    "WeaponType": "Melee",
+    "WeaponProperties": [
+      "Versatile (1d10 two-handed)"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat"
+    }
+  },
+  {
+    "$type": "weapon",
+    "Id": "item_weapon_spear",
+    "Name": "Spear",
+    "Description": "Balanced spear for melee or throwing.",
+    "Quantity": 1,
+    "Weight": 3,
+    "Value": 5,
+    "ItemType": "Weapon",
+    "Rarity": "Common",
+    "DamageDice": "1d6",
+    "DamageType": "Piercing",
+    "WeaponType": "Both",
+    "WeaponProperties": [
+      "Thrown (30/60)",
+      "Versatile (1d8 two-handed)"
+    ],
+    "Properties": {
+      "RelevantSkill": "Melee Combat or Ranged Combat"
+    }
+  }
+]

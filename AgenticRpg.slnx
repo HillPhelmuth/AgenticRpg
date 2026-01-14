@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="AgenticRpg.Components/AgenticRpg.Components.csproj" />
+  <Project Path="AgenticRpg.Core/AgenticRpg.Core.csproj" />
+  <Project Path="AgenticRpg.DevUtility/AgenticRpg.DevUtility.csproj" Id="07457afb-9f2f-4dd4-886b-f802bd979d8d" />
+  <Project Path="AgenticRpg.DiceRoller/AgenticRpg.DiceRoller.csproj" />
+  <Project Path="AgenticRpg/AgenticRpg.Client/AgenticRpg.Client.csproj" />
+  <Project Path="AgenticRpg/AgenticRpg/AgenticRpg.csproj" />
+</Solution>

@@ -1,0 +1,103 @@
+@page "/campaign-creation"
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Components.ChatComponents
+@using AgenticRpg.Core.Models.Enums
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@inherits RpgPageBase
+
+<PageTitle>Create Campaign - AI Agentic RPG</PageTitle>
+
+<div class="campaign-creation">
+    <div class="creation-header">
+        <button @onclick="GoBack" class="btn-back">← Back to Menu</button>
+        <h1>Create New Campaign</h1>
+    </div>
+
+    <!-- Mobile View Toggle (visible only on mobile/tablet) -->
+    <div class="mobile-view-toggle">
+        <button class="toggle-btn @(CurrentMobileView == MobileView.World ? "active" : "")" 
+                @onclick='() => SetMobileView(MobileView.World)'>
+            🗺️ World
+        </button>
+        <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")" 
+                @onclick='() => SetMobileView(MobileView.Chat)'>
+            💬 Chat
+        </button>
+    </div>
+
+    <div class="creation-content">
+        <!-- Left Side: World Details & Campaign Form -->
+        <div class="world-panel @(CurrentMobileView == MobileView.World ? "mobile-visible" : "mobile-hidden")">
+            <!-- Campaign Basic Info Form -->
+            @if (!WorldOnly)
+            {
+                <div class="campaign-form-section">
+                    <h2>Campaign Information</h2>
+                    <div class="form-group">
+                        <label>Campaign Name</label>
+                        <input type="text" @bind="CampaignName" placeholder="Enter campaign name..." class="form-input"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea @bind="CampaignDescription" placeholder="Describe your campaign..." rows="3" class="form-input"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Max Players</label>
+                        <input type="number" @bind="MaxPlayers" min="2" max="8" class="form-input"/>
+                    </div>
+
+                </div>
+            }
+            <!-- World Details Display -->
+            <div class="world-details-section">
+                @if (CurrentWorld == null)
+                {
+                    <div class="world-placeholder">
+                        <p>Start chatting with the World Builder AI to create your campaign world.</p>
+                    </div>
+                }
+                else
+                {
+                    <WorldDetails World="CurrentWorld"></WorldDetails>
+                }
+            </div>
+
+            <!-- Save Button -->
+            <div class="action-buttons">
+                <button @onclick="SaveCampaign" 
+                        disabled="@(!CanSaveCampaign)" 
+                        class="btn-save">
+                    Save Campaign
+                </button>
+                @if (!string.IsNullOrEmpty(SaveMessage))
+                {
+                    <p class="save-message @(IsSaveError ? "error" : "success")">@SaveMessage</p>
+                }
+            </div>
+        </div>
+
+        <!-- Right Side: AI Chat with World Builder (only show if creating new world) -->
+        @if (string.IsNullOrEmpty(WorldId))
+        {
+            <div class="chat-panel @(CurrentMobileView == MobileView.Chat ? "mobile-visible" : "mobile-hidden")">
+                <div class="chat-header">
+                    @* <h2>World Builder AI</h2> *@
+                    <p class="chat-subtitle">Work with the AI to create your campaign world</p>
+                </div>
+                <div class="chat-container">
+                    <ChatView Messages="ChatMessages" 
+                              OnMessageDeleted="HandleMessageDeleted" 
+                              OnMessageEdited="HandleMessageEdited"
+                              OnSuggestedActionInvoked="SendMessage" />
+
+                    <UserInput @ref="UserInputRef"
+                               OnSubmit="SendMessage" 
+                               IsProcessing="IsProcessing"
+                               Placeholder="Describe the world you want to create..."
+                               HintText="Ask the AI to generate locations, NPCs, quests, and lore for your world" />
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,100 @@
+[
+	{
+		"Name": "Athletics",
+		"Rank": 0,
+		"AssociatedAttribute": "Might",
+		"Description": "Climbing, swimming, jumping, and feats of raw strength in rugged environments.",
+		"Effects": "Add Might modifier plus Athletics rank to exertion checks, resisting grapples, and forcing doors or restraints."
+	},
+	{
+		"Name": "Melee Combat",
+		"Rank": 0,
+		"AssociatedAttribute": "Might",
+		"Description": "Proficiency with close-range weapons such as swords, axes, maces, and hammers.",
+		"Effects": "Add Might modifier plus Melee Combat rank to melee attack rolls and damage-based contests."
+	},
+	{
+		"Name": "Ranged Combat",
+		"Rank": 0,
+		"AssociatedAttribute": "Agility",
+		"Description": "Accuracy with bows, crossbows, thrown knives, and other distance weapons.",
+		"Effects": "Add Agility modifier plus Ranged Combat rank to ranged attack rolls and precision volley checks."
+	},
+	{
+		"Name": "Stealth",
+		"Rank": 0,
+		"AssociatedAttribute": "Agility",
+		"Description": "Moving silently, hiding, and slipping past alert foes or traps.",
+		"Effects": "Add Agility modifier plus Stealth rank to concealment checks, ambush attempts, and trap bypasses."
+	},
+	{
+		"Name": "Acrobatics",
+		"Rank": 0,
+		"AssociatedAttribute": "Agility",
+		"Description": "Balance, tumbling, flips, and evasive maneuvers in combat or exploration.",
+		"Effects": "Add Agility modifier plus Acrobatics rank to avoid hazards, reduce fall damage, or slip free of restraints."
+	},
+	{
+		"Name": "Endurance",
+		"Rank": 0,
+		"AssociatedAttribute": "Vitality",
+		"Description": "Resisting fatigue, poison, disease, harsh weather, and prolonged strain.",
+		"Effects": "Add Vitality modifier plus Endurance rank to checks against exhaustion, starvation, or environmental threats."
+	},
+	{
+		"Name": "Survival",
+		"Rank": 0,
+		"AssociatedAttribute": "Wits",
+		"Description": "Tracking, foraging, navigation, and wilderness know-how.",
+		"Effects": "Add Wits modifier plus Survival rank to gather supplies, follow tracks, or avoid natural hazards."
+	},
+	{
+		"Name": "Perception",
+		"Rank": 0,
+		"AssociatedAttribute": "Wits",
+		"Description": "Spotting ambushes, noticing hidden details, and reading the environment.",
+		"Effects": "Add Wits modifier plus Perception rank to initiative awareness, trap detection, and investigative sweeps."
+	},
+	{
+		"Name": "Crafting",
+		"Rank": 0,
+		"AssociatedAttribute": "Wits",
+		"Description": "Designing, repairing, and improving weapons, armor, tools, or alchemical devices.",
+		"Effects": "Add Wits modifier plus Crafting rank to build quality gear, salvage materials, or jury-rig field repairs."
+	},
+	{
+		"Name": "Investigation",
+		"Rank": 0,
+		"AssociatedAttribute": "Wits",
+		"Description": "Analyzing clues, solving puzzles, and piecing together mysteries.",
+		"Effects": "Add Wits modifier plus Investigation rank to research rolls, crime-scene analysis, and logic-based challenges."
+	},
+	{
+		"Name": "Persuasion",
+		"Rank": 0,
+		"AssociatedAttribute": "Presence",
+		"Description": "Diplomacy, negotiation, and inspiring cooperation through sincerity.",
+		"Effects": "Add Presence modifier plus Persuasion rank to bargains, pleas for aid, or rallying NPC support."
+	},
+	{
+		"Name": "Intimidation",
+		"Rank": 0,
+		"AssociatedAttribute": "Presence",
+		"Description": "Commanding fear or obedience through force of personality.",
+		"Effects": "Add Presence modifier plus Intimidation rank to coercion attempts, morale checks, or breaking enemy resolve."
+	},
+	{
+		"Name": "Deception",
+		"Rank": 0,
+		"AssociatedAttribute": "Presence",
+		"Description": "Lies, disguises, bluffing, and sleight-of-hand misdirection.",
+		"Effects": "Add Presence modifier plus Deception rank to impersonations, forged stories, or concealing intent."
+	},
+	{
+		"Name": "Leadership",
+		"Rank": 0,
+		"AssociatedAttribute": "Presence",
+		"Description": "Guiding allies, issuing battlefield commands, and bolstering morale.",
+		"Effects": "Add Presence modifier plus Leadership rank to coordinate group actions, share tactics, or steady panicked allies."
+	}
+]

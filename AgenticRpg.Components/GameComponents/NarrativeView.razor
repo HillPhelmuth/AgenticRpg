@@ -1,0 +1,134 @@
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Enums
+@using AgenticRpg.Components.ChatComponents
+@using Markdig
+@namespace AgenticRpg.Components.GameComponents
+
+<div class="narrative-view @CssClass">
+    <div class="narrative-tabs">
+        <button class="@(ActiveTab == NarrativeTab.Global ? "active" : "")" @onclick="() => SetTab(NarrativeTab.Global)">
+            Global
+        </button>
+        <button class="@(ActiveTab == NarrativeTab.GM ? "active" : "")" @onclick="() => SetTab(NarrativeTab.GM)">
+            GM Only
+        </button>
+        <button class="@(ActiveTab == NarrativeTab.Character ? "active" : "")" @onclick="() => SetTab(NarrativeTab.Character)">
+            Character
+        </button>
+    </div>
+
+    <div class="narrative-content">
+        @if (FilteredNarratives.Any())
+        {
+            @foreach (var narrative in FilteredNarratives)
+            {
+                <div class="narrative-entry">
+                    <div class="narrative-header">
+                        @if (!string.IsNullOrEmpty(narrative.SpeakerName))
+                        {
+                            <span class="speaker-name">@narrative.SpeakerName</span>
+                        }
+                        <span class="narrative-type">[@narrative.Type]</span>
+                        <span class="narrative-timestamp">@narrative.Timestamp.ToLocalTime().ToString("MMM dd, hh:mm tt")</span>
+                    </div>
+                    <div class="narrative-body">
+                        @((MarkupString)ConvertMarkdownToHtml(narrative.Content))
+                    </div>
+                    @if (narrative.Tags.Any())
+                    {
+                        <div class="narrative-tags">
+                            @foreach (var tag in narrative.Tags)
+                            {
+                                <span class="tag">@tag</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="narrative-empty">
+                <p>No narrative entries in this category</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<Narrative> Narratives { get; set; } = [];
+
+    [Parameter]
+    public string? CurrentCharacterId { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public NarrativeTab InitialTab { get; set; } = NarrativeTab.Global;
+
+    private NarrativeTab ActiveTab { get; set; } = NarrativeTab.Global;
+
+    private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .Build();
+
+    protected override void OnInitialized()
+    {
+        ActiveTab = InitialTab;
+    }
+
+    private IEnumerable<Narrative> FilteredNarratives
+    {
+        get
+        {
+            return ActiveTab switch
+            {
+                NarrativeTab.Global => Narratives
+                    .Where(n => n.Visibility == NarrativeVisibility.Global)
+                    .OrderBy(n => n.SequenceNumber),
+                
+                NarrativeTab.GM => Narratives
+                    .Where(n => n.Visibility == NarrativeVisibility.GMOnly)
+                    .OrderBy(n => n.SequenceNumber),
+                
+                NarrativeTab.Character => Narratives
+                    .Where(n => n.Visibility == NarrativeVisibility.CharacterSpecific 
+                        && n.TargetCharacterId == CurrentCharacterId)
+                    .OrderBy(n => n.SequenceNumber),
+                
+                _ => Enumerable.Empty<Narrative>()
+            };
+        }
+    }
+
+    private void SetTab(NarrativeTab tab)
+    {
+        ActiveTab = tab;
+    }
+
+    private string ConvertMarkdownToHtml(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+            return string.Empty;
+
+        return Markdown.ToHtml(markdown, _markdownPipeline);
+    }
+
+    /// <summary>
+    /// Switches to a specific tab. Can be called from parent component.
+    /// </summary>
+    public void SwitchTab(NarrativeTab tab)
+    {
+        SetTab(tab);
+        StateHasChanged();
+    }
+
+    public enum NarrativeTab
+    {
+        Global,
+        GM,
+        Character
+    }
+}

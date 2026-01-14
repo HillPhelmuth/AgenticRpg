@@ -1,0 +1,10 @@
+﻿[
+  {
+    "outputFile": "wwwroot/css/allDice.css",
+    "inputFile": "Styles/AllDice.scss"
+  },
+  {
+    "outputFile": "Styles/Roll12Style.css",
+    "inputFile": "Styles/Roll12Style.scss"
+  }
+]

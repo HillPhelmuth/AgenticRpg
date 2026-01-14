@@ -1,0 +1,1016 @@
+.character-sheet-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
+    border: 3px solid #4dd0e1;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(77, 208, 225, 0.3);
+}
+
+.sheet-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #6f5a44;
+    font-style: italic;
+}
+
+.sheet-header {
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+    color: #4dd0e1;
+    padding: 0.75rem 1rem;
+    border-bottom: 3px solid #4dd0e1;
+    box-shadow: 0 0 20px rgba(156, 39, 176, 0.5);
+}
+
+.sheet-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(77, 208, 225, 0.7);
+}
+
+.sheet-navigation {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.sheet-navigation button {
+    padding: 0.4rem 1.2rem;
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.8) 0%, rgba(10, 14, 26, 0.9) 100%);
+    color: #4dd0e1;
+    border: 2px solid #4dd0e1;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 10px rgba(77, 208, 225, 0.3);
+}
+
+.sheet-navigation button:hover {
+    background: linear-gradient(135deg, rgba(77, 208, 225, 0.2) 0%, rgba(38, 198, 218, 0.1) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(77, 208, 225, 0.5);
+}
+
+.sheet-navigation button.active {
+    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+    color: #0a0e1a;
+    border-color: #d4af37;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.sheet-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.sheet-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sheet-content::-webkit-scrollbar-track {
+    background: #e8dbc5;
+}
+
+.sheet-content::-webkit-scrollbar-thumb {
+    background: #8b7355;
+    border-radius: 4px;
+}
+
+.page {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Page 1: Stats */
+.basic-info {
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.7) 0%, rgba(10, 14, 26, 0.85) 100%);
+    border: 2px solid rgba(77, 208, 225, 0.4);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 15px rgba(77, 208, 225, 0.2);
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.info-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-field label {
+    font-size: 0.7rem;
+    color: #4dd0e1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+}
+
+.info-field span {
+    color: #e0f2f1;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.attributes-section,
+.combat-stats,
+.weapons-section,
+.skills-section,
+.spellcasting-section,
+.currency-section,
+.inventory-section,
+.equipment-section,
+.background-section,
+.portrait-section {
+    background: #fff9ed;
+    border: 2px solid #d4c4a8;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    
+}
+.portrait-section{
+    display:flex;
+    justify-content:center;
+}
+.attributes-section h3,
+.combat-stats h3,
+.weapons-section h3,
+.skills-section h3,
+.spellcasting-section h3,
+.currency-section h3,
+.inventory-section h3,
+.equipment-section h3,
+.background-section h3,
+.portrait-section h3 {
+    margin: 0 0 0.75rem 0;
+    color: #3a2f26;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #d4c4a8;
+    padding-bottom: 0.4rem;
+    font-weight: bold;
+}
+
+.attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+}
+
+.attribute-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(77, 208, 225, 0.15) 0%, rgba(38, 198, 218, 0.1) 100%);
+    border: 2px solid #4dd0e1;
+    border-radius: 8px;
+    padding: 0.75rem;
+    box-shadow: 0 0 15px rgba(77, 208, 225, 0.3);
+}
+
+.attr-name {
+    font-size: 0.8rem;
+    color: #4dd0e1;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+
+.attr-score {
+    font-size: 1.75rem;
+    color: darkblue;
+    font-weight: bold;
+}
+
+.attr-modifier {
+    font-size: 1.1rem;
+    color: #d4af37;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-box label {
+    font-size: 0.8rem;
+    color: #3a2f26;
+    font-weight: bold;
+    margin-bottom: 0.4rem;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    color: #3a2f26;
+    font-weight: bold;
+}
+
+.hp-bar,
+.mp-bar {
+    position: relative;
+    height: 28px;
+    background: #e8dbc5;
+    border: 2px solid #8b7355;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hp-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(to right, #d45555, #e87777);
+    transition: width 0.3s ease;
+}
+
+.mp-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(to right, #5588d4, #77aaee);
+    transition: width 0.3s ease;
+}
+
+.hp-bar span,
+.mp-bar span {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #3a2f26;
+    font-weight: bold;
+    font-size: 0.9rem;
+    z-index: 1;
+}
+
+/* Temp HP Styling */
+.temp-hp {
+    margin-top: 0.4rem;
+    padding: 0.2rem 0.4rem;
+    background: #b8d4f1;
+    border: 1px solid #5588d4;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.temp-hp small {
+    color: #2d5a8a;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+/* Death Saves Styling */
+.death-saves {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #ffe8e8;
+    border: 2px solid #d45555;
+    border-radius: 6px;
+}
+
+.death-saves h4 {
+    margin: 0 0 0.6rem 0;
+    color: #a03030;
+    font-size: 0.95rem;
+}
+
+.death-save-tracker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.save-type {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.save-type label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    min-width: 75px;
+    color: #3a2f26;
+}
+
+.save-dots {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.save-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #8b7355;
+    background: #f4e8d4;
+}
+
+.save-dot.filled {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.save-dot.success {
+    background: #88d488;
+    border-color: #4a9d4a;
+}
+
+.save-dot.failure {
+    background: #d45555;
+    border-color: #a03030;
+}
+
+.save-dot.empty {
+    background: #e8dbc5;
+}
+
+.weapons-table,
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.weapons-table th,
+.weapons-table td,
+.inventory-table th,
+.inventory-table td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid #d4c4a8;
+}
+
+.weapons-table th,
+.inventory-table th {
+    background: #f4e8d4;
+    color: #3a2f26;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.weapons-table td,
+.inventory-table td {
+    color: #3a2f26;
+    font-size: 0.85rem;
+}
+
+.weapons-table tr:hover,
+.inventory-table tr:hover {
+    background: #f9f4ed;
+}
+
+/* Inventory Table Specific - IMPROVED CONTRAST */
+.item-row {
+    transition: background-color 0.2s ease;
+}
+
+.item-row strong {
+    color: #2a1f16;
+    font-weight: bold;
+}
+
+.item-description {
+    color: #5a4435;
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+.inventory-table tbody td {
+    color: #2a1f16;
+}
+
+.skills-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.4rem;
+}
+
+.skill-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem;
+    background: #f4e8d4;
+    border-radius: 4px;
+}
+
+.skill-name {
+    color: #2a1f16;
+    font-size: 0.85rem;
+}
+
+.skill-bonus {
+    color: #2a1f16;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.spell-slots {
+    margin-bottom: 0.75rem;
+}
+
+.spell-slots h4 {
+    color: #2a1f16;
+    margin-bottom: 0.6rem;
+    font-size: 0.95rem;
+}
+
+.slot-level {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.slot-level label {
+    font-weight: bold;
+    color: #2a1f16;
+    min-width: 70px;
+    font-size: 0.85rem;
+}
+
+.slot-tracker {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.slot-count {
+    font-size: 0.8rem;
+    color: #2a1f16;
+    font-weight: bold;
+    margin-right: 0.2rem;
+}
+
+.slot-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #8b7355;
+}
+
+.slot-dot.available {
+    background: #77aaee;
+}
+
+.slot-dot.used {
+    background: #d4c4a8;
+}
+
+.known-spells h4 {
+    color: #2a1f16;
+    margin-bottom: 0.6rem;
+    font-size: 0.95rem;
+}
+
+.spell-level-group {
+    margin-bottom: 1rem;
+}
+
+.spell-level-group h5 {
+    color: #2a1f16;
+    margin-bottom: 0.6rem;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.spell-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.spell-item {
+    padding: 0.75rem;
+    background: #f9f4ed;
+    border: 1px solid #d4c4a8;
+    border-radius: 6px;
+    transition: box-shadow 0.2s ease;
+}
+
+.spell-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.spell-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.spell-header strong {
+    color: #2a1f16;
+    font-size: 0.95rem;
+}
+
+.spell-school {
+    padding: 0.2rem 0.4rem;
+    background: #e8dbc5;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    color: #2a1f16;
+    font-weight: normal;
+    text-transform: uppercase;
+}
+
+.spell-description {
+    margin: 0.4rem 0;
+    color: #2a1f16;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.spell-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.6rem 0;
+    padding: 0.6rem;
+    background: #fff9ed;
+    border-radius: 4px;
+}
+
+.spell-details span {
+    font-size: 0.8rem;
+    color: #2a1f16;
+}
+
+.spell-details strong {
+    color: #2a1f16;
+}
+
+.spell-effect {
+    margin: 0.6rem 0 0 0;
+    padding: 0.6rem;
+    background: #fffaed;
+    border-left: 3px solid #d4a574;
+    color: #2a1f16;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.spell-effect strong {
+    color: #2a1f16;
+}
+
+/* Page 2: Abilities & Equipment */
+.currency-display {
+    text-align: center;
+}
+
+.gold-amount {
+    font-size: 1.75rem;
+    color: #d4a574;
+    font-weight: bold;
+}
+
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.equip-slot {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem;
+    background: #f4e8d4;
+    border: 2px solid #d4c4a8;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.equip-slot.filled {
+    background: #fff9ed;
+    border-color: #8b7355;
+}
+
+.equip-slot.empty {
+    opacity: 0.6;
+}
+
+.equip-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.equip-slot label {
+    font-size: 0.7rem;
+    color: #2a1f16;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+}
+
+.equip-slot span {
+    color: #2a1f16;
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+    font-size: 0.85rem;
+}
+
+/* Item Rarity Colors */
+.item-rarity {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.item-rarity.common {
+    background: #7a7a7a;
+    color: #fff;
+}
+
+.item-rarity.uncommon {
+    background: #4a9d4a;
+    color: #fff;
+}
+
+.item-rarity.rare {
+    background: #4a75b8;
+    color: #fff;
+}
+
+.item-rarity.veryrare {
+    background: #9a4ab8;
+    color: #fff;
+}
+
+.item-rarity.legendary {
+    background: #e68a00;
+    color: #fff;
+}
+
+.item-rarity.artifact {
+    background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcf7f, #4d96ff);
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.background-text {
+    line-height: 1.5;
+    color: #2a1f16;
+}
+
+.background-text p {
+    margin: 0.4rem 0;
+    color: #2a1f16;
+}
+
+/* Empty Message */
+.empty-message {
+    color: #5a4435;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+/* Character Status */
+.character-status {
+    background: #fff9ed;
+    border: 2px solid #d4c4a8;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 1rem;
+}
+
+.character-status h3 {
+    margin: 0 0 0.75rem 0;
+    color: #3a2f26;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #d4c4a8;
+    padding-bottom: 0.4rem;
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Status Items */
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-item label {
+    font-weight: bold;
+    color: #2a1f16;
+    min-width: 110px;
+    font-size: 0.85rem;
+}
+
+.status-item span {
+    color: #2a1f16;
+    font-size: 0.85rem;
+}
+
+.status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.status-badge.alive {
+    background: #88d488;
+    color: #2d5a2d;
+}
+
+.status-badge.unconscious {
+    background: #ffcc66;
+    color: #7a5a00;
+}
+
+.status-badge.dead {
+    background: #d45555;
+    color: #fff;
+}
+
+/* Portrait */
+.portrait-image {
+    width: 350px;
+    height: 400px;
+    border: 4px solid #8b7355;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    object-fit: cover;
+}
+
+.portrait-placeholder {
+    width: 350px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    background: #e8dbc5;
+    border: 4px dashed #8b7355;
+    border-radius: 8px;
+    color: #6f5a44;
+    font-style: italic;
+}
+
+.placeholder-icon {
+    font-size: 5rem;
+}
+
+/* Repeating Elements */
+.monospace {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    color: #2a1f16;
+}
+
+/* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .sheet-header {
+        padding: 0.6rem;
+    }
+
+    .sheet-header h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .sheet-navigation {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .sheet-navigation button {
+        flex: 1 1 calc(50% - 0.15rem);
+        min-width: 85px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .sheet-content {
+        padding: 0.6rem;
+    }
+
+    .basic-info,
+    .attributes-section,
+    .combat-stats,
+    .weapons-section,
+    .skills-section,
+    .spellcasting-section,
+    .currency-section,
+    .inventory-section,
+    .equipment-section,
+    .background-section {
+        padding: 0.6rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-row,
+    .attribute-grid,
+    .stat-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+
+    .attribute-card,
+    .stat-item {
+        padding: 0.4rem;
+    }
+
+    .attr-name,
+    .stat-label {
+        font-size: 0.75rem;
+    }
+
+    .attr-score,
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .attr-modifier {
+        font-size: 0.95rem;
+    }
+
+    .weapons-table,
+    .skills-table,
+    .inventory-table {
+        font-size: 0.75rem;
+    }
+
+    .weapons-table th,
+    .weapons-table td,
+    .skills-table th,
+    .skills-table td,
+    .inventory-table th,
+    .inventory-table td {
+        padding: 0.35rem 0.25rem;
+    }
+
+    /* Make tables horizontally scrollable on small screens */
+    .weapons-section,
+    .skills-section,
+    .inventory-section {
+        overflow-x: auto;
+    }
+
+    .weapons-table,
+    .skills-table,
+    .inventory-table {
+        min-width: 500px;
+    }
+
+    .equipment-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+
+    .portrait-container {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .portrait-image,
+    .portrait-placeholder {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        aspect-ratio: 7/8;
+    }
+
+    .placeholder-icon {
+        font-size: 3.5rem;
+    }
+}
+
+/* Tablet Portrait (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .sheet-navigation button {
+        flex: 1 1 auto;
+        min-width: 95px;
+    }
+
+    .info-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .attribute-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .equipment-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablet Landscape (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .info-row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .attribute-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .stat-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .sheet-header {
+        padding: 0.4rem 0.6rem;
+    }
+
+    .sheet-header h2 {
+        font-size: 0.95rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .sheet-navigation button {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .sheet-content {
+        padding: 0.4rem;
+    }
+}
+
+/* Touch Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .sheet-navigation button {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    .sheet-navigation button:active {
+        transform: scale(0.97);
+    }
+
+    input,
+    textarea,
+    select {
+        min-height: 44px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .sheet-content {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .sheet-navigation {
+        display: none;
+    }
+
+    .page {
+        page-break-after: always;
+    }
+
+    .page:last-child {
+        page-break-after: auto;
+    }
+}
