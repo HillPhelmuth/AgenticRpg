@@ -1,6 +1,3 @@
-using System.ComponentModel;
-using System.Text;
-using System.Text.Json;
 using AgenticRpg.Core.Agents.Tools.Results;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
@@ -9,7 +6,9 @@ using AgenticRpg.Core.Repositories;
 using AgenticRpg.Core.Rules;
 using AgenticRpg.Core.State;
 using AgenticRpg.DiceRoller.Models;
-using Microsoft.Identity.Client;
+using System.ComponentModel;
+using System.Text;
+using System.Text.Json;
 using Location = AgenticRpg.DiceRoller.Models.Location;
 
 namespace AgenticRpg.Core.Agents.Tools;
@@ -26,6 +25,62 @@ public class CombatTools(
 {
     private readonly Random _random = new();
 
+    // Creates standard roll window options for combat dice prompts.
+    private static RollDiceWindowOptions CreateRollWindowOptions(string title, Location location)
+    {
+        return new RollDiceWindowOptions
+        {
+            Title = title,
+            Location = location,
+            Style = "width:max-content;min-width:40vw;height:max-content"
+        };
+    }
+
+    // Creates roll parameters with optional player targeting.
+    private static RollDiceParameters CreateRollParameters(DieType dieType, int numberOfRolls, bool isManual, string? playerId)
+    {
+        var parameters = new RollDiceParameters
+        {
+            DieType = dieType,
+            NumberOfRolls = numberOfRolls,
+            IsManual = isManual
+        };
+
+        if (!string.IsNullOrWhiteSpace(playerId))
+        {
+            parameters.Set("PlayerId", playerId);
+        }
+
+        return parameters;
+    }
+
+    // Rolls a single d20 and returns the highest total from the window results.
+    private async Task<int> RollTopD20Async(string campaignId, RollDiceWindowOptions windowOptions, bool isManual, string? playerId, int rollWindows)
+    {
+        var parameters = CreateRollParameters(DieType.D20, 1, isManual, playerId);
+        var result = await rollDiceService.RequestDiceRoll(campaignId, parameters, windowOptions, rollWindows);
+        return result.OrderByDescending(x => x?.Results?.Total).FirstOrDefault()?.Results?.Total ?? 0;
+    }
+
+    // Rolls damage dice and returns the summed total.
+    private async Task<int> RollDiceSumAsync(string campaignId, RollDiceWindowOptions windowOptions, DieType dieType, int numberOfRolls, bool isManual, string? playerId)
+    {
+        var parameters = CreateRollParameters(dieType, numberOfRolls, isManual, playerId);
+        var rolls = await rollDiceService.RequestDiceRoll(campaignId, parameters, windowOptions);
+        return rolls.Sum(r => r.Results.Total);
+    }
+
+    // Serializes a CombatAttackResult error response.
+    private static string SerializeCombatAttackError(string error)
+    {
+        return JsonSerializer.Serialize(new CombatAttackResult
+        {
+            Success = false,
+            Message = "",
+            Error = error
+        });
+    }
+
     private static int GetAttackModifier(WeaponItem weapon, int might, int agility)
     {
         var modAttribute = weapon.WeaponType == WeaponType.Ranged ? AttributeType.Agility : AttributeType.Might;
@@ -41,48 +96,30 @@ public class CombatTools(
         [Description("The unique ID of the campaign where this combat is occurring.")] string campaignId)
     {
         var gameState = await stateManager.GetCampaignStateAsync(campaignId);
+        
         if (gameState?.CurrentCombat == null)
         {
-            return JsonSerializer.Serialize(new CombatAttackResult
-            {
-                Success = false,
-                Message = "",
-                Error = "No active combat"
-            });
+            return SerializeCombatAttackError("No active combat");
         }
 
+        if (gameState?.CurrentCombat.InitiativeOrder.Count == 0)
+        {
+            return SerializeCombatAttackError("Initiative order is empty. Invoke `DetermineInitiative` to start combat.");
+        }
         var attacker = gameState.CurrentCombat.FindPartyCharacter(attackerId);
         var target = gameState.CurrentCombat.FindEnemyMonster(targetId);
 
         if (attacker == null || target == null)
         {
-            return JsonSerializer.Serialize(new CombatAttackResult
-            {
-                Success = false,
-                Message = "",
-                Error = "Attacker or target not found"
-            });
+            return SerializeCombatAttackError("Attacker or target not found");
         }
 
         // Player attacks are always manual rolls.
+        var windowOptions = CreateRollWindowOptions(
+            $"{attackerId}:Roll {1}{DieType.D20} to attack {targetId} with {weapon.Name}",
+            Location.Center);
 
-        var windowOptions = new RollDiceWindowOptions()
-        {
-            Title = $"{attackerId}:Roll {1}{DieType.D20} to attack {targetId} with {weapon.Name}",
-            Location = Location.Center,
-            Style = "width:max-content;min-width:40vw;height:max-content"
-        };
-
-        var parameters = new RollDiceParameters
-        {
-            DieType = DieType.D20,
-            NumberOfRolls = 1,
-            IsManual = true
-        };
-        parameters.Set("PlayerId", attacker.PlayerId);
-
-        var result = await rollDiceService.RequestDiceRoll(campaignId, parameters, windowOptions, 1);
-        var roll = result.OrderByDescending(x => x.Results.Total).FirstOrDefault()?.Results.Total ?? 0;
+        var roll = await RollTopD20Async(campaignId, windowOptions, true, attacker.PlayerId, 1);
 
         var attackModifier = StatsCalculator.CalculateAttackBonus(attacker, weapon);
         if (attacker.Skills.TryGetValue("Melee Combat", out var meleeSkill) && weapon.WeaponType is WeaponType.Melee or WeaponType.Both)
@@ -104,23 +141,11 @@ public class CombatTools(
             var dieType = weapon.GetDieType();
             var numberOfDice = weapon.GetDieRollCount();
 
-            var damageWindowOptions = new RollDiceWindowOptions()
-            {
-                Title = $"Roll {numberOfDice}{dieType} for {weapon.Name} damage",
-                Location = Location.Center,
-                Style = "width:max-content;min-width:40vw;height:max-content"
-            };
+            var damageWindowOptions = CreateRollWindowOptions(
+                $"Roll {numberOfDice}{dieType} for {weapon.Name} damage",
+                Location.Center);
 
-            var damageParameters = new RollDiceParameters
-            {
-                DieType = dieType,
-                NumberOfRolls = numberOfDice,
-                IsManual = true
-            };
-            damageParameters.Set("PlayerId", attacker.PlayerId);
-
-            var damageRolls = await rollDiceService.RequestDiceRoll(campaignId, damageParameters, damageWindowOptions);
-            var rawRollValue = damageRolls.Sum(r => r.Results.Total);
+            var rawRollValue = await RollDiceSumAsync(campaignId, damageWindowOptions, dieType, numberOfDice, true, attacker.PlayerId);
             if (isCritical) rawRollValue *= 2;
 
             damage = rawRollValue + attackModifier + weapon.GetDieRollBonus();
@@ -128,7 +153,7 @@ public class CombatTools(
         }
 
         var targetDefeated = target.CurrentHP <= 0;
-
+        gameState.CurrentCombat.CurrentTurnIndex++;
         // Add to combat log
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
@@ -181,52 +206,29 @@ public class CombatTools(
         var gameState = await stateManager.GetCampaignStateAsync(campaignId);
         if (gameState?.CurrentCombat == null)
         {
-            return JsonSerializer.Serialize(new CombatAttackResult
-            {
-                Success = false,
-                Message = "",
-                Error = "No active combat"
-            });
+            return SerializeCombatAttackError("No active combat");
         }
-
+        if (gameState?.CurrentCombat.InitiativeOrder.Count == 0)
+        {
+            return SerializeCombatAttackError("Initiative order is empty. Invoke `DetermineInitiative` to start combat.");
+        }
         var attacker = gameState.CurrentCombat.FindEnemyMonster(attackerId);
         var target = gameState.CurrentCombat.FindPartyCharacter(targetId);
 
         if (attacker == null || target == null)
         {
-            return JsonSerializer.Serialize(new CombatAttackResult
-            {
-                Success = false,
-                Message = "",
-                Error = "Attacker or target not found"
-            });
+            return SerializeCombatAttackError("Attacker or target not found");
         }
         if (attacker.CurrentHP <= 0)
         {
-            return JsonSerializer.Serialize(new CombatAttackResult
-            {
-                Success = false,
-                Message = "",
-                Error = "Attacker is defeated"
-            });
+            return SerializeCombatAttackError("Attacker is defeated");
         }
 
-        var windowOptions = new RollDiceWindowOptions()
-        {
-            Title = $"{attacker.Name}:Roll {1}{DieType.D20} to attack {target.Name} with {weapon.Name}",
-            Location = Location.TopRight,
-            Style = "width:max-content;min-width:40vw;height:max-content"
-        };
+        var windowOptions = CreateRollWindowOptions(
+            $"{attacker.Name}:Roll {1}{DieType.D20} to attack {target.Name} with {weapon.Name}",
+            Location.TopRight);
 
-        var parameters = new RollDiceParameters
-        {
-            DieType = DieType.D20,
-            NumberOfRolls = 1,
-            IsManual = false
-        };
-
-        var result = await rollDiceService.RequestDiceRoll(campaignId, parameters, windowOptions, 1);
-        var roll = result.OrderByDescending(x => x?.Results?.Total).FirstOrDefault()?.Results?.Total ?? 0;
+        var roll = await RollTopD20Async(campaignId, windowOptions, false, null, 1);
 
         var attackModifier = GetAttackModifier(weapon, attacker.Might, attacker.Agility);
 
@@ -240,22 +242,11 @@ public class CombatTools(
             var dieType = weapon.GetDieType();
             var numberOfDice = weapon.GetDieRollCount();
 
-            var damageWindowOptions = new RollDiceWindowOptions()
-            {
-                Title = $"Roll {numberOfDice}{dieType} for {weapon.Name} damage",
-                Location = Location.Center,
-                Style = "width:max-content;min-width:40vw;height:max-content"
-            };
+            var damageWindowOptions = CreateRollWindowOptions(
+                $"Roll {numberOfDice}{dieType} for {weapon.Name} damage",
+                Location.Center);
 
-            var damageParameters = new RollDiceParameters
-            {
-                DieType = dieType,
-                NumberOfRolls = numberOfDice,
-                IsManual = false
-            };
-
-            var damageRolls = await rollDiceService.RequestDiceRoll(campaignId, damageParameters, damageWindowOptions);
-            var rawRollValue = damageRolls.Sum(r => r.Results.Total);
+            var rawRollValue = await RollDiceSumAsync(campaignId, damageWindowOptions, dieType, numberOfDice, false, null);
             if (isCritical) rawRollValue *= 2;
 
             damage = rawRollValue + attackModifier + weapon.GetDieRollBonus();
@@ -275,7 +266,7 @@ public class CombatTools(
         }
 
         var targetDefeated = target.CurrentHP <= 0;
-
+        gameState.CurrentCombat.CurrentTurnIndex++;
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
             Round = gameState.CurrentCombat.Round,
@@ -334,7 +325,15 @@ public class CombatTools(
                 Error = "No active combat"
             });
         }
-        
+        if (gameState?.CurrentCombat.InitiativeOrder.Count == 0)
+        {
+            return JsonSerializer.Serialize(new CombatAttackResult
+            {
+                Success = false,
+                Message = "",
+                Error = "Initiative order is empty. Invoke `DetermineInitiative` to start combat."
+            });
+        }
         var attacker = gameState.CurrentCombat.FindPartyCharacter(attackerId);
         var target = gameState.CurrentCombat.FindEnemyMonster(targetId);
         
@@ -390,16 +389,7 @@ public class CombatTools(
             Style = "width:max-content;min-width:40vw;height:max-content"
         };
 
-        var saveParameters = new RollDiceParameters
-        {
-            DieType = DieType.D20,
-            NumberOfRolls = 1,
-            IsManual = false
-        };
-        saveParameters.Set("PlayerId", attacker.PlayerId);
-
-        var saveRolls = await rollDiceService.RequestDiceRoll(campaignId, saveParameters, saveWindowOptions, 1);
-        var saveRoll = saveRolls.OrderByDescending(x => x?.Results?.Total).FirstOrDefault()?.Results?.Total ?? 0;
+        var saveRoll = await RollTopD20Async(campaignId, saveWindowOptions, false, attacker.PlayerId, 1);
 
         var inferredSaveModifier = saveAttribute switch
         {
@@ -419,9 +409,10 @@ public class CombatTools(
         var appliedEffectMagnitude = rawEffectMagnitude;
 
         // Resolve damage only when the spell has dice.
-        if (spellEffect.EffectDice is { Length: > 0 })
+        var levelEffectDice = spellEffect.GetLevelEffectDice(attacker.Level);
+        if (levelEffectDice is { Length: > 0 })
         {
-            var parts = spellEffect.EffectDice.Trim().ToLowerInvariant().Split('d', '+');
+            var parts = levelEffectDice.Trim().ToLowerInvariant().Split('d', '+');
             if (parts.Length >= 2 &&
                 int.TryParse(parts[0], out var diceCount) &&
                 Enum.TryParse<DieType>(parts[1], out var diceSides))
@@ -433,18 +424,8 @@ public class CombatTools(
                     Style = "width:max-content;min-width:40vw;height:max-content"
                 };
 
-                var damageParameters = new RollDiceParameters
-                {
-                    DieType = diceSides,
-                    NumberOfRolls = diceCount,
-                    IsManual = true
-                };
-                
                 // Reason: Player spell damage dice should only show for the casting player.
-                damageParameters.Set("PlayerId", attacker.PlayerId);
-
-                var damageRolls = await rollDiceService.RequestDiceRoll(campaignId, damageParameters, damageWindowOptions);
-                var rawRollValue = damageRolls.Sum(r => r.Results.Total);
+                var rawRollValue = await RollDiceSumAsync(campaignId, damageWindowOptions, diceSides, diceCount, true, attacker.PlayerId);
                 if (parts.Length > 2 && int.TryParse(parts[2], out var bonus))
                 {
                     // Add any flat bonus to damage magnitude.
@@ -470,7 +451,7 @@ public class CombatTools(
         }
 
         var targetDefeated = target.CurrentHP <= 0;
-
+        gameState.CurrentCombat.CurrentTurnIndex++;
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
             Round = gameState.CurrentCombat.Round,
@@ -661,7 +642,7 @@ public class CombatTools(
     [Description("Resolves a special ability, spell, or monster power used by a combatant. Parameters: characterId (user of ability), abilityName (name of ability/non-combat spell), targetIds (array of target combatant IDs), campaignId. Returns JSON with ability effects and results.")]
     public async Task<string> ResolveSpecialAbility(
         [Description("The unique character ID or combatant ID of the entity using the special ability.")] string characterId,
-        [Description("The name of the special ability, spell, or power being used (e.g., 'Fireball', 'Sneak Attack', 'Breath Weapon').")] string abilityName,
+        [Description("The name of the non-damage/utility special ability, spell, or power being used (e.g., 'Blindness', 'Inspire Fear').")] string abilityName,
         [Description("Array of combatant IDs targeted by this ability. Can be empty for self-targeting abilities or single/multiple targets depending on the ability.")] string[] targetIds,
         [Description("The unique ID of the campaign where this combat is occurring.")] string campaignId)
     {
@@ -694,7 +675,7 @@ public class CombatTools(
 
         var userId = userCharacter?.Id ?? userMonster?.Name ?? characterId;
         var userName = userCharacter?.Name ?? userMonster?.Name ?? characterId;
-
+        gameState.CurrentCombat.CurrentTurnIndex++;
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
             Round = gameState.CurrentCombat.Round,
@@ -729,6 +710,15 @@ public class CombatTools(
                 Success = false,
                 Message = "",
                 Error = "No active combat"
+            });
+        }
+        if (!TryEndCombat(gameState.CurrentCombat, victor, out var message))
+        {
+            return JsonSerializer.Serialize(new EndCombatResult
+            {
+                Success = false,
+                Message = "",
+                Error = message
             });
         }
 
@@ -793,6 +783,27 @@ public class CombatTools(
             Message = $"Combat ended. {victor} victorious. Returning to Game Master.",
             ActiveAgent = "GameMaster"
         });
+    }
+
+    private bool TryEndCombat(CombatEncounter encounter, CombatVictor victor, out string message)
+    {
+        if (encounter == null)
+        {
+            message = "No active combat";
+            return false;
+        }
+        switch (victor)
+        {
+            case CombatVictor.Party when !encounter.AllEnemiesDefeated():
+                message = $"Cannot end combat in favor of {victor}: Not all enemies are defeated.";
+                return false;
+            case CombatVictor.Enemies when !encounter.AllPartyDefeated():
+                message = $"Cannot end combat in favor of {victor}: Not all party members are defeated.";
+                return false;
+            default:
+                message = "";
+                return true;
+        }
     }
 }
 

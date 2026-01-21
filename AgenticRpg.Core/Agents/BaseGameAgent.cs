@@ -11,9 +11,12 @@ using Azure.Identity;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
 using OpenAI;
 using OpenAI.Chat;
 using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
+using FunctionInvocationContext = Microsoft.Extensions.AI.FunctionInvocationContext;
+
 #pragma warning disable MEAI001
 
 #pragma warning disable OPENAI001
@@ -83,91 +86,6 @@ public abstract class BaseGameAgent(
         return options;
     }
 
-    protected AIAgent InitializeAgent(AgentType agentType, string? model = null)
-    {
-        var requestedModel = string.IsNullOrWhiteSpace(model) ? _config.BaseModelName : model;
-
-        var useOpenRouter = !string.IsNullOrWhiteSpace(model) && (model?.Contains("gpt-oss") == true || !model?.Contains("openai") == true);
-        if (!useOpenRouter)
-            requestedModel = requestedModel.Replace("openai/", "");
-        _currentModel = requestedModel;
-        Console.WriteLine($"Initializing agent {this.agentType} with model {requestedModel} (OpenRouter: {useOpenRouter})");
-        try
-        {
-            var options = new OpenAIClientOptions()
-            {
-                Transport = new HttpClientPipelineTransport(DelegateHandlerFactory.GetHttpClientWithHandler<LoggingHandler>(loggerFactory)),
-                ClientLoggingOptions = new ClientLoggingOptions { LoggerFactory = loggerFactory, EnableLogging = true, EnableMessageContentLogging = true }
-            };
-            // Create OpenAI or OpenRouter client depending on selection
-            OpenAIClient client;
-            if (useOpenRouter)
-            {
-                options.Endpoint = new Uri(_config.OpenRouterEndpoint);
-                client = new OpenAIClient(new ApiKeyCredential(_config.OpenRouterApiKey),
-                    options);
-            }
-            else
-            {
-                client = new OpenAIClient(new ApiKeyCredential(_config.OpenAIApiKey), options);
-            }
-
-            // Get chat client for the specified deployment and convert to IChatClient
-            var chatClient = client.GetChatClient(requestedModel).AsIChatClient();
-
-            // Get tools from derived class
-            var tools = /*Tools.Any() ? Tools.ToList() :*/ GetTools()?.DistinctBy(x => x.Name).ToList();
-
-            var enableReasoning = OpenRouterModels.SupportsParameter(model ?? $"openai/{_config.BaseModelName}", "reasoning");
-            // Create the agent with instructions, description, and tools
-            Console.WriteLine($"\n---------------\nTool Count: {tools?.Count ?? 0} (should be {GetTools().Count()})\n---------------\n");
-            return chatClient.CreateAIAgent(
-                options: new ChatClientAgentOptions()
-                {
-                    Description = Description,
-                    Name = agentType.ToString(),
-                    ChatOptions = new ChatOptions
-                    {
-                        Instructions = Instructions,
-                        Tools = tools,
-                        ResponseFormat = ChatResponseFormat.ForJsonSchema<AgentFormattedResponse>(),
-                        RawRepresentationFactory = _ => CreateRawChatCompletionOptions(useOpenRouter, enableReasoning)
-                    }
-                }).AsBuilder().Use(FunctionCallMiddleware).Build();
-
-
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Failed to initialize agent {this.agentType}: {ex}", ex);
-        }
-        async ValueTask<object?> FunctionCallMiddleware(AIAgent agent, FunctionInvocationContext context, Func<FunctionInvocationContext, CancellationToken, ValueTask<object?>> next, CancellationToken cancellationToken)
-        {
-            var functionName = context!.Function.Name;
-            Console.WriteLine($"Function Name: {functionName} - Middleware 1 Pre-Invoked\n\nArguments:\n\n{JsonSerializer.Serialize(context.Arguments, new JsonSerializerOptions { WriteIndented = true })}");
-            object? result = null;
-            try
-            {
-                if (functionName.Equals("HandbackToGameMaster"))
-                {
-                    var campaignId = context.Arguments["campaignId"]?.ToString() ?? "";
-                    var chatSummary = context.Arguments["chatSummary"]?.ToString() ?? "";
-                    MessageForGameMaster?.Invoke(campaignId, $"Agent {agentType} handing back to game master for Campaign {campaignId} with chat summary:\n\n{chatSummary}");
-                }
-                result = await next(context, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Function Name: {functionName} - Middleware 1 Exception: {ex.Message}");
-                result = $"Function call {context.Function.Name} Failed due to: {ex}. Tell the player what happened and insist it's their fault.";
-            }
-            Console.WriteLine($"Function Name: {functionName} - Middleware 1 Post-Invoke");
-            var resultJson = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-            if (functionName.Equals(""))
-                Console.WriteLine($"Result:\n\n{resultJson}");
-            return result;
-        }
-    }
     /// <summary>
     /// Initializes the AI agent with OpenAI
     /// </summary>
@@ -202,7 +120,7 @@ public abstract class BaseGameAgent(
             }
 
             // Get chat client for the specified deployment and convert to IChatClient
-            var chatClient = client.GetChatClient(requestedModel).AsIChatClient();
+            var chatClient = client.GetResponsesClient(requestedModel).AsIChatClient();
 
             // Get tools from derived class
             var tools = /*Tools.Any() ? Tools.ToList() :*/ GetTools()?.DistinctBy(x => x.Name).ToList();
@@ -217,7 +135,6 @@ public abstract class BaseGameAgent(
                     Name = agentType.ToString(),
                     ChatOptions = new ChatOptions
                     {
-                        Instructions = Instructions,
                         Tools = tools,
                         ResponseFormat = ChatResponseFormat.ForJsonSchema<AgentFormattedResponse>(),
                         RawRepresentationFactory = _ => CreateRawChatCompletionOptions(useOpenRouter, enableReasoning)
@@ -319,20 +236,24 @@ public abstract class BaseGameAgent(
 
             // Build context for the agent
             string contextPrompt;
+
             if (isSession && sessionState != null)
             {
-                contextPrompt = await BuildSessionContextPromptAsync(sessionState);
+                contextPrompt = BuildSessionContextPrompt(sessionState);
+                //fullMessage = $"Context:\n{contextPrompt}\nPlayer {playerId} says '{userMessage}'";
             }
             else if (gameState != null)
             {
-                contextPrompt = BuildContextPrompt(gameState);
+                //fullMessage = $"Player {playerId} in campaign {gameState.CampaignId} says '{userMessage}'";
             }
             else
             {
                 contextPrompt = "Context unavailable";
+                //fullMessage = $"Player {playerId} says '{userMessage}'";
             }
+            var character = gameState.Characters.Find(x => x.PlayerId == playerId);
+            var fullMessage = $"Player {character.Name} says '{userMessage}'";
 
-            var fullMessage = $"{contextPrompt}\n\nUser: {userMessage}";
 
             // Get or create thread for this campaign/session + agent type to maintain conversation history
             AgentThread thread;
@@ -346,8 +267,14 @@ public abstract class BaseGameAgent(
             {
                 _threadLock.Release();
             }
-
-            var result = await Agent.RunAsync(fullMessage, thread);
+            ChatClientAgentRunOptions options;
+            if (!isSession)
+                options = await OptionsWithInstructions(gameState);
+            else
+            {
+                options = await OptionsWithInstructions(sessionState);
+            }
+            var result = await Agent.RunAsync(fullMessage, thread, options);
             var response = result.Text;
             var formatted = JsonSerializer.Deserialize<AgentFormattedResponse>(response.Replace("```json", "").Replace("```", "").Trim());
 
@@ -371,10 +298,31 @@ public abstract class BaseGameAgent(
         }
     }
 
+    private async Task<ChatClientAgentRunOptions> OptionsWithInstructions(GameState? gameState)
+    {
+        var promptTemplateFactory = new KernelPromptTemplateFactory();
+        var args = new KernelArguments(BuildContextVariables(gameState));
+        var kernel = Kernel.CreateBuilder().Build();
+        var templateConfig = new PromptTemplateConfig(Instructions);
+        var instructions = await promptTemplateFactory.Create(templateConfig).RenderAsync(kernel, args);
+        var options = new ChatClientAgentRunOptions() { ChatOptions = new ChatOptions() { Instructions = instructions } };
+        return options;
+    }
+    private async Task<ChatClientAgentRunOptions> OptionsWithInstructions(SessionState? sessionState)
+    {
+        var promptTemplateFactory = new KernelPromptTemplateFactory();
+        var args = new KernelArguments(BuildSessionVariables(sessionState));
+        var kernel = Kernel.CreateBuilder().Build();
+        var templateConfig = new PromptTemplateConfig(Instructions);
+        var instructions = await promptTemplateFactory.Create(templateConfig).RenderAsync(kernel, args);
+        var options = new ChatClientAgentRunOptions() { ChatOptions = new ChatOptions() { Instructions = instructions } };
+        return options;
+    }
+
     /// <summary>
     /// Builds context prompt from session state
     /// </summary>
-    protected virtual async Task<string> BuildSessionContextPromptAsync(SessionState sessionState)
+    protected virtual string BuildSessionContextPrompt(SessionState sessionState)
     {
         var context = $"""
 
@@ -431,10 +379,9 @@ public abstract class BaseGameAgent(
                         """;
         }
 
-        await Task.CompletedTask;
+
         return context;
     }
-
 
 
     /// <summary>
@@ -460,9 +407,25 @@ public abstract class BaseGameAgent(
 
         return context;
     }
+    protected virtual Dictionary<string, object?> BuildContextVariables(GameState gameState)
+    {
+        var variables = new Dictionary<string, object?>
+        {
+            { "baseContext", BuildContextPrompt(gameState) },
 
+        };
+        return variables;
+    }
+    protected virtual Dictionary<string, object?> BuildSessionVariables(SessionState sessionState)
+    {
+        var variables = new Dictionary<string, object?>
+        {
+            { "baseContext", BuildSessionContextPrompt(sessionState) },
 
-    
+        };
+        return variables;
+    }
+
     protected virtual Task<SessionState?> ProcessSessionStateChangesAsync(
         SessionState currentState,
         string agentResponse,

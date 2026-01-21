@@ -325,8 +325,8 @@ public class GameHubService : IGameHubService, IAsyncDisposable
                 return;
             }
 
-            _logger.LogInformation("Received dice roll request {RequestId} for session {SessionId}, {Json}",
-                request.RequestId, request.SessionId, JsonSerializer.Serialize(request));
+            _logger.LogInformation("Received dice roll request {RequestId} for player {TargetPlayerId}; current player is {CurrentPlayerId} for session {SessionId}, {Json}",
+                request.RequestId, request.PlayerId, _currentPlayerId, request.SessionId, JsonSerializer.Serialize(request));
 
             var parameters = request.Parameters ?? new RollDiceParameters();
             var windowOptions = request.WindowOptions ?? new RollDiceWindowOptions();

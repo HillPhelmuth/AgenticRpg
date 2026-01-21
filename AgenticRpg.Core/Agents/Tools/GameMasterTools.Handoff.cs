@@ -7,10 +7,10 @@ namespace AgenticRpg.Core.Agents.Tools;
 
 public partial class GameMasterTools
 {
-    [Description("Transfers control to a specialized agent. Parameters: targetAgent (CharacterCreation, Combat, Economy, WorldBuilder, CharacterLevelUp), context (brief description of why handoff is needed), campaignId. Returns confirmation that the specified agent is now active.")]
+    [Description("Transfers control to a specialized agent. Parameters: targetAgent (CharacterCreation, Combat, Economy, WorldBuilder, CharacterManager), context (brief description of why handoff is needed), campaignId. Returns confirmation that the specified agent is now active.")]
     public async Task<string> HandoffToAgent(
-        [Description("The specialized agent to transfer control to. Must be one of: CharacterCreation, Combat, Economy, WorldBuilder, CharacterLevelUp.")] AgentType targetAgent,
-        [Description("A brief explanation of why control is being transferred to this agent. Provides context for the handoff (e.g., 'Player wants to buy items' for Economy).")] string context,
+        [Description("The specialized agent to transfer control to. Will usually be one of: Economy or CharacterManager.")] AgentType targetAgent,
+        [Description("A brief explanation of why control is being transferred to this agent. Provides context for the handoff (e.g., 'Player wants to buy items' for Economy or 'Player needs to level-up or otherwise wants to manage their character' for CharacterManager).")] string context,
         [Description("The unique ID of the campaign where this handoff is occurring.")] string campaignId)
     {
         var gameState = await stateManager.GetCampaignStateAsync(campaignId);

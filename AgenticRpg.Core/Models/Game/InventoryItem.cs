@@ -134,3 +134,12 @@ public enum MagicEffectType
     Debuff,
     Utility
 }
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum MagicEffectAreaOfEffect
+{
+    SingleTarget,
+    AreaOfEffect,
+    Cone,
+    Line,
+    Self
+}

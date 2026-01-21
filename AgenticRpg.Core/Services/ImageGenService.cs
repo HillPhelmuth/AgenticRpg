@@ -24,11 +24,11 @@ namespace AgenticRpg.Core.Services;
 
 public class ImageGenService
 {
-    private static readonly AgentConfiguration configuration = AgentStaticConfiguration.Default;
+    private static readonly AgentConfiguration Configuration = AgentStaticConfiguration.Default;
     private const string ImageContainerUrl = "https://npcimages.z20.web.core.windows.net/";
     private const string ImageDataPrefix = "data:image/png;base64,";
-    private static BlobServiceClient blobServiceClient => new BlobServiceClient(configuration.BlobStorageConnectionString);
-    private static BlobContainerClient _blobContainerClient => blobServiceClient.GetBlobContainerClient("$web");
+    private static BlobServiceClient BlobServiceClient => new(Configuration.BlobStorageConnectionString);
+    private static BlobContainerClient BlobContainerClient => BlobServiceClient.GetBlobContainerClient("$web");
     public static async Task<string> GenerateCharacterImage(string instructions, string playerId, string characterName)
     {
         var data = await GenerateImageData(instructions);
@@ -39,7 +39,7 @@ public class ImageGenService
 
     private static async Task<ReadOnlyMemory<byte>> GenerateImageData(string instructions)
     {
-        var client = new OpenAIClient(new ApiKeyCredential(configuration.OpenAIApiKey)/*, new OpenAIClientOptions(){Endpoint = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") }*/);
+        var client = new OpenAIClient(new ApiKeyCredential(Configuration.OpenAIApiKey)/*, new OpenAIClientOptions(){Endpoint = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") }*/);
         var imageClient = client.GetImageClient("gpt-image-1.5").AsIImageGenerator();
 
         var images = await imageClient.GenerateImagesAsync(
@@ -84,7 +84,7 @@ public class ImageGenService
     }
     private static async Task<string> SaveAsUrl(string fileName, byte[] bytes)
     {
-        var blobClient = _blobContainerClient.GetBlobClient(fileName);
+        var blobClient = BlobContainerClient.GetBlobClient(fileName);
         await blobClient.UploadAsync(new BinaryData(bytes), overwrite: true);
         return $"{ImageContainerUrl}/{fileName}";
     }

@@ -20,6 +20,6 @@ public enum AgentType
     Economy,
     [Description("World Builder Agent")]
     WorldBuilder,
-    [Description("Character Level Up Agent")]
-    CharacterLevelUp
+    [Description("Character Manager Agent")]
+    CharacterManager
 }

@@ -10,5 +10,6 @@ public enum CombatVictor
 {
     Party,
     Enemies,
-    Draw
+    Draw,
+    PartyFled
 }

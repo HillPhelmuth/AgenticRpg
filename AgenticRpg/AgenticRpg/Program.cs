@@ -78,7 +78,7 @@ services.AddSingleton<IAgentContextProvider, AgentContextProvider>();
 services.AddSingleton<GameMasterAgent>();
 services.AddSingleton<CombatAgent>();
 services.AddSingleton<CharacterCreationAgent>();
-services.AddSingleton<CharacterLevelUpAgent>();
+services.AddSingleton<CharacterManagerAgent>();
 services.AddSingleton<EconomyManagerAgent>();
 services.AddSingleton<WorldBuilderAgent>();
 

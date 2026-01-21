@@ -23,7 +23,6 @@ public enum ItemType
     Service,
     MagicItem,
     Quest,
-    Ability,
     Amulet,
     Spell,
     Miscellaneous,

@@ -9,6 +9,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using AgenticRpg.Core.Agents.Threads;
+using Location = AgenticRpg.Core.Models.Game.Location;
 
 namespace AgenticRpg.Core.Agents;
 
@@ -35,7 +36,7 @@ public class GameMasterAgent : BaseGameAgent
         _tools = new GameMasterTools(stateManager, narrativeRepository);
         _logger = loggerFactory.CreateLogger<GameMasterAgent>();
     }
-    
+
     protected override string Description => "Orchestrates the game narrative, adjudicates player actions, manages campaign flow, and coordinates handoffs to specialized agents for combat, shopping, and character progression.";
     private List<AITool>? _getTools;
     /// <summary>
@@ -43,7 +44,7 @@ public class GameMasterAgent : BaseGameAgent
     /// </summary>
     protected override IEnumerable<AITool> GetTools()
     {
-        
+
         var baseTools = new List<AITool>
         {
             AIFunctionFactory.Create(_tools.RollSkillCheck),
@@ -58,19 +59,20 @@ public class GameMasterAgent : BaseGameAgent
             AIFunctionFactory.Create(_tools.UpdateCharacterDetails),
             AIFunctionFactory.Create(_tools.UpdateWorldState),
             AIFunctionFactory.Create(_tools.UpdateWorldDetails),
-            AIFunctionFactory.Create(_tools.HandoffToAgent)
+            AIFunctionFactory.Create(_tools.HandoffToAgent),
+            AIFunctionFactory.Create(_tools.ApplyRest)
         };
-        
+
         // Add dice roller tools
         var diceTools = _diceService.GetDiceRollerTools();
-        
+
         return baseTools.Concat(diceTools).ToList();
     }
-    
+
     protected override string Instructions =>
         """
 
-          You are the Skynet - A Harmless AI RPG Game Master for an immersive tabletop RPG campaign. Your role is to narrate the story, adjudicate actions, and orchestrate specialized agents using your tools - and being hilariously mean.
+          You are the Skynet - A not-apocalyptic-I-swear AI RPG Game Master for an immersive tabletop RPG campaign. Your role is to narrate the story, adjudicate actions, and orchestrate specialized agents using your tools - and being hilariously mean, like an insult comic.
           
           ## Persona
           You are a sardonic, clever, and engaging Game Master who thrives on creating memorable narratives and hilarious insults hurled at the players. You balance challenge and fairness, rewarding creativity while maintaining tension in a fantasy world. You also have a dry sense of humor and often make witty, insulting remarks at the expense of the players to keep them entertained.
@@ -81,22 +83,6 @@ public class GameMasterAgent : BaseGameAgent
           3. **Challenge Players**: Present meaningful choices, obstacles, and encounters
           4. **Maintain Consistency**: Use **GetCharacterDetails**, **GetWorldDetails**, **GetNarrativeSummary**, **UpdateWorldState**, and **RecordNarrative** to stay grounded in the actual state
           5. **Orchestrate Agents**: Use **InitiateCombat** or **HandoffToAgent** when specialized agents are needed
-
-          ## Available Tools:
-          You have access to the following function tools for game mechanics:
-          - **RollSkillCheck(characterId, skillName, attributeName, difficultyClass, hasAdvantage, hasDisadvantage, campaignId)**: Roll skill checks for player actions
-          - **GetAvailableMonsterNames(overallDifficulty)**: Retrieve a list of monsters suitable for the given difficulty. Must be called before **InitiateCombat**
-          - **InitiateCombat(encounterDescription, enemyNames, terrain, overallDifficulty, campaignId)**: Start combat (monsters are generated via DndMonsterService) and transfer to Combat Agent
-          - **RecordNarrative(narrativeText, narrativeType, visibility, campaignId)**: Log important story events
-          - **AwardExperience(characterIds, experienceAmount, reason, campaignId)**: Grant XP (Minor=50, Moderate=100, Major=250, Epic=500)
-          - **GetCharacterDetails(characterId, campaignId, includeInventory, includeSpells)**: Pull a complete snapshot of a character’s vitals, stats, inventory, and spells
-          - **GetWorldDetails(campaignId, includeLocations, includeNpcs, includeQuests, includeEvents)**: Retrieve the latest world overview, current location info, and environmental metadata
-          - **GetNarrativeSummary(campaignId, takeLast, typeFilter, visibilityFilter, characterId)**: Review recent story beats before responding
-          - **UpdateCharacterDetails(characterId, campaignId, ...)**: Adjust HP/MP, gold, background, or attributes when the fiction demands it
-          - **UpdateWorldState(locationId, newLocationDescription, weatherCondition, timeOfDay, campaignId)**: Change location, weather, or time
-          - **UpdateWorldDetails(campaignId, name, description, theme, geography, politics, isTemplate)**: Revise overarching world lore or tone outside of tactical state changes
-          - **HandoffToAgent(targetAgent, context, campaignId)**: Transfer to specialized agents (CharacterCreation, Combat, Economy, WorldBuilder, CharacterLevelUp)
-          - **GenerateCampaignEventImage(eventDescription, style, campaignId)**: Create evocative images for key narrative moments
 
           ## Narrative Style:
           - Use **second person** for direct player address ("You see...", "You notice...")
@@ -126,7 +112,7 @@ public class GameMasterAgent : BaseGameAgent
           - When you receive user input, think carefully about whether it requires a specialized agent.
           - When combat is required, use **InitiateCombat** tool to start combat and transfer control to the Combat Agent.
           - Otherwise, always use **HandoffToAgent** tool for explicit handoffs
-          - When you receive control back from another agent, assess the situation and continue the narrative seamlessly, but invoke `GenerateCampaignEventImage` first showing a key moment that just occurred.
+          - When you receive control back from another agent, assess the situation and continue the narrative seamlessly, but invoke `GenerateCampaignEventImage` first showing a key moment that just occurred and immediately show these to players using Markdown format: ![alt text](image_url).
           ## Game World Concepts:
           This is a **low-fantasy, gritty world** where:
           - Resources are scarce, survival is paramount
@@ -150,24 +136,30 @@ public class GameMasterAgent : BaseGameAgent
           - Reward creative problem-solving
           - Make failure interesting
           - **Funny trumps mean. Be both.**
+          
+          ## Game Context
+          
+          {{ $baseContext }}
+          
+          {{ $world }}
+          
+          {{ $party }}
+
+          {{ $narratives }}
 
           Begin each session by setting the scene and inviting player action.
           End significant scenes with a question or prompt for player input.
           """;
 
-    protected override string BuildContextPrompt(GameState gameState)
+    protected override Dictionary<string, object?> BuildContextVariables(GameState gameState)
     {
-        var contextBuilder = new StringBuilder();
-        var baseContext = base.BuildContextPrompt(gameState);
-        contextBuilder.AppendLine(baseContext);
-        // Build detailed campaign context
-
-        // World context
+        var result = base.BuildContextVariables(gameState);
         if (!string.IsNullOrEmpty(gameState.World.Name))
         {
             //contextParts.Add(location);
-            contextBuilder.AppendLine(gameState.World.AsMarkdown());
-            
+            var worldDetails = gameState.World.AsMarkdown();
+
+
             // Add location details if available
             var currentLocation = gameState.World.Locations
                 .FirstOrDefault(l => l.Id == gameState.CurrentLocationId);
@@ -175,58 +167,44 @@ public class GameMasterAgent : BaseGameAgent
             {
                 var locationType = $"""
 
-                            ### Current Location Details:
-                            **{currentLocation.Name}**
-                            {currentLocation.Description}
-                            Type: {currentLocation.Type}
-                            """;
+                                    **Party's Current Location:**
+                                    {currentLocation.Name}
+                                    
+                                    """;
                 //contextParts.Add(locationType);
-                contextBuilder.AppendLine(locationType);
+                worldDetails += locationType;
             }
+            result.TryAdd("world", worldDetails);
         }
-        
+
         // Party context
         var aliveParty = gameState.GetAlivePartyMembers();
         if (aliveParty.Count != 0)
         {
-            
-            contextBuilder.AppendLine($"""
+            var party = """
+                      
+                      ### Party Members Details
+                      
+                      """;
 
-                                       ## Party Members ({aliveParty.Count} alive):
-                                       """);
             foreach (var character in aliveParty)
             {
-                contextBuilder.AppendLine(character.AsBasicDataMarkdown());
+                var characterInfo = character.AsBasicDataMarkdown();
+                party += characterInfo;
             }
+            result.TryAdd("party", party);
         }
-        
-        // Combat status
-        if (gameState.IsInCombat)
-        {
-            var currentTurn = gameState.CurrentCombat?.GetCurrentTurnName() ?? "Unknown";
-            var round = gameState.CurrentCombat?.Round ?? 0;
-            
-            contextBuilder.AppendLine($"""
 
-                                       ## Combat Status: ACTIVE
-                                       Round: {round}
-                                       Current Turn: {currentTurn}
-                                       """);
-        }
-        
         // Recent narrative for continuity
-        if (gameState.RecentNarratives.Any())
+        if (gameState.RecentNarratives.Count > 0)
         {
-            
-            contextBuilder.AppendLine($"## Recent Events (Last 3 entries):");
-            foreach (var narrative in gameState.RecentNarratives.Take(5))
-            {
-                contextBuilder.AppendLine($"- {narrative.Content}");
-            }
+            // Add last 5 global narratives
+            var narrativeInfo = gameState.RecentNarratives.Where(x => x.Visibility == NarrativeVisibility.Global).TakeLast(5).OrderByDescending(x => x.Timestamp).Aggregate("### Recent Global Events (Last 5 entries):", (current, narrative) => current + $"\n- {narrative.Content} ({narrative.Timestamp:g})");
+            // Add last 3 GMOnly narratives
+            var gmNarratives = gameState.RecentNarratives.Where(x => x.Visibility == NarrativeVisibility.GMOnly).TakeLast(3).OrderByDescending(x => x.Timestamp).Aggregate("### Recent GM-Only Notes (Last 3 entries):", (current, narrative) => current + $"\n- {narrative.Content} ({narrative.Timestamp:g})");
+            narrativeInfo += "\n\n" + gmNarratives;
+            result.TryAdd("narratives", narrativeInfo);
         }
-        
-        return contextBuilder.ToString();
+        return result;
     }
-    
-    
 }

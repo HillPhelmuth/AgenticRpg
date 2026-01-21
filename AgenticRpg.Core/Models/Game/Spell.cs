@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json.Serialization;
 using AgenticRpg.Core.Helpers;
 
 namespace AgenticRpg.Core.Models.Game;
@@ -17,7 +18,8 @@ public class Spell
 
     [Description("Spell level (0-9, where 0 is cantrip)")]
     public int Level { get; set; } = 0;
-
+    [Description("Classes that can cast the spell")]
+    public SpellClass SpellClass { get; set; }
     [Description("School of magic")] public string School { get; set; } = string.Empty;
 
     [Description("Time required to cast the spell")]
@@ -46,4 +48,10 @@ public class Spell
     {
         return FileHelper.ExtractFromAssembly<List<Spell>>("ClericSpellList.json") ?? [];
     }
+}
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum SpellClass
+{
+    WizardAndWarMage,
+    ClericAndPaladin
 }

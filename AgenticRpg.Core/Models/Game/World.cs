@@ -105,22 +105,22 @@ public class World
         markdownBuilder.AppendLine($"**Geography:** {Geography}");
         markdownBuilder.AppendLine($"**Politics:** {Politics}");
         // ToDo Replace this with `GetLocations` Tool call
-        markdownBuilder.AppendLine("### Locations");
+        markdownBuilder.AppendLine("#### Locations");
         foreach (var location in Locations)
         {
             markdownBuilder.AppendLine($"**{location.Name}:** {location.Description}");
         }
-        markdownBuilder.AppendLine("### NPCs");
+        markdownBuilder.AppendLine("#### NPCs");
         foreach (var npc in NPCs)
         {
             markdownBuilder.AppendLine($"**{npc.Name}:** {npc.Description}");
         }
-        markdownBuilder.AppendLine("### Quests");
-        foreach (var quest in Quests)
+        markdownBuilder.AppendLine("#### Available Quests");
+        foreach (var quest in Quests.Where(x => x.Status is not QuestStatus.Completed or QuestStatus.Failed))
         {
             markdownBuilder.AppendLine($"**{quest.Name}:** {quest.Description}");
         }
-        markdownBuilder.AppendLine("### World Events");
+        markdownBuilder.AppendLine("#### World Events");
         foreach (var worldEvent in Events)
         {
             markdownBuilder.AppendLine($"**{worldEvent.Name}:** {worldEvent.Description}");

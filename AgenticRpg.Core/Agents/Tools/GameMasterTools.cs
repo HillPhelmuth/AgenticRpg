@@ -135,7 +135,7 @@ public partial class GameMasterTools(
             // fill the remainder with random monsters at a difficulty approximated by overallDifficulty.
             var remaining = desiredCount - monsters.Count;
             var challengeRating = Math.Clamp(overallDifficulty, 0, 15).ToString();
-            var encounter = await DndMonsterService.CreateRandomMonsterEncounter(remaining, challengeRating);
+            var encounter = await DndApiService.CreateRandomMonsterEncounter(remaining, challengeRating);
             monsters.AddRange(encounter.Monsters);
         }
 
@@ -243,5 +243,21 @@ public partial class GameMasterTools(
         var instructions = $"Generate a {style} image for the following RPG event: {eventDescription}";
         var campaignImage = await ImageGenService.GenerateCampaignImage(instructions, campaignId);
         return $"![Campaign Event]({campaignImage})";
+    }
+
+    [Description("Applies a full rest to all characters in the campaign, restoring health and magic points. Parameters: campaignId. Returns summary of restored health and abilities for each character.")]
+    public async Task<string> ApplyRest(string campaignId)
+    {
+        var campaignState = await stateManager.GetCampaignStateAsync(campaignId);
+        var characterSummaries = new List<string>();
+
+        foreach (var character in campaignState.Characters)
+        {
+            character.ApplyRestRestore();
+            characterSummaries.Add($"{character.Name}: Health restored to {character.CurrentHP}/{character.MaxHP}, Abilities restored.");
+        }
+
+        await stateManager.UpdateCampaignStateAsync(campaignState);
+        return string.Join("\n", characterSummaries);
     }
 }

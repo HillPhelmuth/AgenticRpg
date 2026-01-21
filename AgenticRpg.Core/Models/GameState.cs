@@ -106,15 +106,14 @@ public class GameState
     /// <summary>
     /// Checks if the campaign is in combat
     /// </summary>
-    public bool IsInCombat => CurrentCombat != null &&
-        CurrentCombat.Status == CombatStatus.Active;
+    public bool IsInCombat => CurrentCombat is { Status: CombatStatus.Active };
 
     /// <summary>
     /// Gets ready status for a player
     /// </summary>
     public PlayerReadyStatus? GetReadyStatus(string playerId)
     {
-        return PlayerReadyStatuses.TryGetValue(playerId, out var status) ? status : null;
+        return PlayerReadyStatuses.GetValueOrDefault(playerId);
     }
 
     /// <summary>

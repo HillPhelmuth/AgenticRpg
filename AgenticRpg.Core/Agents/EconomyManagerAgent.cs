@@ -189,74 +189,124 @@ public class EconomyManagerAgent(
                                               When the player is done shopping or leaves the shop, include this in your response:
                                               **[HANDOFF:GameMaster|Shopping concluded at {shop/merchant name}]**
 
+                                              ## Game Context
+
+                                              {{ $baseContext }}
+
+                                              {{ $economyLocation }}
+
+                                              {{ $economyMerchants }}
+
+                                              {{ $economyParty }}
+
                                               **Remember**: You are NOT just a transaction processor - you are a living, breathing merchant with personality, opinions, and goals. Make shopping an adventure, not just a menu!
 
                                               """;
 
-    protected override string BuildContextPrompt(GameState gameState)
+    /// <summary>
+    /// Builds game-state variables used to render prompt templates for economy interactions.
+    /// </summary>
+    protected override Dictionary<string, object?> BuildContextVariables(GameState gameState)
     {
+        var variables = base.BuildContextVariables(gameState);
+
+        variables.TryAdd("economyLocation", BuildEconomyLocation(gameState));
+        variables.TryAdd("economyMerchants", BuildEconomyMerchants(gameState));
+        variables.TryAdd("economyParty", BuildEconomyParty(gameState));
+
+        return variables;
+    }
+
+    /// <summary>
+    /// Builds current location context for shopping.
+    /// </summary>
+    private static string BuildEconomyLocation(GameState gameState)
+    {
+        if (string.IsNullOrEmpty(gameState.CurrentLocationId))
+        {
+            return string.Empty;
+        }
+
+        var currentLocation = gameState.World.Locations.FirstOrDefault(l => l.Id == gameState.CurrentLocationId);
+        if (currentLocation is null)
+        {
+            return string.Empty;
+        }
+
+        return $"""
+                === ECONOMY & SHOPPING CONTEXT ===
+
+                **Current Location:** {currentLocation.Name}
+                **Description:** {currentLocation.Description}
+                """;
+    }
+
+    /// <summary>
+    /// Builds merchant availability context for the current location.
+    /// </summary>
+    private static string BuildEconomyMerchants(GameState gameState)
+    {
+        if (string.IsNullOrEmpty(gameState.CurrentLocationId))
+        {
+            return string.Empty;
+        }
+
+        var localMerchants = gameState.World.NPCs
+            .Where(n => n.CurrentLocationId == gameState.CurrentLocationId &&
+                        (n.Role.ToLower().Contains("merchant") ||
+                         n.Role.ToLower().Contains("shopkeeper") ||
+                         n.Role.ToLower().Contains("vendor")))
+            .ToList();
+
+        if (!localMerchants.Any())
+        {
+            return string.Empty;
+        }
+
         var contextBuilder = new StringBuilder();
-
-        contextBuilder.AppendLine("=== ECONOMY & SHOPPING CONTEXT ===\n");
-
-        // Show current location
-        if (!string.IsNullOrEmpty(gameState.CurrentLocationId))
+        contextBuilder.AppendLine("**Available Merchants:**");
+        foreach (var merchant in localMerchants)
         {
-            var currentLocation = gameState.World.Locations.FirstOrDefault(l => l.Id == gameState.CurrentLocationId);
-            if (currentLocation != null)
+            contextBuilder.AppendLine($"- **{merchant.Name}** - {merchant.Role}");
+            if (merchant.Attributes.TryGetValue("ShopType", out var shopVal))
             {
-                contextBuilder.AppendLine($"**Current Location:** {currentLocation.Name}");
-                contextBuilder.AppendLine($"**Description:** {currentLocation.Description}\n");
+                contextBuilder.AppendLine($"  Shop Type: {shopVal}");
+            }
+            if (merchant.Attributes.TryGetValue("Disposition", out var value))
+            {
+                contextBuilder.AppendLine($"  Disposition: {value}");
             }
         }
+        contextBuilder.AppendLine();
 
-        // Show merchants in current location
-        if (!string.IsNullOrEmpty(gameState.CurrentLocationId))
+        return contextBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Builds party inventory and gold context for commerce decisions.
+    /// </summary>
+    private static string BuildEconomyParty(GameState gameState)
+    {
+        if (!gameState.Characters.Any())
         {
-            var localMerchants = gameState.World.NPCs
-                .Where(n => n.CurrentLocationId == gameState.CurrentLocationId && 
-                            (n.Role.ToLower().Contains("merchant") || 
-                             n.Role.ToLower().Contains("shopkeeper") || 
-                             n.Role.ToLower().Contains("vendor")))
-                .ToList();
-
-            if (localMerchants.Any())
-            {
-                contextBuilder.AppendLine("**Available Merchants:**");
-                foreach (var merchant in localMerchants)
-                {
-                    contextBuilder.AppendLine($"- **{merchant.Name}** - {merchant.Role}");
-                    if (merchant.Attributes.TryGetValue("ShopType", out var shopVal))
-                    {
-                        contextBuilder.AppendLine($"  Shop Type: {shopVal}");
-                    }
-                    if (merchant.Attributes.TryGetValue("Disposition", out var value))
-                    {
-                        contextBuilder.AppendLine($"  Disposition: {value}");
-                    }
-                }
-                contextBuilder.AppendLine();
-            }
+            return string.Empty;
         }
 
-        // Show character gold and inventory
-        if (gameState.Characters.Any())
+        var contextBuilder = new StringBuilder();
+        contextBuilder.AppendLine("**Party Members:**");
+        foreach (var character in gameState.Characters)
         {
-            contextBuilder.AppendLine("**Party Members:**");
-            foreach (var character in gameState.Characters)
+            contextBuilder.AppendLine($"- **{character.Name}** (Level {character.Level} {character.Class})");
+            contextBuilder.AppendLine($"  Gold: {character.Gold}");
+            contextBuilder.AppendLine($"  Presence: {character.Attributes[Models.Enums.AttributeType.Presence]}");
+
+            if (character.Inventory.Any())
             {
-                contextBuilder.AppendLine($"- **{character.Name}** (Level {character.Level} {character.Class})");
-                contextBuilder.AppendLine($"  Gold: {character.Gold}");
-                contextBuilder.AppendLine($"  Presence: {character.Attributes[Models.Enums.AttributeType.Presence]}");
-                
-                if (character.Inventory.Any())
-                {
-                    var significantItems = character.Inventory.Take(5).ToList();
-                    contextBuilder.AppendLine($"  Inventory: {string.Join(", ", significantItems.Select(i => $"{i.Name} ({i.Quantity})"))}");
-                }
-                
-                contextBuilder.AppendLine();
+                var significantItems = character.Inventory.Take(5).ToList();
+                contextBuilder.AppendLine($"  Inventory: {string.Join(", ", significantItems.Select(i => $"{i.Name} ({i.Quantity})"))}");
             }
+
+            contextBuilder.AppendLine();
         }
 
         return contextBuilder.ToString();

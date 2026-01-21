@@ -12,7 +12,7 @@ namespace AgenticRpg.Core.Models.Game;
 /// </summary>
 public class Character
 {
-    
+
     /// <summary>
     /// Unique identifier for the character
     /// </summary>
@@ -84,7 +84,7 @@ public class Character
     public int Wits { get => Attributes[AttributeType.Wits]; set => Attributes[AttributeType.Wits] = value; }
     [JsonIgnore]
     public int Presence { get => Attributes[AttributeType.Presence]; set => Attributes[AttributeType.Presence] = value; }
-   
+
     /// <summary>
     /// Maximum hit points
     /// </summary>
@@ -252,7 +252,7 @@ public class Character
     public string AsBasicDataMarkdown()
     {
         var markdownBuilder = new StringBuilder();
-        markdownBuilder.AppendLine($"## Character {Name} (Level {Level})");
+        markdownBuilder.AppendLine($"### Character {Name} (Level {Level})");
         markdownBuilder.AppendLine($"**Race:** {Race}");
         markdownBuilder.AppendLine($"**Class:** {Class}");
         if (this.IsSpellcaster())
@@ -261,18 +261,24 @@ public class Character
         }
 
         // Equipped items
-        markdownBuilder.AppendLine("### Equipped Items");
+        markdownBuilder.AppendLine("#### Equipped Items");
         markdownBuilder.AppendLine(Equipment.AsMarkdown());
         // Skills
-        markdownBuilder.AppendLine("### Skills");
+        markdownBuilder.AppendLine("#### Skills");
         foreach (var skill in CharacterSkills)
         {
             markdownBuilder.AppendLine(skill.AsMarkdown());
         }
         // Background
-        markdownBuilder.AppendLine("### Background");
+        markdownBuilder.AppendLine("#### Background");
         markdownBuilder.AppendLine(Background);
         return markdownBuilder.ToString();
 
+    }
+
+    public void ApplyRestRestore()
+    {
+        CurrentHP = MaxHP;
+        CurrentMP = MaxMP;
     }
 }

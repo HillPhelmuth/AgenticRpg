@@ -19,17 +19,17 @@ using Microsoft.Extensions.Logging;
 
 namespace AgenticRpg.Core.Services;
 
-public class DndMonsterService
+public class DndApiService
 {
     private static List<DndMonster>? _allMonsters;
     private static List<DndMonster> AllDndMonsters => _allMonsters ??= FileHelper.ExtractFromAssembly<List<DndMonster>>("MonsterDndCache.json");
-
+    private const string ApiBaseUrl = "https://www.dnd5eapi.co";
     public static DndMonster? GetMonsterByName(string name)
     {
         var monster = AllDndMonsters.FirstOrDefault(m => m.Index?.Equals(name, StringComparison.CurrentCultureIgnoreCase) == true);
         return monster;
     }
-
+    private static HttpClient _httpClient = new() { BaseAddress = new Uri(ApiBaseUrl) };
     public static async Task<RpgMonster?> CreateMonsterByNameAsync(string name)
     {
         var monster = GetMonsterByName(name);
@@ -83,6 +83,54 @@ public class DndMonsterService
         return monsterEncounter;
     }
 
+    public static async Task<DndSpells> GetSpellData()
+    {
+        var response = await _httpClient.GetStringAsync("/api/2014/spells?level=4,5&school=evocation,abjuration");
+        return JsonSerializer.Deserialize<DndSpells>(response);
+    }
+    public static async Task<List<JsonElement>> RetrieveSpells()
+    {
+        var spellMetadata = DndSpells.FromFile();
+        var result = new List<JsonElement>();
+        foreach (var spellData in spellMetadata.Results)
+        {
+            var response = await _httpClient.GetStringAsync(spellData.Url);
+            var spellJson = JsonSerializer.Deserialize<JsonElement>(response);
+            result.Add(spellJson);
+        }
+        return result;
+    }
+
+    public static async Task<Spell> ConvertSpellAsync(JsonElement spellData)
+    {
+        var prompt =
+            $"""
+             Convert the spell below from the D&D format provided to the proper json schema format. Find the json fields that most closely match the D&D fields and map them accordingly.
+
+             **Spell**
+             ```
+             {JsonSerializer.Serialize(spellData, new JsonSerializerOptions() { WriteIndented = true })}
+             ```
+             """;
+        var config = AgentStaticConfiguration.Default;
+        var client = new OpenAIClient(new ApiKeyCredential(config.OpenRouterApiKey!), new OpenAIClientOptions() { Endpoint = new Uri(config.OpenRouterEndpoint), ClientLoggingOptions = new ClientLoggingOptions() { LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole()) } });
+        var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
+        var agent = chatClient.CreateAIAgent(new ChatClientAgentOptions()
+        {
+            Name = "Spell Converter",
+            Description = "Converts D&D spells to RPG spells in JSON format.",
+            ChatOptions = new ChatOptions()
+            {
+                Instructions = prompt,
+                ResponseFormat = ChatResponseFormat.ForJsonSchema<Spell>(),
+                RawRepresentationFactory = _ => new OpenRouterChatCompletionOptions()
+                { Provider = new Provider() { Sort = "throughput" } }
+            }
+        });
+        var response = await agent.RunAsync<Spell>();
+        var rpgSpell = response.Result;
+        return rpgSpell;
+    }
 
     private static async Task<RpgMonster?> ConvertMonsterAsync(DndMonster monster)
     {
@@ -119,7 +167,7 @@ public class DndMonsterService
                 rpgMonster.ArmorClass -= (Math.Min(3, rpgMonster.ArmorClass - (int)monster.ChallengeRating));
             }
 #if DEBUG
-            
+
 #endif
             // TEMP Console.WriteLine($"Monster {rpgMonster.Name} - {rpgMonster.Description} Created.");
             return rpgMonster;
@@ -365,7 +413,7 @@ public class LegendaryAction
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("damage")]
-    public List<Damage>? Damage { get; set; }
+    public List<DndSpellDamage>? Damage { get; set; }
 }
 
 public class ProficiencyElement
@@ -414,4 +462,155 @@ public class MonsterEncounter(List<RpgMonster> monsters)
     public DateTime EncounterStart { get; set; } = DateTime.Now;
     public DateTime EncounterEnd { get; set; }
 
+}
+public class DndSpells
+{
+    [JsonPropertyName("count")]
+    public int Count { get; set; }
+
+    [JsonPropertyName("results")]
+    public List<SpellMetadata> Results { get; set; }
+
+    public static DndSpells FromFile()
+    {
+        return FileHelper.ExtractFromAssembly<DndSpells>("DndSpellsList.json");
+    }
+}
+
+public class SpellMetadata
+{
+    [JsonPropertyName("index")]
+    public string Index { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+}
+public class DndSpell
+{
+    [JsonPropertyName("index")]
+    public string Index { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("desc")]
+    public List<string> Desc { get; set; }
+
+    [JsonPropertyName("higher_level")]
+    public List<string> HigherLevel { get; set; }
+
+    [JsonPropertyName("range")]
+    public string Range { get; set; }
+
+    [JsonPropertyName("components")]
+    public List<string> Components { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("material")]
+    public string Material { get; set; }
+
+    [JsonPropertyName("ritual")]
+    public bool Ritual { get; set; }
+
+    [JsonPropertyName("duration")]
+    public string Duration { get; set; }
+
+    [JsonPropertyName("concentration")]
+    public bool Concentration { get; set; }
+
+    [JsonPropertyName("casting_time")]
+    public string CastingTime { get; set; }
+
+    [JsonPropertyName("level")]
+    public long Level { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("attack_type")]
+    public string AttackType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("damage")]
+    public DndSpellDamage Damage { get; set; }
+
+    [JsonPropertyName("school")]
+    public School School { get; set; }
+
+    [JsonPropertyName("classes")]
+    public List<School> Classes { get; set; }
+
+    [JsonPropertyName("subclasses")]
+    public List<School> Subclasses { get; set; }
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public DateTimeOffset UpdatedAt { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("dc")]
+    public DnDDc Dc { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("area_of_effect")]
+    public AreaOfEffect AreaOfEffect { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("heal_at_slot_level")]
+    public Dictionary<string, string> HealAtSlotLevel { get; set; }
+}
+
+public class AreaOfEffect
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; }
+
+    [JsonPropertyName("size")]
+    public long Size { get; set; }
+}
+
+public class School
+{
+    [JsonPropertyName("index")]
+    public string Index { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+}
+
+public class DndSpellDamage
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("damage_type")]
+    public School DamageType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("damage_at_slot_level")]
+    public Dictionary<string, string> DamageAtSlotLevel { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("damage_at_character_level")]
+    public Dictionary<string, string> DamageAtCharacterLevel { get; set; }
+}
+
+public class DnDDc
+{
+    [JsonPropertyName("dc_type")]
+    public School DcType { get; set; }
+
+    [JsonPropertyName("dc_success")]
+    public string DcSuccess { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("desc")]
+    public string Desc { get; set; }
 }

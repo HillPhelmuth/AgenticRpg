@@ -21,14 +21,14 @@ public class CombatEncounter
     /// <summary>
     /// Current status of the combat
     /// </summary>
-    public CombatStatus Status { get; set; } = CombatStatus.Initializing;
+    public CombatStatus Status { get; set; } = CombatStatus.Active;
     
     public List<Character> PartyCharacters { get; set; } = [];
     public List<RpgMonster> EnemyMonsters { get; set; } = [];
 
     /// <summary>
     /// The rolled initiative values for each participant (keyed by participant id).
-    /// Characters use Character.Id; monsters use Monster.Name.
+    /// Characters use Character.Name; monsters use Monster.Name.
     /// </summary>
     public Dictionary<string, int> InitiativeRolls { get; set; } = [];
     /// <summary>

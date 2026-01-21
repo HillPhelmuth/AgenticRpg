@@ -1,371 +1,497 @@
 [
-	{
-		"Id": "spell_wizard_magic_missile",
-		"Name": "Magic Missile",
-		"Description": "Launch multiple bolts of pure force that never miss.",
-		"Level": 1,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "120 feet",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S"],
-		"EffectText": "Fire three darts dealing 1d4 + caster level force damage each; gain another dart at caster levels 3, 6, 9, 12, and 15.",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": "1d4",
-			"SavingThrowDamageType": "Magical"
-		}
-	},
-	{
-		"Id": "spell_wizard_shield",
-		"Name": "Shield",
-		"Description": "Form an invisible barrier that intercepts harm.",
-		"Level": 1,
-		"School": "Arcane (Abjuration)",
-		"CastingTime": "1 reaction",
-		"Range": "Self",
-		"Duration": "Until start of next turn",
-		"Components": ["V", "S"],
-		"EffectText": "Form a shimmering ward until the start of your next turn; the ward can intercept harm.",
-		"Effect": {
-			"EffectType": "Buff",
-			"AffectedAttribute": "AC",
-			"EffectMagnitude": 0,
-			"EffectDuration": 1,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_burning_hands",
-		"Name": "Burning Hands",
-		"Description": "Project a fan of roaring flame.",
-		"Level": 1,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "15-foot cone",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S"],
-		"EffectText": "Creatures in cone take 3d6 fire damage (Dex save DC 12 + caster level for half).",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": "3d6",
-			"SavingThrowDamageType": "Fire"
-		}
-	},
-	{
-		"Id": "spell_wizard_mage_armor",
-		"Name": "Mage Armor",
-		"Description": "Wrap a target in spectral plates of force.",
-		"Level": 1,
-		"School": "Arcane (Abjuration)",
-		"CastingTime": "1 action",
-		"Range": "Touch",
-		"Duration": "1 hour",
-		"Components": ["V", "S", "M"],
-		"EffectText": "Target gains +3 armor bonus for 1 hour; does not stack with worn armor.",
-		"Effect": {
-			"EffectType": "Buff",
-			"AffectedAttribute": "AC",
-			"EffectMagnitude": 3,
-			"EffectDuration": 600,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_arcane_sight",
-		"Name": "Arcane Sight",
-		"Description": "Open your senses to magical auras.",
-		"Level": 2,
-		"School": "Arcane (Divination)",
-		"CastingTime": "1 action",
-		"Range": "Self",
-		"Duration": "10 minutes",
-		"Components": ["V", "S"],
-		"EffectText": "Detect magical effects within 60 feet and learn their school with a quick action to focus.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 100,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_illusory_disguise",
-		"Name": "Illusory Disguise",
-		"Description": "Layer a believable glamour over a creature.",
-		"Level": 2,
-		"School": "Arcane (Illusion)",
-		"CastingTime": "1 action",
-		"Range": "Touch",
-		"Duration": "1 hour",
-		"Components": ["V", "S"],
-		"EffectText": "Target assumes a new appearance of the same size; opposed Perception vs spell DC reveals the illusion.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 600,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_feather_fall",
-		"Name": "Feather Fall",
-		"Description": "Slow falling creatures before impact.",
-		"Level": 1,
-		"School": "Arcane (Transmutation)",
-		"CastingTime": "1 reaction",
-		"Range": "60 feet",
-		"Duration": "1 minute",
-		"Components": ["V"],
-		"EffectText": "Up to five targets descend slowly and take no falling damage while spell lasts.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 10,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_fireball",
-		"Name": "Fireball",
-		"Description": "Detonate a globe of wildfire.",
-		"Level": 3,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "150 feet",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S", "M"],
-		"EffectText": "Creatures in a 20-foot radius take 6d6 fire damage (Dex save DC 14 + caster level for half).",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": "6d6",
-			"SavingThrowDamageType": "Fire"
-		}
-	},
-	{
-		"Id": "spell_wizard_counterspell",
-		"Name": "Counterspell",
-		"Description": "Disrupt another caster's spell mid-chant.",
-		"Level": 3,
-		"School": "Arcane (Abjuration)",
-		"CastingTime": "1 reaction",
-		"Range": "60 feet",
-		"Duration": "Instantaneous",
-		"Components": ["S"],
-		"EffectText": "Negate a spell being cast; check equals spell level + 10 to succeed.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_blink",
-		"Name": "Blink",
-		"Description": "Slip unpredictably between planes.",
-		"Level": 3,
-		"School": "Arcane (Transmutation)",
-		"CastingTime": "1 action",
-		"Range": "Self",
-		"Duration": "5 rounds",
-		"Components": ["V", "S"],
-		"EffectText": "Each round teleport up to 30 feet to a visible space; attacks against you have disadvantage while phased.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 5,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_wall_of_ice",
-		"Name": "Wall of Ice",
-		"Description": "Create a thick barrier of razor-sharp frost.",
-		"Level": 4,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "120 feet",
-		"Duration": "10 minutes",
-		"Components": ["V", "S", "Water"],
-		"EffectText": "Conjure a wall up to 30 feet long and 10 feet high with 50 hit points; breaking a panel deals 2d6 cold to adjacent creatures.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 100,
-			"EffectDice": "2d6",
-			"SavingThrowDamageType": "Cold"
-		}
-	},
-	{
-		"Id": "spell_wizard_invisibility",
-		"Name": "Invisibility",
-		"Description": "Render a creature unseen.",
-		"Level": 3,
-		"School": "Arcane (Illusion)",
-		"CastingTime": "1 action",
-		"Range": "Touch",
-		"Duration": "1 minute",
-		"Components": ["V", "S"],
-		"EffectText": "Target becomes invisible until they attack or cast a spell; gains +5 bonus to Stealth checks.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 10,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_lightning_bolt",
-		"Name": "Lightning Bolt",
-		"Description": "Hurl a concentrated line of lightning.",
-		"Level": 3,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "100-foot line",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S"],
-		"EffectText": "Creatures in line take 5d8 lightning damage; Dexterity save (DC 13 + caster level) halves.",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": "5d8",
-			"SavingThrowDamageType": "Lightning"
-		}
-	},
-	{
-		"Id": "spell_wizard_meteor_swarm",
-		"Name": "Meteor Swarm",
-		"Description": "Summon catastrophic flaming stones.",
-		"Level": 9,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "1 mile",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S"],
-		"EffectText": "Call four meteors that each deal 8d6 fire damage in a 20-foot radius (Dex save DC 18 + caster level for half).",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": "8d6",
-			"SavingThrowDamageType": "Fire"
-		}
-	},
-	{
-		"Id": "spell_wizard_teleportation",
-		"Name": "Teleportation",
-		"Description": "Fold space to relocate instantly.",
-		"Level": 7,
-		"School": "Arcane (Conjuration)",
-		"CastingTime": "1 action",
-		"Range": "10 feet",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S"],
-		"EffectText": "Transport up to six willing creatures to a well-known location with 95% accuracy; mishap on failure deals 4d6 force damage.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_arcane_storm",
-		"Name": "Arcane Storm",
-		"Description": "Saturate a battlefield in raw magic.",
-		"Level": 8,
-		"School": "Arcane (Evocation)",
-		"CastingTime": "1 action",
-		"Range": "150 feet",
-		"Duration": "3 rounds",
-		"Components": ["V", "S"],
-		"EffectText": "40-foot radius zone deals 5d10 arcane damage each round; creatures that remain inside must save each round for half.",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 3,
-			"EffectDice": "5d10",
-			"SavingThrowDamageType": "Magical"
-		}
-	},
-	{
-		"Id": "spell_wizard_time_stop",
-		"Name": "Time Stop",
-		"Description": "Freeze the flow of time for everyone but you.",
-		"Level": 9,
-		"School": "Arcane (Transmutation)",
-		"CastingTime": "1 action",
-		"Range": "Self",
-		"Duration": "2 turns",
-		"Components": ["V"],
-		"EffectText": "Take two additional turns in which other creatures and objects are frozen; damaging someone ends the effect early.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 2,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_summon_elemental",
-		"Name": "Summon Elemental",
-		"Description": "Bind a powerful elemental ally.",
-		"Level": 7,
-		"School": "Arcane (Conjuration)",
-		"CastingTime": "1 action",
-		"Range": "60 feet",
-		"Duration": "10 rounds",
-		"Components": ["V", "S", "M"],
-		"EffectText": "Summon a CR 10 elemental that obeys your commands for 10 rounds or until reduced to 0 HP.",
-		"Effect": {
-			"EffectType": "Utility",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 10,
-			"EffectDice": null
-		}
-	},
-	{
-		"Id": "spell_wizard_disintegrate",
-		"Name": "Disintegrate",
-		"Description": "Reduce a creature or object to dust with focused energy.",
-		"Level": 8,
-		"School": "Arcane (Transmutation)",
-		"CastingTime": "1 action",
-		"Range": "60 feet",
-		"Duration": "Instantaneous",
-		"Components": ["V", "S"],
-		"EffectText": "Target takes 10d6 force damage; on a failed save (DC 18 + caster level) they are disintegrated if reduced to 0 HP.",
-		"Effect": {
-			"EffectType": "Damage",
-			"AffectedAttribute": null,
-			"EffectMagnitude": 0,
-			"EffectDuration": 0,
-			"EffectDice": "10d6",
-			"SavingThrowDamageType": "Force"
-		}
-	}
+  {
+    "Id": "spell_wizard_magic_missile",
+    "Name": "Magic Missile",
+    "Description": "Launch multiple bolts of pure force that never miss.",
+    "Level": 1,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "120 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Fire three darts dealing 1d4 \u002B caster level force damage each; gain another dart at caster levels 3, 6, 9, 12, and 15.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Magical"
+    }
+  },
+  {
+    "Id": "spell_wizard_shield",
+    "Name": "Shield",
+    "Description": "Form an invisible barrier that intercepts harm.",
+    "Level": 1,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Abjuration)",
+    "CastingTime": "1 reaction",
+    "Range": "Self",
+    "Duration": "Until start of next turn",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Form a shimmering ward until the start of your next turn; the ward can intercept harm.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "AC",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 3,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_burning_hands",
+    "Name": "Burning Hands",
+    "Description": "Project a fan of roaring flame.",
+    "Level": 1,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "15-foot cone",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creatures in cone take 3d6 fire damage (Dex save DC 12 \u002B caster level for half).",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "3d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Fire"
+    }
+  },
+  {
+    "Id": "spell_wizard_mage_armor",
+    "Name": "Mage Armor",
+    "Description": "Wrap a target in spectral plates of force.",
+    "Level": 1,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Abjuration)",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Target gains \u002B3 armor bonus for 1 hour; does not stack with worn armor.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "AC",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 3,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_arcane_sight",
+    "Name": "Arcane Sight",
+    "Description": "Open your senses to magical auras.",
+    "Level": 2,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Divination)",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "10 minutes",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Detect magical effects within 60 feet and learn their school with a quick action to focus.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_illusory_disguise",
+    "Name": "Illusory Disguise",
+    "Description": "Layer a believable glamour over a creature.",
+    "Level": 2,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Illusion)",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Target assumes a new appearance of the same size; opposed Perception vs spell DC reveals the illusion.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_feather_fall",
+    "Name": "Feather Fall",
+    "Description": "Slow falling creatures before impact.",
+    "Level": 1,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Transmutation)",
+    "CastingTime": "1 reaction",
+    "Range": "60 feet",
+    "Duration": "1 minute",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Up to five targets descend slowly and take no falling damage while spell lasts.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_fireball",
+    "Name": "Fireball",
+    "Description": "Detonate a globe of wildfire.",
+    "Level": 3,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "150 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creatures in a 20-foot radius take 6d6 fire damage (Dex save DC 14 \u002B caster level for half).",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "6d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Fire"
+    }
+  },
+  {
+    "Id": "spell_wizard_counterspell",
+    "Name": "Counterspell",
+    "Description": "Disrupt another caster\u0027s spell mid-chant.",
+    "Level": 3,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Abjuration)",
+    "CastingTime": "1 reaction",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "S"
+    ],
+    "EffectText": "Negate a spell being cast; check equals spell level \u002B 10 to succeed.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_blink",
+    "Name": "Blink",
+    "Description": "Slip unpredictably between planes.",
+    "Level": 3,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Transmutation)",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "5 rounds",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Each round teleport up to 30 feet to a visible space; attacks against you have disadvantage while phased.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 5,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_wall_of_ice",
+    "Name": "Wall of Ice",
+    "Description": "Create a thick barrier of razor-sharp frost.",
+    "Level": 4,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "120 feet",
+    "Duration": "10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "Water"
+    ],
+    "EffectText": "Conjure a wall up to 30 feet long and 10 feet high with 50 hit points; breaking a panel deals 2d6 cold to adjacent creatures.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": "2d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Cold"
+    }
+  },
+  {
+    "Id": "spell_wizard_invisibility",
+    "Name": "Invisibility",
+    "Description": "Render a creature unseen.",
+    "Level": 3,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Illusion)",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Target becomes invisible until they attack or cast a spell; gains \u002B5 bonus to Stealth checks.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_lightning_bolt",
+    "Name": "Lightning Bolt",
+    "Description": "Hurl a concentrated line of lightning.",
+    "Level": 3,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "100-foot line",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creatures in line take 5d8 lightning damage; Dexterity save (DC 13 \u002B caster level) halves.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "5d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Lightning"
+    }
+  },
+  {
+    "Id": "spell_wizard_meteor_swarm",
+    "Name": "Meteor Swarm",
+    "Description": "Summon catastrophic flaming stones.",
+    "Level": 9,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "1 mile",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Call four meteors that each deal 8d6 fire damage in a 20-foot radius (Dex save DC 18 \u002B caster level for half).",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "8d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Fire"
+    }
+  },
+  {
+    "Id": "spell_wizard_teleportation",
+    "Name": "Teleportation",
+    "Description": "Fold space to relocate instantly.",
+    "Level": 7,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Conjuration)",
+    "CastingTime": "1 action",
+    "Range": "10 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Transport up to six willing creatures to a well-known location with 95% accuracy; mishap on failure deals 4d6 force damage.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_arcane_storm",
+    "Name": "Arcane Storm",
+    "Description": "Saturate a battlefield in raw magic.",
+    "Level": 8,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Evocation)",
+    "CastingTime": "1 action",
+    "Range": "150 feet",
+    "Duration": "3 rounds",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "40-foot radius zone deals 5d10 arcane damage each round; creatures that remain inside must save each round for half.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 3,
+      "EffectDice": "5d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Magical"
+    }
+  },
+  {
+    "Id": "spell_wizard_time_stop",
+    "Name": "Time Stop",
+    "Description": "Freeze the flow of time for everyone but you.",
+    "Level": 9,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Transmutation)",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "2 turns",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Take two additional turns in which other creatures and objects are frozen; damaging someone ends the effect early.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 2,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_summon_elemental",
+    "Name": "Summon Elemental",
+    "Description": "Bind a powerful elemental ally.",
+    "Level": 7,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Conjuration)",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "10 rounds",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Summon a CR 10 elemental that obeys your commands for 10 rounds or until reduced to 0 HP.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spell_wizard_disintegrate",
+    "Name": "Disintegrate",
+    "Description": "Reduce a creature or object to dust with focused energy.",
+    "Level": 8,
+    "SpellClass": "WizardAndWarMage",
+    "School": "Arcane (Transmutation)",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Target takes 10d6 force damage; on a failed save (DC 18 \u002B caster level) they are disintegrated if reduced to 0 HP.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "10d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Force"
+    }
+  }
 ]

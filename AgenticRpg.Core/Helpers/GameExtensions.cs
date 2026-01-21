@@ -15,23 +15,5 @@ public static class GameExtensions
         {
             return character.Class is CharacterClass.Wizard or CharacterClass.Cleric or CharacterClass.Paladin or CharacterClass.WarMage;
         }
-
-        public Combatant AsCombatant()
-        {
-            return new Combatant
-            {
-                Id = character.Id,
-                Name = character.Name,
-                ArmorClass = character.ArmorClass,
-                MaxHP = character.MaxHP,
-                CurrentHP = character.MaxHP,
-                Initiative = character.Initiative,
-                CharacterId = character.Id,
-                IsEnemy = false,
-                Speed = character.Speed,
-                EquippedWeapon = character.Equipment.MainHand,
-                
-            };
-        }
     }
 }

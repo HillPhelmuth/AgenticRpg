@@ -186,7 +186,18 @@ public class WorldBuilderAgent(
 
                                               ## Returning to Game Master:
                                               When world building is complete (after SaveWorld), include this in your response:
-                                              
+
+                                              ## Session Context
+
+                                              {{ $baseContext }}
+
+                                              {{ $draftWorldSummary }}
+
+                                              {{ $draftLocations }}
+
+                                              {{ $draftNpcs }}
+
+                                              {{ $draftQuests }}
 
                                               Remember: You're creating a living, breathing world that will host countless adventures. Make it memorable, coherent, and full of possibility!
 
@@ -209,126 +220,215 @@ public class WorldBuilderAgent(
         ];
     }
 
-    protected override string BuildContextPrompt(GameState gameState)
+    /// <summary>
+    /// Builds game-state variables used to render prompt templates for world building.
+    /// </summary>
+    protected override Dictionary<string, object?> BuildContextVariables(GameState gameState)
     {
+        var variables = base.BuildContextVariables(gameState);
+
+        variables.TryAdd("worldSummary", BuildWorldSummary(gameState));
+        variables.TryAdd("existingLocations", BuildExistingLocations(gameState));
+        variables.TryAdd("existingNpcs", BuildExistingNpcs(gameState));
+        variables.TryAdd("existingQuests", BuildExistingQuests(gameState));
+
+        return variables;
+    }
+
+    /// <summary>
+    /// Builds session variables used to render prompt templates for world building.
+    /// </summary>
+    protected override Dictionary<string, object?> BuildSessionVariables(SessionState sessionState)
+    {
+        var variables = base.BuildSessionVariables(sessionState);
+
+        variables.TryAdd("draftWorldSummary", BuildDraftWorldSummary(sessionState));
+        variables.TryAdd("draftLocations", BuildDraftLocations(sessionState));
+        variables.TryAdd("draftNpcs", BuildDraftNpcs(sessionState));
+        variables.TryAdd("draftQuests", BuildDraftQuests(sessionState));
+
+        return variables;
+    }
+
+    /// <summary>
+    /// Builds a summary of the current campaign world.
+    /// </summary>
+    private static string BuildWorldSummary(GameState gameState)
+    {
+        if (gameState.World is null)
+        {
+            return "**No campaign world exists yet.**";
+        }
+
+        var loreCount = gameState.World.Events.Count(e => e.Status == "Lore");
+
+        return $"""
+                # Current Campaign World State
+
+                **World Name**: {gameState.World.Name}
+                **Theme**: {gameState.World.Theme ?? "Not set"}
+                **Locations**: {gameState.World.Locations.Count}
+                **NPCs**: {gameState.World.NPCs.Count}
+                **Quests**: {gameState.World.Quests.Count}
+                **Lore Entries**: {loreCount}
+                """;
+    }
+
+    /// <summary>
+    /// Builds a list of existing locations in the campaign world.
+    /// </summary>
+    private static string BuildExistingLocations(GameState gameState)
+    {
+        if (gameState.World is null || gameState.World.Locations.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var context = new System.Text.StringBuilder();
-
-        context.AppendLine("# Current Campaign World State");
+        context.AppendLine("## Existing Locations");
+        foreach (var location in gameState.World.Locations.Take(10))
+        {
+            context.AppendLine($"- **{location.Name}** ({location.Type}) - ID: {location.Id}");
+        }
         context.AppendLine();
-
-        if (gameState.World != null)
-        {
-            context.AppendLine($"**World Name**: {gameState.World.Name}");
-            context.AppendLine($"**Theme**: {gameState.World.Theme ?? "Not set"}");
-            context.AppendLine($"**Locations**: {gameState.World.Locations.Count}");
-            context.AppendLine($"**NPCs**: {gameState.World.NPCs.Count}");
-            context.AppendLine($"**Quests**: {gameState.World.Quests.Count}");
-            var loreCount = gameState.World.Events.Count(e => e.Status == "Lore");
-            context.AppendLine($"**Lore Entries**: {loreCount}");
-            context.AppendLine();
-
-            if (gameState.World.Locations.Count != 0)
-            {
-                context.AppendLine("## Existing Locations");
-                foreach (var location in gameState.World.Locations.Take(10))
-                {
-                    context.AppendLine($"- **{location.Name}** ({location.Type}) - ID: {location.Id}");
-                }
-                context.AppendLine();
-            }
-
-            if (gameState.World.NPCs.Count != 0)
-            {
-                context.AppendLine("## Existing NPCs");
-                foreach (var npc in gameState.World.NPCs.Take(10))
-                {
-                    var location = gameState.World.Locations.FirstOrDefault(l => l.Id == npc.CurrentLocationId);
-                    context.AppendLine($"- **{npc.Name}** ({npc.Role}) at {location?.Name ?? "Unknown"} - ID: {npc.Id}");
-                }
-                context.AppendLine();
-            }
-
-            if (gameState.World.Quests.Count != 0)
-            {
-                context.AppendLine("## Existing Quests");
-                foreach (var quest in gameState.World.Quests.Take(10))
-                {
-                    context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
-                }
-                context.AppendLine();
-            }
-        }
-        else
-        {
-            context.AppendLine("**No campaign world exists yet.**");
-            context.AppendLine();
-        }
 
         return context.ToString();
     }
 
-    protected override async Task<string> BuildSessionContextPromptAsync(SessionState sessionState)
+    /// <summary>
+    /// Builds a list of existing NPCs in the campaign world.
+    /// </summary>
+    private static string BuildExistingNpcs(GameState gameState)
     {
-        // Get base session context (includes SessionId and session info)
-        var baseContext = await base.BuildSessionContextPromptAsync(sessionState);
-        
+        if (gameState.World is null || gameState.World.NPCs.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var context = new System.Text.StringBuilder();
-        context.AppendLine(baseContext);
-        context.AppendLine("# Draft World State (Session-based World Building)");
+        context.AppendLine("## Existing NPCs");
+        foreach (var npc in gameState.World.NPCs.Take(10))
+        {
+            var location = gameState.World.Locations.FirstOrDefault(l => l.Id == npc.CurrentLocationId);
+            context.AppendLine($"- **{npc.Name}** ({npc.Role}) at {location?.Name ?? "Unknown"} - ID: {npc.Id}");
+        }
         context.AppendLine();
 
+        return context.ToString();
+    }
+
+    /// <summary>
+    /// Builds a list of existing quests in the campaign world.
+    /// </summary>
+    private static string BuildExistingQuests(GameState gameState)
+    {
+        if (gameState.World is null || gameState.World.Quests.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var context = new System.Text.StringBuilder();
+        context.AppendLine("## Existing Quests");
+        foreach (var quest in gameState.World.Quests.Take(10))
+        {
+            context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
+        }
+        context.AppendLine();
+
+        return context.ToString();
+    }
+
+    /// <summary>
+    /// Builds a summary of the draft world in the current session.
+    /// </summary>
+    private static string BuildDraftWorldSummary(SessionState sessionState)
+    {
         var world = sessionState.Context.DraftWorld;
-
-        if (world != null)
+        if (world is null)
         {
-            context.AppendLine($"**World Name**: {world.Name}");
-            context.AppendLine($"**Theme**: {world.Theme ?? "Not set"}");
-            context.AppendLine($"**Locations**: {world.Locations.Count}");
-            context.AppendLine($"**NPCs**: {world.NPCs.Count}");
-            context.AppendLine($"**Quests**: {world.Quests.Count}");
-            var loreCount = world.Events.Count(e => e.Status == "Lore");
-            context.AppendLine($"**Lore Entries**: {loreCount}");
-            context.AppendLine($"**Combat Frequency:** {world.BattleFrequency.GetDescription()}");
-            context.AppendLine();
-            context.AppendLine("*This is a draft world. Use SaveWorld to finalize and attach to campaign.*");
-            context.AppendLine();
-
-            if (world.Locations.Count != 0)
-            {
-                context.AppendLine("## Existing Locations");
-                foreach (var location in world.Locations.Take(10))
-                {
-                    context.AppendLine($"- **{location.Name}** ({location.Type}) - ID: {location.Id}");
-                }
-                context.AppendLine();
-            }
-
-            if (world.NPCs.Count != 0)
-            {
-                context.AppendLine("## Existing NPCs");
-                foreach (var npc in world.NPCs.Take(10))
-                {
-                    var location = world.Locations.FirstOrDefault(l => l.Id == npc.CurrentLocationId);
-                    context.AppendLine($"- **{npc.Name}** ({npc.Role}) at {location?.Name ?? "Unknown"} - ID: {npc.Id}");
-                }
-                context.AppendLine();
-            }
-
-            if (world.Quests.Count != 0)
-            {
-                context.AppendLine("## Existing Quests");
-                foreach (var quest in world.Quests.Take(10))
-                {
-                    context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
-                }
-                context.AppendLine();
-            }
+            return "**No draft world created yet.** Ready to begin world building.";
         }
-        else
+
+        var loreCount = world.Events.Count(e => e.Status == "Lore");
+
+        return $"""
+                # Draft World State (Session-based World Building)
+
+                **World Name**: {world.Name}
+                **Theme**: {world.Theme ?? "Not set"}
+                **Locations**: {world.Locations.Count}
+                **NPCs**: {world.NPCs.Count}
+                **Quests**: {world.Quests.Count}
+                **Lore Entries**: {loreCount}
+                **Combat Frequency:** {world.BattleFrequency.GetDescription()}
+
+                *This is a draft world. Use SaveWorld to finalize and attach to campaign.*
+                """;
+    }
+
+    /// <summary>
+    /// Builds a list of draft locations for the session world.
+    /// </summary>
+    private static string BuildDraftLocations(SessionState sessionState)
+    {
+        var world = sessionState.Context.DraftWorld;
+        if (world is null || world.Locations.Count == 0)
         {
-            context.AppendLine("**No draft world created yet.** Ready to begin world building.");
-            context.AppendLine();
+            return string.Empty;
         }
+
+        var context = new System.Text.StringBuilder();
+        context.AppendLine("## Existing Locations");
+        foreach (var location in world.Locations.Take(10))
+        {
+            context.AppendLine($"- **{location.Name}** ({location.Type}) - ID: {location.Id}");
+        }
+        context.AppendLine();
+
+        return context.ToString();
+    }
+
+    /// <summary>
+    /// Builds a list of draft NPCs for the session world.
+    /// </summary>
+    private static string BuildDraftNpcs(SessionState sessionState)
+    {
+        var world = sessionState.Context.DraftWorld;
+        if (world is null || world.NPCs.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var context = new System.Text.StringBuilder();
+        context.AppendLine("## Existing NPCs");
+        foreach (var npc in world.NPCs.Take(10))
+        {
+            var location = world.Locations.FirstOrDefault(l => l.Id == npc.CurrentLocationId);
+            context.AppendLine($"- **{npc.Name}** ({npc.Role}) at {location?.Name ?? "Unknown"} - ID: {npc.Id}");
+        }
+        context.AppendLine();
+
+        return context.ToString();
+    }
+
+    /// <summary>
+    /// Builds a list of draft quests for the session world.
+    /// </summary>
+    private static string BuildDraftQuests(SessionState sessionState)
+    {
+        var world = sessionState.Context.DraftWorld;
+        if (world is null || world.Quests.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var context = new System.Text.StringBuilder();
+        context.AppendLine("## Existing Quests");
+        foreach (var quest in world.Quests.Take(10))
+        {
+            context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
+        }
+        context.AppendLine();
 
         return context.ToString();
     }

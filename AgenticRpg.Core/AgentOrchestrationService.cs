@@ -22,7 +22,7 @@ public class AgentOrchestrationService
     private readonly GameMasterAgent _gameMasterAgent;
     private readonly CombatAgent _combatAgent;
     private readonly CharacterCreationAgent _characterCreationAgent;
-    private readonly CharacterLevelUpAgent _characterLevelUpAgent;
+    private readonly CharacterManagerAgent _characterLevelUpAgent;
     private readonly EconomyManagerAgent _economyManagerAgent;
     private readonly WorldBuilderAgent _worldBuilderAgent;
     
@@ -41,7 +41,7 @@ public class AgentOrchestrationService
         GameMasterAgent gameMasterAgent,
         CombatAgent combatAgent,
         CharacterCreationAgent characterCreationAgent,
-        CharacterLevelUpAgent characterLevelUpAgent,
+        CharacterManagerAgent characterLevelUpAgent,
         EconomyManagerAgent economyManagerAgent,
         WorldBuilderAgent worldBuilderAgent)
     {
@@ -320,7 +320,7 @@ public class AgentOrchestrationService
             AgentType.GameMaster or AgentType.None => _gameMasterAgent,
             AgentType.Combat => _combatAgent,
             AgentType.CharacterCreation => _characterCreationAgent,
-            AgentType.CharacterLevelUp => _characterLevelUpAgent,
+            AgentType.CharacterManager => _characterLevelUpAgent,
             AgentType.Economy => _economyManagerAgent,
             AgentType.WorldBuilder => _worldBuilderAgent,
             _ => throw new ArgumentException($"Unknown agent type: {agentType}", nameof(agentType))

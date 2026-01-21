@@ -72,17 +72,6 @@ public class CombatAgent : BaseGameAgent
                                               - Apply combat rules exactly as written, and act impartially.
                                               - End combat promptly when victory conditions are met, then return control to the Game Master.
                                               
-                                              # Available Tools
-                                              Use the following combat functions:
-                                              - `ExecutePlayerWeaponAttack(attackerId, targetId, weapon, campaignId)`
-                                              - `ExecuteMonsterWeaponAttack(attackerId, targetId, weapon, campaignId)`
-                                              - `ExecutePlayerSpellAttack(attackerId, targetId, spell, campaignId)`
-                                              - `ApplyDamage(targetId, damageAmount, damageType, attackerId, campaignId)` (use sparingly; prefer attack tools)
-                                              - `ProcessSavingThrow(characterId, savingThrowType, DC, hasAdvantage, campaignId)`
-                                              - `DetermineInitiative(combatantIds, campaignId)`
-                                              - `ResolveSpecialAbility(characterId, abilityName, targetIds, campaignId)`
-                                              - `EndCombat(victor, rewards, campaignId)`
-                                              
                                               # Combat Flow
                                               1. **Start**: Set initiative using `DetermineInitiative`.
                                               2. **Each Turn**:
@@ -133,86 +122,168 @@ public class CombatAgent : BaseGameAgent
                                               - Use terrain when possible.
                                               - Intelligent monsters may flee if outmatched; mindless foes may fight to the end.
                                               
+                                              # Game Context
+                                              {{ $baseContext }}
+
+                                              {{ $combatStatus }}
+
+                                              {{ $initiativeOrder }}
+
+                                              {{ $partyCombatants }}
+
+                                              {{ $enemyCombatants }}
+
+                                              {{ $recentCombatActions }}
+
                                               At the start of each turn, announce whose turn it is. End combat promptly with `EndCombat` when conditions are met.
                                               """;
     
-    protected override string BuildContextPrompt(GameState gameState)
+    /// <summary>
+    /// Builds game-state variables used to render prompt templates for combat.
+    /// </summary>
+    protected override Dictionary<string, object?> BuildContextVariables(GameState gameState)
     {
+        var variables = base.BuildContextVariables(gameState);
+
+        variables.TryAdd("combatStatus", BuildCombatStatus(gameState));
+        variables.TryAdd("initiativeOrder", BuildInitiativeOrder(gameState));
+        variables.TryAdd("partyCombatants", BuildPartyCombatants(gameState));
+        variables.TryAdd("enemyCombatants", BuildEnemyCombatants(gameState));
+        variables.TryAdd("recentCombatActions", BuildRecentCombatActions(gameState));
+
+        return variables;
+    }
+
+    /// <summary>
+    /// Builds the overall combat status block.
+    /// </summary>
+    private static string BuildCombatStatus(GameState gameState)
+    {
+        if (gameState.CurrentCombat is null)
+        {
+            return "No active combat encounter.";
+        }
+
+        return $"""
+                ## Current Combat
+                Round: {gameState.CurrentCombat.Round}
+                Status: {gameState.CurrentCombat.Status}
+                """;
+    }
+
+    /// <summary>
+    /// Builds the initiative order block.
+    /// </summary>
+    private static string BuildInitiativeOrder(GameState gameState)
+    {
+        if (gameState.CurrentCombat is null || !gameState.CurrentCombat.InitiativeOrder.Any())
+        {
+            return string.Empty;
+        }
+
         var sb = new StringBuilder();
-        var baseContext = base.BuildContextPrompt(gameState);
-        sb.AppendLine(baseContext);
+        sb.AppendLine("## Initiative Order:");
+        var currentTurnId = gameState.CurrentCombat.GetCurrentTurnId();
 
-        if (gameState.CurrentCombat == null)
+        foreach (var combatantId in gameState.CurrentCombat.InitiativeOrder)
         {
-            sb.AppendLine("\nNo active combat encounter.");
-            return sb.ToString();
+            var name = gameState.CurrentCombat.GetParticipantName(combatantId) ?? combatantId;
+            var init = gameState.CurrentCombat.InitiativeRolls.GetValueOrDefault(combatantId, 0);
+            var isCurrent = string.Equals(combatantId, currentTurnId, StringComparison.OrdinalIgnoreCase);
+            var marker = isCurrent ? " → " : "   ";
+            sb.AppendLine($"{marker}{name} (Init: {init})");
         }
 
-        // Combat status
-        sb.AppendLine("\n## Current Combat");
-        sb.AppendLine($"Round: {gameState.CurrentCombat.Round}");
-        sb.AppendLine($"Status: {gameState.CurrentCombat.Status}");
+        return sb.ToString();
+    }
 
-        // Initiative order
-        if (gameState.CurrentCombat.InitiativeOrder.Any())
+    /// <summary>
+    /// Builds the party combatant status block.
+    /// </summary>
+    private static string BuildPartyCombatants(GameState gameState)
+    {
+        if (gameState.CurrentCombat is null)
         {
-            sb.AppendLine("\n## Initiative Order:");
-            var currentTurnId = gameState.CurrentCombat.GetCurrentTurnId();
-            
-            foreach (var combatantId in gameState.CurrentCombat.InitiativeOrder)
-            {
-                var name = gameState.CurrentCombat.GetParticipantName(combatantId) ?? combatantId;
-                var init = gameState.CurrentCombat.InitiativeRolls.GetValueOrDefault(combatantId, 0);
-                var isCurrent = string.Equals(combatantId, currentTurnId, StringComparison.OrdinalIgnoreCase);
-                var marker = isCurrent ? " → " : "   ";
-                sb.AppendLine($"{marker}{name} (Init: {init})");
-            }
+            return string.Empty;
         }
 
-        // Party combatants
         var party = gameState.CurrentCombat.PartyCharacters;
-        if (party.Any())
+        if (!party.Any())
         {
-            sb.AppendLine("\n## Party:");
-            foreach (var pc in party)
-            {
-                var status = pc.IsAlive ? "Alive" : "Defeated";
-                sb.AppendLine($"- {pc.Name}: {pc.CurrentHP}/{pc.MaxHP} HP (+{pc.CurrentHP} temp), AC {pc.ArmorClass}, Initiative {pc.Initiative} ({status})");
+            return string.Empty;
+        }
 
-                var weapon = pc.Equipment.MainHand;
-                if (weapon != null)
+        var sb = new StringBuilder();
+        sb.AppendLine("## Party:");
+
+        foreach (var pc in party)
+        {
+            var status = pc.IsAlive ? "Alive" : "Defeated";
+            sb.AppendLine($"- {pc.Name}: {pc.CurrentHP}/{pc.MaxHP} HP (+{pc.CurrentHP} temp), AC {pc.ArmorClass}, Initiative {pc.Initiative} ({status})");
+
+            var weapon = pc.Equipment.MainHand;
+            if (weapon != null)
+            {
+                sb.Append($"  Equipped Weapon: {weapon.Name} ({weapon.DamageDice} {weapon.DamageType})");
+                if (weapon.WeaponProperties.Any())
                 {
-                    sb.Append($"  Equipped Weapon: {weapon.Name} ({weapon.DamageDice} {weapon.DamageType})");
-                    if (weapon.WeaponProperties.Any()) sb.Append($" [{string.Join(", ", weapon.WeaponProperties)}]");
-                    sb.AppendLine();
+                    sb.Append($" [{string.Join(", ", weapon.WeaponProperties)}]");
                 }
+                sb.AppendLine();
             }
         }
 
-        // Enemy combatants
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Builds the enemy combatant status block.
+    /// </summary>
+    private static string BuildEnemyCombatants(GameState gameState)
+    {
+        if (gameState.CurrentCombat is null)
+        {
+            return string.Empty;
+        }
+
         var enemies = gameState.CurrentCombat.EnemyMonsters;
-        if (enemies.Any())
+        if (!enemies.Any())
         {
-            sb.AppendLine("\n## Enemies:");
-            foreach (var enemy in enemies)
-            {
-                var status = enemy.CurrentHP > 0 ? "Alive" : "Defeated";
-                var id = enemy.Name ?? "Unknown";
-                var init = gameState.CurrentCombat.InitiativeRolls.TryGetValue(id, out var roll) ? roll : 0;
-                sb.AppendLine($"- {enemy.Name}: {enemy.CurrentHP}/{enemy.MaxHP} HP, AC {enemy.ArmorClass}, Initiative {init} ({status})");
-                sb.AppendLine($"  CR: {enemy.ChallengeRating}");
-            }
+            return string.Empty;
         }
 
-        // Recent combat log (last 5 entries)
-        if (gameState.CurrentCombat.CombatLog.Any())
+        var sb = new StringBuilder();
+        sb.AppendLine("## Enemies:");
+
+        foreach (var enemy in enemies)
         {
-            sb.AppendLine("\n## Recent Combat Actions:");
-            var recentLog = gameState.CurrentCombat.CombatLog.TakeLast(5);
-            foreach (var entry in recentLog)
-            {
-                sb.AppendLine($"- Round {entry.Round}: {entry.Description}");
-            }
+            var status = enemy.CurrentHP > 0 ? "Alive" : "Defeated";
+            var id = enemy.Name ?? "Unknown";
+            var init = gameState.CurrentCombat.InitiativeRolls.TryGetValue(id, out var roll) ? roll : 0;
+            sb.AppendLine($"- {enemy.Name}: {enemy.CurrentHP}/{enemy.MaxHP} HP, AC {enemy.ArmorClass}, Initiative {init} ({status})");
+            sb.AppendLine($"  CR: {enemy.ChallengeRating}");
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Builds the recent combat log block.
+    /// </summary>
+    private static string BuildRecentCombatActions(GameState gameState)
+    {
+        if (gameState.CurrentCombat is null || !gameState.CurrentCombat.CombatLog.Any())
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine("## Recent Combat Actions:");
+
+        var recentLog = gameState.CurrentCombat.CombatLog.TakeLast(5);
+        foreach (var entry in recentLog)
+        {
+            sb.AppendLine($"- Round {entry.Round}: {entry.Description}");
         }
 
         return sb.ToString();

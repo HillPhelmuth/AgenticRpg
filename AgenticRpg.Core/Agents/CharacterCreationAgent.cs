@@ -195,6 +195,14 @@ public class CharacterCreationAgent(
       - For quick creation, use CreateQuickCharacter and you're done!
       - For equipment selection, always show prices and remind players of their 150 gold budget
 
+      ## Session Context
+
+      {{ $baseContext }}
+
+      {{ $characterCreationProgress }}
+
+      {{ $characterCreationGuidance }}
+
       
       Begin by greeting the player and asking if they want `Quick Creation` or `Step-by-Step`!
       
@@ -202,21 +210,21 @@ public class CharacterCreationAgent(
       """;
 
     
-    protected override string BuildContextPrompt(GameState gameState)
+    /// <summary>
+    /// Builds session variables used to render prompt templates for character creation.
+    /// </summary>
+    protected override Dictionary<string, object?> BuildSessionVariables(SessionState sessionState)
     {
-        var baseContext = base.BuildContextPrompt(gameState);
-        
-        // Add character creation specific context
-        var characterInProgress = gameState.Metadata.GetValueOrDefault("CharacterInProgress");
-        
-        return $"""
-                {baseContext}
+      var variables = base.BuildSessionVariables(sessionState);
 
-                ## Character Creation Progress:
-                {(characterInProgress != null ? "Character data in progress" : "Starting fresh character creation")}
+      var progress = sessionState.Context.DraftCharacter is null
+        ? "## Character Creation Progress:\nStarting fresh character creation."
+        : "## Character Creation Progress:\nCharacter data in progress.";
 
-                Remember to use your validation tools and guide the player step-by-step.
-                """;
+      variables.TryAdd("characterCreationProgress", progress);
+      variables.TryAdd("characterCreationGuidance", "Remember to use your validation tools and guide the player step-by-step.");
+
+      return variables;
     }
     
     

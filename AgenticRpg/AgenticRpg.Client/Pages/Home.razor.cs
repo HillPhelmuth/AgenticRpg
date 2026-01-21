@@ -47,7 +47,7 @@ public partial class Home
     {
         //Navigation.NavigateTo("/startup");
         //HubService.OnDiceRollResult += HandleDiceRollResult;
-        Console.WriteLine($"Available Monsters: {DndMonsterService.GetAvailableMonsterNames()}");
+        Console.WriteLine($"Available Monsters: {DndApiService.GetAvailableMonsterNames()}");
         //await HubService.StartAsync();
         await base.OnInitializedAsync();
     }
