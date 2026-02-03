@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text.Json;
 using AgenticRpg.Client.Services;
 using AgenticRpg.Components;
@@ -13,9 +14,11 @@ using AgenticRpg.Core.Rules;
 using AgenticRpg.Core.Services;
 using AgenticRpg.Core.State;
 using AgenticRpg.DiceRoller.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Identity.Web;
 using Location = AgenticRpg.Core.Models.Game.Location;
 using Results = Microsoft.AspNetCore.Http.Results;
 
@@ -27,6 +30,30 @@ services.AddRazorComponents()
    .AddInteractiveWebAssemblyComponents().AddInteractiveServerComponents();
 services.AddOpenApi();
 
+// Configure authentication and authorization for API endpoints.
+services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+services.AddAuthorization();
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+services.AddCors(options =>
+{
+    options.AddPolicy("ClientCors", policy =>
+    {
+        if (allowedOrigins.Length == 0)
+        {
+            policy.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+            return;
+        }
+
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 
 // Add SignalR
 services.AddSignalR();
@@ -34,7 +61,7 @@ services.AddSignalR();
 // Configure Cosmos DB Client
 var cosmosClient = new CosmosClient(builder.Configuration["ConnectionStrings:CosmosDBConnection"], new CosmosClientOptions()
 {
-    UseSystemTextJsonSerializerWithOptions = new System.Text.Json.JsonSerializerOptions()
+    UseSystemTextJsonSerializerWithOptions = new JsonSerializerOptions()
     {
         // Example: Ignore null values during serialization
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
@@ -45,45 +72,18 @@ var cosmosClient = new CosmosClient(builder.Configuration["ConnectionStrings:Cos
 });
 services.AddSingleton(cosmosClient);
 services.AddHttpClient();
-// Register Cosmos DB Repositories
-services.AddSingleton<ICampaignRepository, CampaignRepository>();
-services.AddSingleton<ICharacterRepository, CharacterRepository>();
-services.AddSingleton<IWorldRepository, WorldRepository>();
-services.AddSingleton<INarrativeRepository, NarrativeRepository>();
-services.AddSingleton<IGameStateManager, GameStateManager>();
-services.AddSingleton<ISessionStateManager, SessionStateManager>();
-services.AddSingleton<IGameStateRepository, GameStateRepository>();
-services.AddScoped<ICampaignService, CampaignService>();
-services.AddScoped<ICharacterService, CharacterService>();
-services.AddScoped<IWorldService, WorldService>();
-services.AddScoped<IGameStateService, GameStateService>();
-
-// Register Core Services
-services.AddSingleton<CombatRulesEngine>();
-services.AddSingleton<AttributeCalculator>();
-services.AddSingleton<StatsCalculator>();
-
-// Shared agent thread store (scopeId + AgentType -> AgentThread)
-services.AddSingleton<IAgentThreadStore, InMemoryAgentThreadStore>();
-
-services.AddSingleton<ISessionCompletionService, SessionCompletionService>();
-
 // Register Agent Configuration and Context Provider
 var config = new AgentConfiguration() { OpenAIApiKey = builder.Configuration["OpenAI:ApiKey"]!, OpenRouterApiKey = builder.Configuration["OpenRouter:ApiKey"]! };
 AgentStaticConfiguration.Configure(builder.Configuration);
 services.AddSingleton(config);
 services.AddSingleton<IAgentContextProvider, AgentContextProvider>();
 
-// Register AI Agents
-services.AddSingleton<GameMasterAgent>();
-services.AddSingleton<CombatAgent>();
-services.AddSingleton<CharacterCreationAgent>();
-services.AddSingleton<CharacterManagerAgent>();
-services.AddSingleton<EconomyManagerAgent>();
-services.AddSingleton<WorldBuilderAgent>();
+services.AddCoreRpgServices();
 
-// Register Agent Orchestration Service
-services.AddSingleton<AgentOrchestrationService>();
+services.AddScoped<ICampaignService, CampaignService>();
+services.AddScoped<ICharacterService, CharacterService>();
+services.AddScoped<IWorldService, WorldService>();
+services.AddScoped<IGameStateService, GameStateService>();
 
 // Register Dice Roll Request Service
 services.AddRollDiceHubService();
@@ -103,6 +103,10 @@ else
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+app.UseCors("ClientCors");
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 
@@ -130,15 +134,33 @@ dice.MapPost("/", async (IRollDiceService diceRollerService, [FromBody] DiceRoll
 // ============================================================================
 
 var campaigns = app.MapGroup("/api/campaigns")
-    .WithTags("Campaigns");
+    .WithTags("Campaigns")
+    .RequireAuthorization();
+
+// Resolves the current user ID from authenticated claims.
+static string? GetCurrentUserId(ClaimsPrincipal user)
+{
+    // Reason: Ensure consistent ownership checks across endpoints.
+    return user.FindFirstValue("name")
+           ?? user.FindFirstValue(ClaimTypes.Name)
+           ?? user.Identity?.Name
+           ?? user.FindFirstValue("preferred_username")
+           ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+           ?? user.FindFirstValue("oid");
+}
 
 // GET /api/campaigns - List all campaigns with pagination
 campaigns.MapGet("/", async (
-        ICampaignRepository repo,
-        [FromQuery] int skip = 0,
-        [FromQuery] int take = 50) =>
+        ClaimsPrincipal user,
+        ICampaignRepository repo) =>
 {
-    var result = await repo.GetAllAsync(skip, take);
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var result = await repo.GetByOwnerIdAsync(userId);
     return Results.Ok(result);
 })
     .WithName("GetAllCampaigns")
@@ -147,10 +169,31 @@ campaigns.MapGet("/", async (
 // GET /api/campaigns/{id} - Get campaign by ID
 campaigns.MapGet("/{id}", async (
         string id,
-        ICampaignRepository repo) =>
+        ClaimsPrincipal user,
+        ICampaignRepository repo,
+        ICharacterRepository characterRepository) =>
 {
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
     var campaign = await repo.GetByIdAsync(id);
-    return campaign is not null ? Results.Ok(campaign) : Results.NotFound();
+    if (campaign is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (campaign.OwnerId == userId)
+    {
+        return Results.Ok(campaign);
+    }
+
+    // Reason: Allow participants to access campaigns after joining with a character.
+    var playerCharacters = await characterRepository.GetByPlayerIdAsync(userId);
+    var isParticipant = playerCharacters.Any(character => character.CampaignId == campaign.Id);
+    return isParticipant ? Results.Ok(campaign) : Results.Forbid();
 })
     .WithName("GetCampaignById")
     .Produces<Campaign>()
@@ -159,20 +202,73 @@ campaigns.MapGet("/{id}", async (
 // GET /api/campaigns/owner/{ownerId} - Get campaigns by owner ID
 campaigns.MapGet("/owner/{ownerId}", async (
         string ownerId,
+        ClaimsPrincipal user,
         ICampaignRepository repo) =>
 {
-    var result = await repo.GetByOwnerIdAsync(ownerId);
+    
+    var userId = GetCurrentUserId(user);
+    Console.WriteLine($"User Id: {userId}");
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!string.Equals(ownerId, userId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repo.GetByOwnerIdAsync(userId);
     return Results.Ok(result);
 })
     .WithName("GetCampaignsByOwner")
     .Produces<IEnumerable<Campaign>>();
 
+// GET /api/campaigns/invitation/{invitationCode} - Get campaign by invitation code
+campaigns.MapGet("/invitation/{invitationCode}", async (
+        string invitationCode,
+        [FromQuery] string userId,
+        ClaimsPrincipal user,
+        ICampaignRepository repo) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(currentUserId))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!string.Equals(userId, currentUserId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
+    if (string.IsNullOrWhiteSpace(invitationCode))
+    {
+        return Results.BadRequest("Invitation code is required.");
+    }
+
+    var campaign = await repo.GetByInvitationCodeAsync(invitationCode, currentUserId);
+    return campaign is not null ? Results.Ok(campaign) : Results.NotFound();
+})
+    .WithName("GetCampaignByInvitationCode")
+    .Produces<Campaign>()
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status400BadRequest);
+
 // POST /api/campaigns - Create new campaign
 campaigns.MapPost("/", async (
         [FromBody] Campaign campaign,
+        ClaimsPrincipal user,
         ICampaignRepository repo) =>
 {
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
 
+    // Reason: Enforce ownership server-side regardless of client input.
+    campaign.OwnerId = userId;
     var created = await repo.CreateAsync(campaign);
     return Results.Created($"/api/campaigns/{created.Id}", created);
 })
@@ -184,8 +280,15 @@ campaigns.MapPost("/", async (
 campaigns.MapPut("/{id}", async (
         string id,
         [FromBody] Campaign campaign,
+        ClaimsPrincipal user,
         ICampaignRepository repo) =>
 {
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
     if (id != campaign.Id)
     {
         return Results.BadRequest("ID mismatch");
@@ -197,6 +300,13 @@ campaigns.MapPut("/{id}", async (
         return Results.NotFound();
     }
 
+    if (!string.Equals(existing.OwnerId, userId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
+    campaign.OwnerId = existing.OwnerId;
+
     var updated = await repo.UpdateAsync(campaign);
     return Results.Ok(updated);
 }).WithName("UpdateCampaign")
@@ -207,8 +317,26 @@ campaigns.MapPut("/{id}", async (
 // DELETE /api/campaigns/{id} - Delete campaign
 campaigns.MapDelete("/{id}", async (
         string id,
+        ClaimsPrincipal user,
         ICampaignRepository repo) =>
 {
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var existing = await repo.GetByIdAsync(id);
+    if (existing is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (!string.Equals(existing.OwnerId, userId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
     var success = await repo.DeleteAsync(id);
     return success ? Results.NoContent() : Results.NotFound();
 }).WithName("DeleteCampaign")
@@ -237,14 +365,45 @@ characters.MapGet("/{id}", async (
     .WithName("GetCharacterById")
     .Produces<Character>()
     .Produces(StatusCodes.Status404NotFound);
-
-// GET /api/characters/campaign/{campaignId} - Get all characters in a campaign
-characters.MapGet("/campaign/{campaignId}", async (
-        string campaignId,
-        ICharacterRepository repo) =>
+characters.MapGet("/createVideo/{id}", async (string id, ICharacterRepository repo) =>
 {
-    var result = await repo.GetByCampaignIdAsync(campaignId);
-    return Results.Ok(result);
+    // Logic to create a video for the character with the given ID
+    var character = await repo.GetByIdAsync(id);
+    if (character is null)
+    {
+        return Results.NotFound();
+    }
+    var promptTypes = Enum.GetValues<IntroPromptType>().ToList();
+    var random = new Random();
+    var selectedPromptType = promptTypes[random.Next(promptTypes.Count)];
+    var videoUrl = await VideoGenService.GenerateCharacterIntroVideo(character, selectedPromptType);
+    character.IntroVidUrl = videoUrl;
+    await repo.UpdateAsync(character);
+
+    return Results.Ok(character);
+}).WithName("GenerateCharacterVideo").Produces<Character>();
+// GET /api/characters/campaign/{campaignId} - Get all characters in an active campaign
+characters.MapGet("/campaign/{campaignId}", async (
+        string campaignId, ICharacterRepository charRepo, ICampaignRepository campaignRepo) =>
+{
+    var campaign = await campaignRepo.GetByIdAsync(campaignId);
+    if (campaign is null)
+    {
+        return Results.NotFound();
+    }
+
+    var ids = campaign.CharacterIds;
+    var playerLobbyIds = campaign.PlayerReadyStatuses.Select(x => x.Value.CharacterId);
+    List<Character> results = [];
+    foreach (var id in ids)
+    {
+        var character = await charRepo.GetByIdAsync(id);
+        if (character is not null && playerLobbyIds.Contains(character.Id))
+        {
+            results.Add(character);
+        }
+    }
+    return Results.Ok(results);
 })
     .WithName("GetCharactersByCampaign")
     .Produces<IEnumerable<Character>>();

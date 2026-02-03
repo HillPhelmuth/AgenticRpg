@@ -105,7 +105,7 @@
                     <ChatView Messages="@ChatMessages" 
                              OnMessageDeleted="HandleMessageDeleted"
                              OnMessageEdited="HandleMessageEdited"
-                             OnSuggestedActionInvoked="SendMessage" />
+                              OnSuggestedActionInvoked="SendMessage" OnSpeakText="PlaySpeechAsync" IsPlaybackActive="_speechGenerating" CancelPlayback="CancelPlayback" />
 
                     <UserInput @ref="UserInputRef"
                               OnSubmit="SendMessage"

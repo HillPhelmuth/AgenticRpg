@@ -13,11 +13,4 @@ public interface IGameStateService
     /// <param name="campaignId">The campaign ID</param>
     /// <returns>The game state, or null if not found</returns>
     Task<GameState?> GetGameStateAsync(string campaignId);
-    
-    /// <summary>
-    /// Forces a save of the game state to persistent storage
-    /// </summary>
-    /// <param name="campaignId">The campaign ID</param>
-    /// <returns>True if save was successful</returns>
-    Task<bool> SaveGameStateAsync(string campaignId);
 }

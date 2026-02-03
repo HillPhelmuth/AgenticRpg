@@ -17,13 +17,10 @@ namespace AgenticRpg.Core.Agents.Tools;
 /// <summary>
 /// Tools for managing economy, shops, and item transactions
 /// </summary>
-public class EconomyTools(
+public class ShopkeeperTools(
     IGameStateManager gameStateManager,
-    ICharacterRepository characterRepository,
-    IWorldRepository worldRepository)
+    ICharacterRepository characterRepository)
 {
-    private readonly IWorldRepository _worldRepository = worldRepository;
-
     /// <summary>
     /// Gets the inventory of a shop with available items and prices
     /// </summary>
@@ -31,7 +28,8 @@ public class EconomyTools(
     public async Task<string> GetShopInventory(
         [Description("The type of shop to display inventory for. Valid types: Weapon, Armor, General, Magic, Tavern. Determines what items are available.")] ShopType shopType,
         [Description("The unique ID of the location where this shop is situated.")] string locationId,
-        [Description("The unique ID of the NPC merchant who runs this shop.")] string merchantId,
+        [Description("The name of the merchant who runs this shop.")] string merchantName,
+        [Description("Maximum rarity of items to display in the shop. Only items with a rarity less than or equal to this value will be shown. Most shops will not contain `Rare` or `VeryRare` items")] Rarity maxRarity,
         [Description("The unique ID of the campaign where this shop transaction is occurring.")] string campaignId)
     {
         try
@@ -46,33 +44,24 @@ public class EconomyTools(
                 });
             }
 
-            // Find the merchant NPC
-            var merchant = gameState.World.NPCs.FirstOrDefault(n => n.Id == merchantId);
-            if (merchant == null)
-            {
-                return JsonSerializer.Serialize(new GetShopInventoryResult
-                {
-                    Success = false,
-                    Error = $"Merchant with ID {merchantId} not found."
-                });
-            }
+
 
             // Find the location
             var location = gameState.World.Locations.FirstOrDefault(l => l.Id == locationId);
             var locationName = location?.Name ?? "Unknown Location";
 
             // Generate shop inventory based on shop type
-            var inventory = GenerateShopInventory(shopType);
+            var inventory = GenerateShopInventory(shopType, maxRarity);
 
             var result = new GetShopInventoryResult
             {
                 Success = true,
                 ShopType = shopType.ToString(),
-                ShopName = $"{merchant.Name}'s {shopType} Shop",
-                MerchantName = merchant.Name,
+                ShopName = $"{merchantName}'s {shopType} Shop",
+                MerchantName = merchantName,
                 LocationId = locationId,
                 Inventory = inventory,
-                Message = $"Welcome to {merchant.Name}'s shop in {locationName}! Browse {inventory.Count} items."
+                Message = $"Welcome to {merchantName}'s shop in {locationName}! Browse {inventory.Count} items."
             };
 
             return JsonSerializer.Serialize(result);
@@ -87,9 +76,6 @@ public class EconomyTools(
         }
     }
 
-    /// <summary>
-    /// Gets detailed information about a specific item
-    /// </summary>
     [Description("Returns detailed stats, description, and properties for a specific item.")]
     public async Task<string> GetItemDetails(
         [Description("The exact name of the item to get detailed information about (e.g., 'Iron Sword', 'Health Potion', 'Chainmail').")] string itemName,
@@ -109,7 +95,7 @@ public class EconomyTools(
             }
 
             // Get item details from database/inventory
-            var itemDetails = GetItemDetailsFromDatabase(itemName, shopType);
+            var itemDetails = InventoryItem.GetAllItemsFromFile().FirstOrDefault(x => x.Name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
 
             if (itemDetails == null)
             {
@@ -123,15 +109,8 @@ public class EconomyTools(
             var result = new GetItemDetailsResult
             {
                 Success = true,
-                ItemName = itemDetails.Value.Item.Name,
-                ItemType = itemDetails.Value.Item.ItemType,
-                Description = itemDetails.Value.Item.Description,
-                BasePrice = itemDetails.Value.Item.Value,
-                Weight = (int)itemDetails.Value.Item.Weight,
-                Rarity = itemDetails.Value.Item.Rarity,
-                Stats = itemDetails.Value.Stats,
-                Requirements = itemDetails.Value.Requirements,
-                Message = $"Details for {itemName}: {itemDetails.Value.Item.Description}"
+                Item = itemDetails,
+                Message = $"Details for item '{itemName}': {itemDetails.Description}, Value: {itemDetails.Value} gold, Rarity: {itemDetails.Rarity}."
             };
 
             return JsonSerializer.Serialize(result);
@@ -155,6 +134,7 @@ public class EconomyTools(
         [Description("The exact name of the item being purchased.")] string itemName,
         [Description("The number of items to purchase. Must be a positive integer.")] int quantity,
         [Description("The final negotiated price per item in gold pieces. This should reflect any discounts or markups from haggling.")] int negotiatedPrice,
+        [Description("If item can be worn, check if player wants to equip it.")] bool equipItem,
         [Description("The unique ID of the campaign where this transaction is occurring.")] string campaignId)
     {
         try
@@ -203,22 +183,13 @@ public class EconomyTools(
             }
             else
             {
-                // Try to get item details to set proper ItemType and Rarity
-                var itemDetails = GetItemDetailsFromDatabase(itemName, ShopType.General);
-                var newItem = new InventoryItem
-                {
-                    Name = itemName,
-                    Quantity = quantity,
-                    Value = negotiatedPrice,
-                    ItemType = itemDetails?.Item.ItemType ?? ItemType.Miscellaneous,
-                    Rarity = itemDetails?.Item.Rarity ?? Rarity.Common
-                };
-                character.Inventory.Add(newItem);
+                var itemDetails = InventoryItem.GetAllItemsFromFile().FirstOrDefault(x => x.Name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+                character.Inventory.Add(itemDetails);
             }
 
             character.UpdatedAt = DateTime.UtcNow;
             await characterRepository.UpdateAsync(character);
-
+            await gameStateManager.UpdateCampaignStateAsync(gameState);
             var result = new ProcessPurchaseResult
             {
                 Success = true,
@@ -831,32 +802,30 @@ public class EconomyTools(
         return false;
     }
 
-    private List<InventoryItem> GenerateShopInventory(ShopType shopType)
+    private List<InventoryItem> GenerateShopInventory(ShopType shopType, Rarity maxRarity)
     {
         var inventory = new List<InventoryItem>();
 
         switch (shopType)
         {
             case ShopType.Weapon:
-                var allWeapon = WeaponItem.GetAllWeaponsFromFile();
+                var allWeapon = WeaponItem.GetAllWeaponsFromFile().Where(x => x.Rarity <= maxRarity);
                 inventory.AddRange(allWeapon);
                 break;
 
             case ShopType.Armor:
-                var allArmor = ArmorItem.GetAllArmorFromFile();
+                var allArmor = ArmorItem.GetAllArmorFromFile().Where(x => x.Rarity <= maxRarity);
                 inventory.AddRange(allArmor);
                 break;
 
             case ShopType.General:
-                var allItems = InventoryItem.GetAllItemsFromFile();
+                var allItems = InventoryItem.GetAllItemsFromFile().Where(x => x.Rarity <= maxRarity);
                 inventory.AddRange(allItems);
                 break;
 
             case ShopType.Magic:
-                inventory.Add(new InventoryItem { Name = "Scroll of Fireball", ItemType = ItemType.Scroll, Description = "Cast Fireball once", Value = 300, Quantity = 2, Rarity = Rarity.Rare, Properties = new Dictionary<string, object> { { "SpellLevel", 3 } } });
-                inventory.Add(new InventoryItem { Name = "Potion of Greater Healing", ItemType = ItemType.Consumable, Description = "Restores 4d4+4 HP", Value = 150, Quantity = 5, Rarity = Rarity.Uncommon, Properties = new Dictionary<string, object> { { "Healing", "4d4+4" } } });
-                inventory.Add(new InventoryItem { Name = "Ring of Protection", ItemType = ItemType.Ring, Description = "Grants +1 to AC", Value = 500, Quantity = 1, Rarity = Rarity.Rare, Properties = new Dictionary<string, object> { { "ACBonus", 1 } } });
-                inventory.Add(new InventoryItem { Name = "Wand of Magic Missiles", ItemType = ItemType.Wand, Description = "7 charges, cast Magic Missile", Value = 800, Quantity = 1, Rarity = Rarity.Rare, Properties = new Dictionary<string, object> { { "Charges", 7 }, { "SpellLevel", 1 } } });
+                var allMagicItems = MagicItem.GetAllMagicItemsFromFile().Where(x => x.Rarity <= maxRarity);
+                inventory.AddRange(allMagicItems);
                 break;
 
             case ShopType.Tavern:

@@ -6,9 +6,9 @@ namespace AgenticRpg.Core.Agents.Threads;
 
 public sealed class InMemoryAgentThreadStore : IAgentThreadStore
 {
-    private readonly ConcurrentDictionary<ThreadKey, AgentThread> _threads = new();
+    private readonly ConcurrentDictionary<ThreadKey, AgentSession> _threads = new();
 
-    public AgentThread GetOrCreate(string scopeId, AgentType agentType, Func<AgentThread> factory)
+    public async Task<AgentSession> GetOrCreate(string scopeId, AgentType agentType, Func<Task<AgentSession>> factory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scopeId);
         if (agentType == AgentType.None)
@@ -19,7 +19,8 @@ public sealed class InMemoryAgentThreadStore : IAgentThreadStore
         ArgumentNullException.ThrowIfNull(factory);
 
         var key = new ThreadKey(scopeId, agentType);
-        return _threads.GetOrAdd(key, _ => factory());
+        var session = await factory();
+        return _threads.GetOrAdd(key, session);
     }
 
     public bool TryRemoveScope(string scopeId)

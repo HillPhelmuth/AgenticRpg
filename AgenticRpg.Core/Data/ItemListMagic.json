@@ -56,6 +56,7 @@
       {
         "EffectType": "Damage",
         "AffectedAttribute": null,
+        "AreaOfEffect": "Area",
         "EffectMagnitude": 0,
         "EffectDuration": 0,
         "EffectDice": "6d6"
@@ -100,7 +101,7 @@
         "AffectedAttribute": null,
         "EffectMagnitude": 0,
         "EffectDuration": 0,
-        "EffectDice": "1d4"
+        "EffectDice": "2d4"
       }
     ]
   },
@@ -138,8 +139,8 @@
     "ChargesRemaining": 0,
     "Effects": [
       {
-        "EffectType": "Utility",
-        "AffectedAttribute": null,
+        "EffectType": "Buff",
+        "AffectedAttribute": "AC",
         "EffectMagnitude": 1,
         "EffectDuration": 0,
         "EffectDice": null
@@ -155,7 +156,7 @@
     "Name": "Amulet of Vitality",
     "Description": "A warm amulet that steadies the wearer's heartbeat.",
     "ItemType": "Amulet",
-    "Rarity": "Uncommon",
+    "Rarity": "Rare",
     "Value": 600,
     "Weight": 0.2,
     "Quantity": 1,
@@ -164,6 +165,90 @@
       {
         "EffectType": "Buff",
         "AffectedAttribute": "Vitality",
+        "EffectMagnitude": 2,
+        "EffectDuration": 0,
+        "EffectDice": null
+      }
+    ]
+  },
+  {
+    "$type": "magic",
+    "Id": "magic_amulet_strength",
+    "Name": "Amulet of Strength",
+    "Description": "A heavy amulet that pulses with power.",
+    "ItemType": "Amulet",
+    "Rarity": "VeryRare",
+    "Value": 1000,
+    "Weight": 0.2,
+    "Quantity": 1,
+    "ChargesRemaining": 0,
+    "Effects": [
+      {
+        "EffectType": "Buff",
+        "AffectedAttribute": "Might",
+        "EffectMagnitude": 2,
+        "EffectDuration": 0,
+        "EffectDice": null
+      }
+    ]
+  },
+  {
+    "$type": "magic",
+    "Id": "magic_amulet_charisma",
+    "Name": "Amulet of Charisma",
+    "Description": "A beautifully crafted amulet that enhances the wearer's presence.",
+    "ItemType": "Amulet",
+    "Rarity": "Uncommon",
+    "Value": 600,
+    "Weight": 0.2,
+    "Quantity": 1,
+    "ChargesRemaining": 0,
+    "Effects": [
+      {
+        "EffectType": "Buff",
+        "AffectedAttribute": "Presence",
+        "EffectMagnitude": 2,
+        "EffectDuration": 0,
+        "EffectDice": null
+      }
+    ]
+  },
+  {
+    "$type": "magic",
+    "Id": "magic_amulet_intelligence",
+    "Name": "Amulet of Intelligence",
+    "Description": "A finely crafted amulet that enhances the wearer's intellect.",
+    "ItemType": "Amulet",
+    "Rarity": "VeryRare",
+    "Value": 1200,
+    "Weight": 0.2,
+    "Quantity": 1,
+    "ChargesRemaining": 0,
+    "Effects": [
+      {
+        "EffectType": "Buff",
+        "AffectedAttribute": "Wits",
+        "EffectMagnitude": 2,
+        "EffectDuration": 0,
+        "EffectDice": null
+      }
+    ]
+  },
+  {
+    "$type": "magic",
+    "Id": "magic_amulet_agility",
+    "Name": "Amulet of Agility",
+    "Description": "A lightweight amulet that enhances the wearer's reflexes.",
+    "ItemType": "Amulet",
+    "Rarity": "Rare",
+    "Value": 900,
+    "Weight": 0.2,
+    "Quantity": 1,
+    "ChargesRemaining": 0,
+    "Effects": [
+      {
+        "EffectType": "Buff",
+        "AffectedAttribute": "Agility",
         "EffectMagnitude": 2,
         "EffectDuration": 0,
         "EffectDice": null

@@ -60,8 +60,39 @@ public class CampaignRepository(CosmosClient cosmosClient)
         CancellationToken cancellationToken = default)
     {
         return await QueryAsync(
-            q => q.Where(c => c.OwnerId == ownerId),
+            q => q.Where(c => c.OwnerId == ownerId || c.InvitedUserIds.Contains(ownerId)),
             cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a campaign by invitation code and records the invited user
+    /// </summary>
+    /// <param name="invitationCode">The invitation code provided to the player</param>
+    /// <param name="userId">The user ID to record as invited</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The campaign, or null if not found</returns>
+    public async Task<Campaign?> GetByInvitationCodeAsync(
+        string invitationCode,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var results = await QueryAsync(
+            q => q.Where(c => c.InvitationCode == invitationCode),
+            cancellationToken);
+
+        var campaign = results.FirstOrDefault();
+        if (campaign is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(userId) && !campaign.InvitedUserIds.Contains(userId))
+        {
+            campaign.InvitedUserIds.Add(userId);
+            await UpdateAsync(campaign, cancellationToken);
+        }
+
+        return campaign;
     }
     public async Task<IEnumerable<Campaign>> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {

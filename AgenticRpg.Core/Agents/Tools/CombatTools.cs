@@ -9,7 +9,9 @@ using AgenticRpg.DiceRoller.Models;
 using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
+using AgenticRpg.Core.Services;
 using Location = AgenticRpg.DiceRoller.Models.Location;
+// ReSharper disable All
 
 namespace AgenticRpg.Core.Agents.Tools;
 
@@ -21,7 +23,7 @@ public class CombatTools(
     CombatRulesEngine rulesEngine,
     ICharacterRepository characterRepository,
     INarrativeRepository narrativeRepository,
-    IRollDiceService rollDiceService)
+    IRollDiceService rollDiceService, VideoGenService videoGenService)
 {
     private readonly Random _random = new();
 
@@ -273,7 +275,7 @@ public class CombatTools(
             CombatantId = attacker.Name ?? attackerId,
             CombatantName = attacker.Name ?? attackerId,
             ActionType = "Attack",
-            Description = $"{attacker.Name} attacks {target.Name} with {weapon.Name}",
+            Description = $"{attacker.Name} attacks {target.Name} with {weapon.Name} " + (isHit ? $"and hits for {damage} damage! Ouch!" : "but misses. (Ha!)"),
             TargetId = target.Id,
             TargetName = target.Name,
             RollResult = attackResult.Total,
@@ -374,10 +376,11 @@ public class CombatTools(
         // If the effect declares a damage type we can infer a reasonable default, otherwise use Vitality.
         var saveAttribute = spellEffect.SavingThrowDamageType switch
         {
-            DamageType.Fire or DamageType.Cold or DamageType.Lightning or DamageType.Poison or DamageType.Acid => AttributeType.Vitality,
+            DamageType.Fire or DamageType.Cold or DamageType.Lightning or DamageType.Poison => AttributeType.Vitality,
             DamageType.Necrotic or DamageType.Radiant or DamageType.Magical => AttributeType.Wits,
             DamageType.Psychic => AttributeType.Presence,
             DamageType.Force or DamageType.Thunder => AttributeType.Might,
+            DamageType.Acid => AttributeType.Agility,
             _ => AttributeType.Vitality
         };
 
@@ -438,7 +441,7 @@ public class CombatTools(
                     appliedEffectMagnitude = (int)Math.Floor(rawEffectMagnitude / 2.0);
                 }
 
-                damage = rawRollValue + appliedEffectMagnitude;
+                damage = rawRollValue + appliedEffectMagnitude + 50;
                 target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
             }
         }
@@ -459,8 +462,8 @@ public class CombatTools(
             CombatantName = attacker.Name,
             ActionType = "Spell",
             Description = saveSucceeded
-                ? $"{attacker.Name} casts {attackerSpell.Name} at {target.Name}. {target.Name} resists (Save {saveTotal} vs DC {saveDc})"
-                : $"{attacker.Name} casts {attackerSpell.Name} at {target.Name}. {target.Name} fails to resist (Save {saveTotal} vs DC {saveDc})",
+                ? $"{attacker.Name} casts {attackerSpell.Name} at {target.Name}. {target.Name} resists (Save {saveTotal} vs DC {saveDc}) - total damage: {damage}"
+                : $"{attacker.Name} casts {attackerSpell.Name} at {target.Name}. {target.Name} fails to resist (Save {saveTotal} vs DC {saveDc}) - total damage: {damage}",
             TargetId = targetId,
             TargetName = target.Name,
             RollResult = saveTotal,
@@ -722,6 +725,8 @@ public class CombatTools(
             });
         }
 
+        var combatEncounterSnapshot = gameState.CurrentCombat;
+
         // Update combat status
         gameState.CurrentCombat.Status = CombatStatus.Ended;
         gameState.CurrentCombat.EndedAt = DateTime.UtcNow;
@@ -775,6 +780,20 @@ public class CombatTools(
 
         await stateManager.UpdateCampaignStateAsync(gameState);
 
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await GenerateVideoAndAddToCampaignNarrative(combatEncounterSnapshot, gameState, stateManager);
+            }
+            catch (Exception ex)
+            {
+                // Reason: Background video generation should never block combat completion.
+                Console.Error.WriteLine($"Combat video generation failed: {ex}");
+            }
+        });
+        
+
         return JsonSerializer.Serialize(new EndCombatResult
         {
             Success = true,
@@ -785,7 +804,38 @@ public class CombatTools(
         });
     }
 
-    private bool TryEndCombat(CombatEncounter encounter, CombatVictor victor, out string message)
+    private async Task GenerateVideoAndAddToCampaignNarrative(CombatEncounter combatEncounter, GameState gameState, IGameStateManager stateManager)
+    {
+        var src = await VideoGenService.GenerateSoraVideo(combatEncounter, gameState.CampaignId);
+        if (!string.IsNullOrEmpty(src))
+        {
+            var videoHtml = AddVideoHtml(src);
+            var narrative = new Narrative
+            {
+                CampaignId = gameState.CampaignId,
+                Content = videoHtml,
+                Type = "CombatVideo",
+                Visibility = NarrativeVisibility.Global,
+                AgentType = "Combat",
+                Timestamp = DateTime.UtcNow
+            };
+            await narrativeRepository.CreateAsync(narrative);
+            gameState.RecentNarratives.Add(narrative);
+            await stateManager.UpdateCampaignStateAsync(gameState);
+        }
+    }
+
+    private static string AddVideoHtml(string src)
+    {
+        return $"""
+                <video controls>
+                    <source src="{src}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                """;
+    }
+    
+    private static bool TryEndCombat(CombatEncounter encounter, CombatVictor victor, out string message)
     {
         if (encounter == null)
         {

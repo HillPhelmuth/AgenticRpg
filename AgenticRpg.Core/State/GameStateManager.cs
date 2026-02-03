@@ -5,6 +5,7 @@ using Azure.Core;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Text.Json;
 using AgenticRpg.Core.Models.Game;
 
 namespace AgenticRpg.Core.State;
@@ -119,7 +120,9 @@ public class GameStateManager(
             logger.LogError("Cannot update state with empty campaign ID");
             return false;
         }
-        
+        // ------------------------------------Temptorary Logging------------------------------------
+        //logger.LogInformation("Updating campaign state: {CampaignId}, Version:\n\n {Version}", state.CampaignId, JsonSerializer.Serialize(state));
+        //-------------------------------------------------------------------------------------------
         // Update timestamp and version
         state.LastUpdated = DateTime.UtcNow;
         state.Version++;

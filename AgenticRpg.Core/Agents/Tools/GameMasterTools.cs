@@ -94,7 +94,7 @@ public partial class GameMasterTools(
         if (difficultyLevel > 1)
             difficultyLevel--;
         var rpgMonsters = RpgMonster.GetAllRpgMonsters(difficultyLevel);
-        var names = string.Join(", ", rpgMonsters.Select(m => m.Name).ToList());
+        var names = string.Join(", ", rpgMonsters.Select(m => m.Name).ToList().Shuffle());
         return names;
     }
     [Description("Initiates combat by creating combatants and transitioning to the Combat Agent. Returns confirmation that combat has started and Combat Agent is taking over.")]
@@ -235,16 +235,47 @@ public partial class GameMasterTools(
                                                       The difficulty level of the monster(s) (0-15). Can be a single value like "10" or a comma seprated list string like: "4,10,0" to get multiple difficulty levels.
                                                       """;
 
-    [Description("Generate an image of a major campaign event. Outputs markdown to display image to players.")]
+    [Description("Generate an image of a major campaign event. Outputs to the narrative display.")]
     public async Task<string> GenerateCampaignEventImage([Description("The unique ID of the campaign where this narrative belongs.")] string campaignId, [Description("The style of the image to generate.")] string style, [Description("Detailed description of scene to display. Will be used as prompt for image generator.")] string eventDescription)
     {
-        // Implementation for generating an image based on the campaign event
-        // This could involve calling an external image generation API or service
+        var campaignState = await stateManager.GetCampaignStateAsync(campaignId);
         var instructions = $"Generate a {style} image for the following RPG event: {eventDescription}";
-        var campaignImage = await ImageGenService.GenerateCampaignImage(instructions, campaignId);
-        return $"![Campaign Event]({campaignImage})";
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await GenerateImageAndAddToCampaignNarrative(instructions, campaignState!, stateManager);
+            }
+            catch (Exception ex)
+            {
+                // Reason: Background image generation should never block combat completion.
+                await Console.Error.WriteLineAsync($"Image generation failed: {ex}");
+            }
+        });
+        //var campaignImage = await ImageGenService.GenerateCampaignImage(instructions, campaignId);
+        //var generateCampaignEventImage = $"![Campaign Event]({campaignImage})";
+        return "Image is generating. It will display in the player narrative display when completed.";
     }
-
+    private async Task GenerateImageAndAddToCampaignNarrative(string instructions, GameState gameState, IGameStateManager stateManager)
+    {
+        var campaignImage = await ImageGenService.GenerateCampaignImage(instructions, gameState.CampaignId);
+        var generateCampaignEventImage = $"![Campaign Event]({campaignImage})";
+        if (!string.IsNullOrEmpty(campaignImage))
+        {
+            var narrative = new Narrative
+            {
+                CampaignId = gameState.CampaignId,
+                Content = generateCampaignEventImage,
+                Type = "Story",
+                Visibility = NarrativeVisibility.Global,
+                AgentType = "GameMaster",
+                Timestamp = DateTime.UtcNow
+            };
+            await narrativeRepository.CreateAsync(narrative);
+            gameState.RecentNarratives.Add(narrative);
+            await stateManager.UpdateCampaignStateAsync(gameState);
+        }
+    }
     [Description("Applies a full rest to all characters in the campaign, restoring health and magic points. Parameters: campaignId. Returns summary of restored health and abilities for each character.")]
     public async Task<string> ApplyRest(string campaignId)
     {

@@ -1,4 +1,6 @@
-﻿using AgenticRpg.Core.Agents;
+﻿#pragma warning disable MEAI001
+#pragma warning disable OPENAI001
+using AgenticRpg.Core.Agents;
 using AgenticRpg.Core.Agents.Llms;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.State;
@@ -16,9 +18,11 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AgenticRpg.Core.Models.Game;
+using OpenAI.Images;
+using ImageGenerationOptions = Microsoft.Extensions.AI.ImageGenerationOptions;
+using OpenAIImageGenerationOptions = OpenAI.Images.ImageGenerationOptions;
 
-#pragma warning disable MEAI001
-#pragma warning disable OPENAI001
+
 
 namespace AgenticRpg.Core.Services;
 
@@ -43,7 +47,10 @@ public class ImageGenService
         var imageClient = client.GetImageClient("gpt-image-1.5").AsIImageGenerator();
 
         var images = await imageClient.GenerateImagesAsync(
-            instructions);
+            instructions, new ImageGenerationOptions()
+            {
+                RawRepresentationFactory = _ => new OpenAIImageGenerationOptions(){ModerationLevel = GeneratedImageModerationLevel.Low, Size = GeneratedImageSize.W1024xH1536 }
+            });
         var contents = images.Contents.OfType<DataContent>();
         var data = contents.First().Data;
         return data;
@@ -51,8 +58,8 @@ public class ImageGenService
 
     public static async Task<string> GenerateCharacterImage(Character character, string? additionalInstructions = null)
     {
-        
-        var instructions = $"Character: {character.Name}, Race: {character.Race}, Class: {character.Class}, Background: {character.Background}";
+
+        var instructions = $"Character: {character.Name}, Race: {character.Race}, Class: {character.Class}, Background: {character.Background}. \n Facing camera, full body shot.";
 
         if (!string.IsNullOrEmpty(additionalInstructions))
         {

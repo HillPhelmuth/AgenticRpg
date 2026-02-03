@@ -8,6 +8,7 @@ public interface ICampaignService
     Task<IEnumerable<Campaign>> GetAllCampaignsAsync(int skip = 0, int take = 50);
     Task<Campaign?> GetCampaignByIdAsync(string id);
     Task<IEnumerable<Campaign>> GetCampaignsByOwnerAsync(string ownerId);
+    Task<Campaign?> GetCampaignByInvitationCodeAsync(string invitationCode, string userId);
     Task<Campaign> CreateCampaignAsync(Campaign campaign);
     Task<Campaign> UpdateCampaignAsync(Campaign campaign);
     Task DeleteCampaignAsync(string id);
@@ -68,6 +69,35 @@ public class CampaignService : ICampaignService
         {
             _logger.LogError(ex, "Error fetching campaigns for owner {OwnerId}", ownerId);
             return [];
+        }
+    }
+
+    /// <summary>
+    /// Gets a campaign by invitation code and records the invited user.
+    /// </summary>
+    /// <param name="invitationCode">The invitation code provided to the player.</param>
+    /// <param name="userId">The user ID to record as invited.</param>
+    /// <returns>The campaign, or null if not found.</returns>
+    public async Task<Campaign?> GetCampaignByInvitationCodeAsync(string invitationCode, string userId)
+    {
+        if (string.IsNullOrWhiteSpace(invitationCode) || string.IsNullOrWhiteSpace(userId))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<Campaign>($"{BaseRoute}/invitation/{invitationCode}?userId={Uri.EscapeDataString(userId)}");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Invitation code {InvitationCode} not found", invitationCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching campaign for invitation code {InvitationCode}", invitationCode);
+            return null;
         }
     }
 

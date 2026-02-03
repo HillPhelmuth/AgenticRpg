@@ -12,6 +12,7 @@ public interface ICharacterService
     Task<Character> CreateCharacterAsync(Character character);
     Task<Character> UpdateCharacterAsync(Character character);
     Task DeleteCharacterAsync(string id);
+    Task<Character?> GenerateCharacterVideo(string id);
 }
 
 public class CharacterService : ICharacterService
@@ -48,7 +49,7 @@ public class CharacterService : ICharacterService
     {
         try
         {
-            var characters = await _httpClient.GetFromJsonAsync<IEnumerable<Character>>($"{BaseRoute}/campaign/{campaignId}");
+            var characters = await _httpClient.GetFromJsonAsync<List<Character>>($"{BaseRoute}/campaign/{campaignId}");
             return characters ?? [];
         }
         catch (Exception ex)
@@ -104,6 +105,23 @@ public class CharacterService : ICharacterService
         }
     }
 
+    public async Task<Character?> GenerateCharacterVideo(string id)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<Character>($"{BaseRoute}/createVideo/{id}");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Character {CharacterId} not found", id);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching character {CharacterId}", id);
+            return null;
+        }
+    }
     public async Task DeleteCharacterAsync(string id)
     {
         try

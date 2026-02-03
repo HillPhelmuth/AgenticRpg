@@ -36,7 +36,7 @@ public static class OpenRouterModelExtensions
     {
         return model.SupportedParameters.Contains(parameter);
     }
-    public static List<OpenRouterModel> GetModelsWithToolsAndStructuredOutputs(this OpenRouterModels allModelData, decimal maxPromptPrice = 3.0m, decimal maxCompletionPrice = 12.0m)
+    public static List<OpenRouterModel> GetModelsWithToolsAndStructuredOutputs(this OpenRouterModels allModelData, decimal maxPromptPrice = 5.0m, decimal maxCompletionPrice = 16.0m)
     {
         return allModelData.Data
             .Where(model => model.SupportedParameters.Contains("tools") && model.SupportedParameters.Contains("tool_choice") && model.SupportedParameters.Contains("structured_outputs") && model.Architecture.OutputModalities.Contains("text") && model.Pricing.PromptPerMillion() <= maxPromptPrice && model.Pricing.CompletionPerMillion() <= maxCompletionPrice).OrderBy(x => x.Id)

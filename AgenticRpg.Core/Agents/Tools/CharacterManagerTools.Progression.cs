@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using AgenticRpg.Core.Agents.Tools.Results;
+using AgenticRpg.Core.Helpers;
 using AgenticRpg.Core.Models.Enums;
 using AgenticRpg.Core.Models.Game;
 
@@ -11,9 +12,7 @@ namespace AgenticRpg.Core.Agents.Tools;
 
 public partial class CharacterManagerTools
 {
-    /// <summary>
-    /// Allocates skill points to a character's skills during level up.
-    /// </summary>
+    
     [Description("Increases a character's skill ranks by allocating available skill points (2 per level).")]
     public async Task<string> AllocateSkillPoints(
         [Description("The unique ID of the character allocating skill points.")] string characterId,
@@ -36,7 +35,7 @@ public partial class CharacterManagerTools
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name.Equals(characterId, StringComparison.OrdinalIgnoreCase));
             if (character is null)
             {
                 return JsonSerializer.Serialize(new AllocateSkillPointsResult
@@ -116,13 +115,10 @@ public partial class CharacterManagerTools
         var skills = Skill.GetAllSkillsFromFile();
         return Task.FromResult(JsonSerializer.Serialize(skills));
     }
-    /// <summary>
-    /// Gets list of spells available for spellcaster classes at a specific level.
-    /// </summary>
+   
     [Description("Returns spells that can be learned at the specified level for spellcaster classes.")]
     public async Task<string> GetAvailableSpells(
         [Description("The unique ID of the character learning spells.")] string characterId,
-        [Description("The spellcasting class. Valid classes: Wizard, Cleric, Paladin, WarMage, Druid, Sorcerer, Warlock.")] CharacterClass spellcasterClass,
         [Description("The character level to determine available spell levels and choices.")] int newLevel,
         [Description("The unique ID of the campaign this character belongs to.")] string campaignId)
     {
@@ -147,45 +143,37 @@ public partial class CharacterManagerTools
                     Error = $"Character with ID {characterId} not found."
                 });
             }
+            
 
-            if (character.Class != spellcasterClass)
+            if (!character.IsSpellcaster())
             {
                 return JsonSerializer.Serialize(new GetAvailableSpellsResult
                 {
                     Success = false,
-                    Error = $"Character class mismatch. Expected {character.Class}, received {spellcasterClass}."
+                    Error = $"{character.Class} is not a spellcasting class."
                 });
             }
 
-            if (!IsSpellcasterClass(spellcasterClass))
+            if (!IsSpellGrantLevel(character.Class, newLevel))
             {
                 return JsonSerializer.Serialize(new GetAvailableSpellsResult
                 {
                     Success = false,
-                    Error = $"{spellcasterClass} is not a spellcasting class."
-                });
-            }
-
-            if (!IsSpellGrantLevel(spellcasterClass, newLevel))
-            {
-                return JsonSerializer.Serialize(new GetAvailableSpellsResult
-                {
-                    Success = false,
-                    Error = $"No new spells are granted to {spellcasterClass} at level {newLevel}."
+                    Error = $"No new spells are granted to {character.Class} at level {newLevel}."
                 });
             }
 
             var maxSpellLevel = GetMaxSpellLevelForCharacterLevel(newLevel);
-            var spells = GetSpellsForClass(spellcasterClass, maxSpellLevel);
+            var spells = GetSpellsForClass(character.Class, maxSpellLevel);
 
             var result = new GetAvailableSpellsResult
             {
                 Success = true,
                 Level = newLevel,
-                SpellcasterClass = spellcasterClass.ToString(),
+                SpellcasterClass = character.Class.ToString(),
                 MaxSpellLevel = maxSpellLevel,
                 AvailableSpells = spells,
-                Message = $"Found {spells.Count} spells available for {spellcasterClass} at level {newLevel}."
+                Message = $"Found {spells.Count} spells available for {character.Class} at level {newLevel}."
             };
 
             return JsonSerializer.Serialize(result);
@@ -200,9 +188,7 @@ public partial class CharacterManagerTools
         }
     }
 
-    /// <summary>
-    /// Adds a selected spell to the character's known spells.
-    /// </summary>
+  
     [Description("Adds the chosen spell to the character's known spells list.")]
     public async Task<string> SelectNewSpell(
         [Description("The unique ID of the character learning the spell.")] string characterId,
@@ -241,7 +227,7 @@ public partial class CharacterManagerTools
                     Error = $"Spell '{spellName}' not found for class {character.Class} at level {newLevel}."
                 });
             }
-            if (!IsSpellcasterClass(character.Class))
+            if (!character.IsSpellcaster())
             {
                 return JsonSerializer.Serialize(new SelectNewSpellResult
                 {

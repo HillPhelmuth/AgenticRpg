@@ -235,7 +235,7 @@
                             {
                                 <div class="known-spells">
                                     <h4>Known Spells (@Character.KnownSpells.Count)</h4>
-                                    @foreach (var level in Character.KnownSpells.GroupBy(s => s.Level).OrderBy(g => g.Key))
+                                    @foreach (var level in Character.KnownSpells.Where(s => s != null).GroupBy(s => s.Level).OrderBy(g => g.Key))
                                     {
                                         <div class="spell-level-group">
                                             <h5>@(level.Key == 0 ? "Cantrips" : $"Level {level.Key}")</h5>

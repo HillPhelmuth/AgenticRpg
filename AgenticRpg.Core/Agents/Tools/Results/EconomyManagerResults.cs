@@ -26,14 +26,7 @@ public class GetShopInventoryResult
 public class GetItemDetailsResult
 {
     public bool Success { get; set; }
-    public string ItemName { get; set; } = string.Empty;
-    public ItemType ItemType { get; set; } = ItemType.Miscellaneous;
-    public string Description { get; set; } = string.Empty;
-    public int BasePrice { get; set; }
-    public int Weight { get; set; }
-    public Rarity Rarity { get; set; } = Rarity.Common;
-    public Dictionary<string, object> Stats { get; set; } = [];
-    public List<string> Requirements { get; set; } = [];
+    public InventoryItem? Item { get; set; }
     public string Message { get; set; } = string.Empty;
     public string? Error { get; set; }
 }

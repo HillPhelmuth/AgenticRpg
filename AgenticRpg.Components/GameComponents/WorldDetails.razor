@@ -12,6 +12,12 @@
     {
         <div class="world-header">
             <h2>@World.Name</h2>
+            @if (!string.IsNullOrEmpty(World.ImageUrl))
+            {
+                <div class="world-image">
+                    <img width="400" height="300" src="@World.ImageUrl" alt="@World.Name" />
+                </div>
+            }
         </div>
 
         <div class="world-content">

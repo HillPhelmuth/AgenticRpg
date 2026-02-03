@@ -5,6 +5,8 @@ using AgenticRpg.Core.Models.Game;
 using AgenticRpg.Core.Services;
 // Add user secrets config code here
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Threading;
 
@@ -12,6 +14,25 @@ var builder = new ConfigurationBuilder()
     .AddUserSecrets<Program>();
 
 var configuration = builder.Build();
+
+var services = new ServiceCollection();
+services.AddSingleton<IConfiguration>(configuration);
+AgentStaticConfiguration.Configure(configuration);
+services.AddLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddSimpleConsole(options =>
+    {
+        options.SingleLine = true;
+        options.TimestampFormat = "HH:mm:ss ";
+    });
+    logging.SetMinimumLevel(LogLevel.Information);
+});
+services.AddSingleton<VideoGenService>();
+var serviceProvider = services.BuildServiceProvider();
+var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+
+
 AgentStaticConfiguration.Configure(configuration);
 Console.WriteLine("Convert Dnd To RPG. Select which area to convert. (input the associated number)");
 const string options = """
@@ -20,6 +41,7 @@ const string options = """
                        3. Create Spells Cache
                        4. Update Spells
                        5. Show Spells
+                       6. Test Sora API
                        """;
 Console.WriteLine(options);
 var input = Console.ReadLine();
@@ -48,8 +70,9 @@ switch (selectedOption)
         {
             var userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var dataPath = Path.Combine(userPath, @"source\repos\AgenticRpg\AgenticRpg.Core\Data");
-            var outputPath = Path.Combine(dataPath, "RpgConvertedSpells-level4_5.json");
-            var spells = await DndApiService.RetrieveSpells();
+            var outputPath = Path.Combine(dataPath, "RpgConvertedSpells-Divination.json");
+            var spellData = await DndApiService.GetSpellData();
+            var spells = await DndApiService.RetrieveSpells(spellData);
             var taskList = spells.Select(DndApiService.ConvertSpellAsync).ToList();
             var convertedSpells = await Task.WhenAll(taskList);
             await File.WriteAllTextAsync(outputPath,
@@ -120,6 +143,21 @@ switch (selectedOption)
 
             break;
         }
+    case 6:
+    {
+        var videoGen = serviceProvider.GetService<VideoGenService>();
+        var ids = videoGen.GetVideoIds();
+        var myId = "";
+        await foreach (var id in ids)
+        {
+            Console.WriteLine($"Video ID: {id} available");
+            myId = id;
+        }
+
+        var result = await videoGen.DownloadFromIdAndSaveUrl(myId);
+        Console.WriteLine(result);
+        break;
+    }
 }
 async Task<RpgMonster?> CreateMonsterAsync(string monsterId)
 {

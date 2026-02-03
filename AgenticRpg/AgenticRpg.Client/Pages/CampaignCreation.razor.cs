@@ -175,7 +175,7 @@ public partial class CampaignCreation : IAsyncDisposable
         {
             ChatMessages.Add(new ChatMessage
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = message.Id,
                 Content = message.FormattedResponse?.MessageToPlayers ?? message.Message,
                 IsUser = false,
                 Timestamp = timestamp,

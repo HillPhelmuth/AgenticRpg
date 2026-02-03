@@ -85,12 +85,12 @@ public class DndApiService
 
     public static async Task<DndSpells> GetSpellData()
     {
-        var response = await _httpClient.GetStringAsync("/api/2014/spells?level=4,5&school=evocation,abjuration");
+        var response = await _httpClient.GetStringAsync("/api/2014/spells?school=divination");
         return JsonSerializer.Deserialize<DndSpells>(response);
     }
-    public static async Task<List<JsonElement>> RetrieveSpells()
+    public static async Task<List<JsonElement>> RetrieveSpells(DndSpells? spellMetadata = null)
     {
-        var spellMetadata = DndSpells.FromFile();
+        spellMetadata ??= DndSpells.FromFile();
         var result = new List<JsonElement>();
         foreach (var spellData in spellMetadata.Results)
         {
@@ -113,9 +113,9 @@ public class DndApiService
              ```
              """;
         var config = AgentStaticConfiguration.Default;
-        var client = new OpenAIClient(new ApiKeyCredential(config.OpenRouterApiKey!), new OpenAIClientOptions() { Endpoint = new Uri(config.OpenRouterEndpoint), ClientLoggingOptions = new ClientLoggingOptions() { LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole()) } });
+        var client = new OpenAIClient(new ApiKeyCredential(config.OpenRouterApiKey!), new OpenAIClientOptions() { Endpoint = new Uri(config.OpenRouterEndpoint), ClientLoggingOptions = new ClientLoggingOptions() { LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole()), EnableMessageLogging = true, EnableLogging = true, EnableMessageContentLogging = true} });
         var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
-        var agent = chatClient.CreateAIAgent(new ChatClientAgentOptions()
+        var agent = chatClient.AsAIAgent(new ChatClientAgentOptions()
         {
             Name = "Spell Converter",
             Description = "Converts D&D spells to RPG spells in JSON format.",
@@ -148,7 +148,7 @@ public class DndApiService
             var config = AgentStaticConfiguration.Default;
             var client = new OpenAIClient(new ApiKeyCredential(config.OpenRouterApiKey!), new OpenAIClientOptions() { Endpoint = new Uri(config.OpenRouterEndpoint), ClientLoggingOptions = new ClientLoggingOptions() { LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole()) } });
             var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
-            var agent = chatClient.CreateAIAgent(new ChatClientAgentOptions()
+            var agent = chatClient.AsAIAgent(new ChatClientAgentOptions()
             {
                 Name = "Monster Converter",
                 Description = "Converts D&D monsters to RPG monsters in JSON format.",
@@ -180,21 +180,6 @@ public class DndApiService
     }
 }
 
-public static class ListExtensions
-{
-    public static List<List<T>> SplitListBy<T>(this List<T> source, int chunkSize)
-    {
-        ArgumentNullException.ThrowIfNull(source);
-        if (chunkSize <= 0) throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
-
-        var result = new List<List<T>>();
-        for (var i = 0; i < source.Count; i += chunkSize)
-        {
-            result.Add(source.GetRange(i, Math.Min(chunkSize, source.Count - i)));
-        }
-        return result;
-    }
-}
 public class DndMonster
 {
     public string ToBasicInfoMarkdown()

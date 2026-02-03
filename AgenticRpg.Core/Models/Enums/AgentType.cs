@@ -16,8 +16,8 @@ public enum AgentType
     CharacterCreation,
     [Description("Combat Agent")]
     Combat,
-    [Description("Economy Agent")]
-    Economy,
+    [Description("Shopkeeper Agent")]
+    ShopKeeper,
     [Description("World Builder Agent")]
     WorldBuilder,
     [Description("Character Manager Agent")]

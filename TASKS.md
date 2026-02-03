@@ -1,5 +1,32 @@
 # Tasks
 
+## 2026-01-31
+- [x] Compact the model dropdown with in-panel filtering and transient popup messages.
+- [x] Limit StartupMenu campaign visibility to owner or invitation code.
+- [x] Enforce campaign ownership in API endpoints.
+- [x] Send access tokens on client API calls.
+- [x] Align API base address to same origin.
+
+## 2026-02-01
+- [x] Cache TTS audio in blob storage by `messageId` to avoid regenerating speech for repeated sends.
+
+## 2026-01-29
+- [x] Add PCM audio JS interop for text-to-speech playback.
+- [x] Stream TTS audio from server to client via SignalR for Game chat.
+
+## 2026-01-27
+- Add DI/logging to `AgenticRpg.DevUtility` (create `ServiceCollection` and `ILoggerFactory` in `Program.cs`).
+
+## 2026-01-23
+- [x] Trigger combat video generation in `EndCombat` without blocking the combat completion response.
+
+## 2026-01-21
+- [x] Refactor `CharacterManagerTools.GetMaxSpellLevelForCharacterLevel` to use a mathematical calculation instead of a hardcoded level table.
+
+## 2026-01-19
+- Refactor CombatTools dice roll and combat-attack helpers to reduce duplication and simplify attack flows.
+- [x] Refactor CharacterLevelUpTools into character manager with updated level-up rules and management tools.
+
 ## 2025-12-21
 - Update `InventoryItem` references to support polymorphic item types (`WeaponItem`, `ArmorItem`), including equipped slot typing and JSON serialization.
 
@@ -11,6 +38,10 @@
 
 ## Discovered During Work
 - (none)
+
+## 2026-01-18
+- [x] Refactor agent instructions to use prompt templates and context variables across all agents.
+- [x] Split agent context prompts into distinct template variables.
 
 ## 2026-01-01
 - [x] Fix dice rolling multi-window flow: `RollDiceHubService.RequestDiceRoll` must honor `numberOfRollWindows` and not return until each window has submitted a result.

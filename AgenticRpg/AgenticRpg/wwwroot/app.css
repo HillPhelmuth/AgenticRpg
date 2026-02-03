@@ -62,3 +62,9 @@ h1:focus {
     max-width:20rem;
     max-height:22rem;
 }
+video {
+    max-width:650px
+}
+img {
+    max-width: 100%
+}

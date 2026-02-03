@@ -9,6 +9,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text;
 using AgenticRpg.Core.Models.Enums;
+using AgenticRpg.Core.Services;
 
 namespace AgenticRpg.Core.Agents;
 
@@ -31,10 +32,10 @@ public class CombatAgent : BaseGameAgent
         INarrativeRepository narrativeRepository,
         IRollDiceService diceService,
         ILoggerFactory loggerFactory,
-        IAgentThreadStore threadStore) : base(config, contextProvider, Models.Enums.AgentType.Combat, loggerFactory, threadStore)
+        IAgentThreadStore threadStore, VideoGenService videoGenService) : base(config, contextProvider, AgentType.Combat, loggerFactory, threadStore)
     {
         _diceService = diceService;
-        _tools = new CombatTools(stateManager, rulesEngine, characterRepository, narrativeRepository, diceService);
+        _tools = new CombatTools(stateManager, rulesEngine, characterRepository, narrativeRepository, diceService, videoGenService);
         //Agent = InitializeAgent(AgentType.Combat);
     }
 

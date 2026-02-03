@@ -9,21 +9,6 @@ namespace AgenticRpg.Core.Agents.Tools;
 public partial class CharacterManagerTools
 {
     /// <summary>
-    /// Determines if a class is considered a spellcaster.
-    /// </summary>
-    private static bool IsSpellcasterClass(CharacterClass characterClass)
-    {
-        return characterClass switch
-        {
-            CharacterClass.Wizard => true,
-            CharacterClass.Cleric => true,
-            CharacterClass.WarMage => true,
-            CharacterClass.Paladin => true,
-            _ => false
-        };
-    }
-
-    /// <summary>
     /// Determines whether a level grants new spells for the specified class.
     /// </summary>
     private static bool IsSpellGrantLevel(CharacterClass characterClass, int level)

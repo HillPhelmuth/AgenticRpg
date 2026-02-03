@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading;
 using AgenticRpg.Client.Services;
 using AgenticRpg.Components.ChatComponents;
 using AgenticRpg.Core.Agents;
@@ -27,6 +28,7 @@ public partial class Game : IAsyncDisposable
     [Inject] private IGameStateService GameStateService { get; set; } = default!;
     [Inject] private ILogger<Game> Logger { get; set; } = default!;
     [Inject] private NavigationManager NavManager { get; set; } = default!;
+    [Inject] private AudioInterop AudioInterop { get; set; } = default!;
 
     private Campaign? Campaign { get; set; }
     private Character? CurrentCharacter { get; set; }
@@ -41,6 +43,7 @@ public partial class Game : IAsyncDisposable
     private bool ShowPartyView { get; set; }
     private new UserInput? UserInputRef { get; set; }
     private MobileView CurrentMobileView { get; set; } = MobileView.Game;
+    private CancellationTokenSource? _speechCts;
     [Inject]
     private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
 
@@ -81,8 +84,9 @@ public partial class Game : IAsyncDisposable
 
             if (CurrentCharacter == null)
             {
-                ErrorMessage = "You don't have a character in this campaign.";
-                return;
+                CurrentCharacter = await CharacterService.GetCharacterByIdAsync(CharacterId);
+                //ErrorMessage = "You don't have a character in this campaign.";
+                //return;
             }
 
             // Connect to SignalR hub
@@ -136,7 +140,7 @@ public partial class Game : IAsyncDisposable
         // Receive messages from Game Master or other players
         ChatMessages.Add(new ChatMessage
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = message.Id,
             Content = message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message,
             IsUser = playerId == CurrentUserId,
             Timestamp = timestamp,
@@ -144,8 +148,12 @@ public partial class Game : IAsyncDisposable
             PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId),
             SuggestedActions = message.FormattedResponse?.SuggestedActions?.FirstOrDefault(x => x.Player.Equals(CurrentCharacter?.Name, StringComparison.OrdinalIgnoreCase))?.Suggestions ?? []
         });
+
+        //_ = PlaySpeechAsync(message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message);
         InvokeAsync(StateHasChanged);
     }
+
+    
 
     private void HandleMessageStatusChanged(string messageId, string status, int? position, string? note)
     {
@@ -389,7 +397,7 @@ public partial class Game : IAsyncDisposable
     {
         try
         {
-            await HubService.LeaveCampaignAsync(CampaignId);
+            await HubService.LeaveCampaignAsync(CampaignId, CurrentUserId, CharacterId!);
             NavManager.NavigateTo("/startup");
         }
         catch (Exception ex)
@@ -412,8 +420,12 @@ public partial class Game : IAsyncDisposable
         {
             if (IsConnected)
             {
-                await HubService.LeaveCampaignAsync(CampaignId);
+                await HubService.LeaveCampaignAsync(CampaignId, CurrentUserId, CharacterId!);
             }
+
+            _speechCts?.Cancel();
+            _speechCts?.Dispose();
+            await AudioInterop.StopAsync();
         }
         catch (Exception ex)
         {

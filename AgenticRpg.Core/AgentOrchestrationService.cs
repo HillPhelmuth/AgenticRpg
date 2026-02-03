@@ -23,7 +23,7 @@ public class AgentOrchestrationService
     private readonly CombatAgent _combatAgent;
     private readonly CharacterCreationAgent _characterCreationAgent;
     private readonly CharacterManagerAgent _characterLevelUpAgent;
-    private readonly EconomyManagerAgent _economyManagerAgent;
+    private readonly ShopKeeperAgent _economyManagerAgent;
     private readonly WorldBuilderAgent _worldBuilderAgent;
     
     private readonly Dictionary<string, CampaignMessageQueue> _messageQueues = [];
@@ -42,7 +42,7 @@ public class AgentOrchestrationService
         CombatAgent combatAgent,
         CharacterCreationAgent characterCreationAgent,
         CharacterManagerAgent characterLevelUpAgent,
-        EconomyManagerAgent economyManagerAgent,
+        ShopKeeperAgent economyManagerAgent,
         WorldBuilderAgent worldBuilderAgent)
     {
         _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
@@ -117,7 +117,7 @@ public class AgentOrchestrationService
         {
             // Get game state to determine active agent
             var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
-            var currentActiveAgent = gameState?.ActiveAgentType;
+            var currentActiveAgent = targetAgentType == AgentType.None ? gameState?.ActiveAgentType : targetAgentType;
             // Get the agent to use - either specified target or current active agent from GameState
             BaseGameAgent activeAgent;
             if (targetAgentType != AgentType.None)
@@ -133,7 +133,7 @@ public class AgentOrchestrationService
                         campaignId, targetAgentType);
                     gameState.ActiveAgentType = targetAgentType;
                     await _stateManager.UpdateCampaignStateAsync(gameState);
-                    await _stateManager.SaveStateAsync(campaignId);
+                    //await _stateManager.SaveStateAsync(campaignId);
                 }
             }
             else
@@ -307,7 +307,7 @@ public class AgentOrchestrationService
         var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
         gameState.ActiveAgent = targetAgentType;
         await _stateManager.UpdateCampaignStateAsync(gameState);
-        await _stateManager.SaveStateAsync(campaignId);
+        // await _stateManager.SaveStateAsync(campaignId);
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ public class AgentOrchestrationService
             AgentType.Combat => _combatAgent,
             AgentType.CharacterCreation => _characterCreationAgent,
             AgentType.CharacterManager => _characterLevelUpAgent,
-            AgentType.Economy => _economyManagerAgent,
+            AgentType.ShopKeeper => _economyManagerAgent,
             AgentType.WorldBuilder => _worldBuilderAgent,
             _ => throw new ArgumentException($"Unknown agent type: {agentType}", nameof(agentType))
         };

@@ -2,6 +2,9 @@ using AgenticRpg.Core.Agents;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
 using AgenticRpg.DiceRoller.Models;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AgenticRpg.Client.Services;
 
@@ -11,9 +14,11 @@ public interface IGameHubService
     Task StopAsync();
     Task JoinSessionAsync(string sessionId, string playerId, string sessionName);
     Task JoinCampaignAsync(string campaignId, string playerId, string characterId, string playerName);
-    Task LeaveSessionAsync(string sessionOrCampaignId);
-    Task LeaveCampaignAsync(string campaignId);
+    Task LeaveSessionAsync(string sessionOrCampaignId, string? playerId = null, string? characterName = null);
+    Task LeaveCampaignAsync(string campaignId, string playerId, string characterId);
     Task SendMessageAsync(string campaignId, string playerId, string message, AgentType targetAgentType = AgentType.None, string? clientMessageId = null);
+    Task StreamSpeechAsync(string text, string messageId, Func<byte[], Task> onChunk,
+        CancellationToken cancellationToken = default);
     Task UpdateReadyStatusAsync(string campaignId, string playerId, bool isReady);
 
     // Event subscriptions

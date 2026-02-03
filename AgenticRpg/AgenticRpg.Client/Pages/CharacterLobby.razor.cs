@@ -11,11 +11,11 @@ public partial class CharacterLobby : IAsyncDisposable
     [Parameter]
     [SupplyParameterFromQuery(Name = "campaignId")]
     public string CampaignId { get; set; } = string.Empty;
-    
+
     [Parameter]
     [SupplyParameterFromQuery(Name = "characterId")]
     public string? CharacterId { get; set; }
-    
+
     [Inject] private new ICampaignService CampaignService { get; set; } = default!;
     [Inject] private ICharacterService CharacterService { get; set; } = default!;
     [Inject] private new IGameHubService HubService { get; set; } = default!;
@@ -53,10 +53,10 @@ public partial class CharacterLobby : IAsyncDisposable
                 ErrorMessage = "Campaign not found.";
                 return;
             }
-            
+
             // Load all characters in the campaign
             Characters = (await CharacterService.GetCharactersByCampaignAsync(CampaignId)).ToList();
-            
+
             // Find current player's character - use CharacterId if provided, otherwise find by PlayerId
             if (!string.IsNullOrEmpty(CharacterId))
             {
@@ -66,10 +66,19 @@ public partial class CharacterLobby : IAsyncDisposable
             {
                 CurrentCharacter = Characters.FirstOrDefault(c => c.PlayerId == CurrentUserId);
             }
-
+            CurrentCharacter ??= await CharacterService.GetCharacterByIdAsync(CharacterId);
+            if (Characters.All(x => x.Id != CurrentCharacter?.Id))
+            {
+                Characters.Add(CurrentCharacter);
+            }
             // Connect to SignalR hub
             await HubService.StartAsync();
-            
+            await HubService.JoinCampaignAsync(
+                Campaign.Id,
+                CurrentUserId,
+                CurrentCharacter.Id,
+                CurrentCharacter.Name
+            );
             // Subscribe to lobby events
             HubService.OnPlayerJoined(HandlePlayerJoined);
             HubService.OnPlayerLeft(HandlePlayerLeft);
@@ -77,16 +86,12 @@ public partial class CharacterLobby : IAsyncDisposable
             HubService.OnReadyStatusSnapshot(HandleReadyStatusSnapshot);
             HubService.OnAllPlayersReady(HandleAllPlayersReady);
             HubService.OnCampaignStarted(HandleCampaignStarted);
+            HubService.OnStateUpdated(HandleStateUpdated);
 
             // Join campaign lobby
             if (CurrentCharacter != null)
             {
-                await HubService.JoinCampaignAsync(
-                    CampaignId, 
-                    CurrentUserId, 
-                    CurrentCharacter.Id, 
-                    CurrentCharacter.Name
-                );
+                
                 IsConnected = true;
 
                 // Check if already ready
@@ -105,10 +110,25 @@ public partial class CharacterLobby : IAsyncDisposable
         }
     }
 
+    private void HandleStateUpdated(GameState gameState)
+    {
+        Logger.LogInformation("Game state updated");
+        InvokeAsync(() =>
+        {
+            // Update ready statuses
+            ReadyStatuses = gameState.PlayerReadyStatuses ?? new Dictionary<string, PlayerReadyStatus>();
+            if (ReadyStatuses.TryGetValue(CurrentUserId, out var readyValue))
+            {
+                IsReady = readyValue.IsReady;
+            }
+            //Characters = gameState.Characters;
+            StateHasChanged();
+        });
+    }
     private void HandlePlayerJoined(string playerId, string characterId, string playerName)
     {
         Logger.LogInformation("Player joined: {PlayerName}", playerName);
-        
+
         // Reload characters to show new player
         InvokeAsync(async () =>
         {
@@ -121,12 +141,13 @@ public partial class CharacterLobby : IAsyncDisposable
     private void HandlePlayerLeft(string playerId)
     {
         Logger.LogInformation("Player left: {PlayerId}", playerId);
-        
+
         // Reload characters
         InvokeAsync(async () =>
         {
             ReadyStatuses.Remove(playerId);
-            Characters = (await CharacterService.GetCharactersByCampaignAsync(CampaignId)).ToList();
+            //await HubService.LeaveCampaignAsync(CampaignId);
+            Characters = (await CharacterService.GetCharactersByCampaignAsync(CampaignId)).Where(x => x.PlayerId != playerId).ToList();
             StateHasChanged();
         });
     }
@@ -149,7 +170,7 @@ public partial class CharacterLobby : IAsyncDisposable
     {
         InvokeAsync(() =>
         {
-            ReadyStatuses = snapshot?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) 
+            ReadyStatuses = snapshot?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
                 ?? new Dictionary<string, PlayerReadyStatus>();
             if (ReadyStatuses.TryGetValue(CurrentUserId, out var readyValue))
             {
@@ -169,7 +190,7 @@ public partial class CharacterLobby : IAsyncDisposable
     private void HandleCampaignStarted(string campaignId)
     {
         Logger.LogInformation("Campaign started: {CampaignId}", campaignId);
-        
+
         // Navigate to game page
         InvokeAsync(() =>
         {
@@ -230,9 +251,11 @@ public partial class CharacterLobby : IAsyncDisposable
         NavManager.NavigateTo($"/character-creation/{CampaignId}");
     }
 
-    private void GoBack()
+    private async Task GoBack()
     {
+        await HubService.LeaveCampaignAsync(CampaignId, _currentUserId, CharacterId!);
         NavManager.NavigateTo("/startup");
+
     }
 
     public async ValueTask DisposeAsync()
@@ -241,7 +264,7 @@ public partial class CharacterLobby : IAsyncDisposable
         {
             if (IsConnected)
             {
-                await HubService.LeaveCampaignAsync(CampaignId);
+                await HubService.LeaveCampaignAsync(CampaignId, _currentUserId, CharacterId!);
             }
         }
         catch (Exception ex)

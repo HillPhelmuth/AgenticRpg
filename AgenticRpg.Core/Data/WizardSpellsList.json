@@ -21,7 +21,17 @@
       "EffectMagnitude": 0,
       "EffectDuration": 0,
       "EffectDice": "1d4",
-      "LevelBasedEffectDiceSlots": {},
+      "LevelBasedEffectDiceSlots": {
+        "1": "1d4\u002B1",
+        "2": "1d4\u002B2",
+        "3": "2d4\u002B3",
+        "4": "2d4\u002B4",
+        "5": "3d4\u002B5",
+        "6": "3d4\u002B6",
+        "7": "4d4\u002B7",
+        "8": "4d4\u002B8",
+        "9": "5d4\u002B9"
+      },
       "SavingThrowDamageType": "Magical"
     }
   },

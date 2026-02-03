@@ -361,3 +361,14 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/.github/skills/skill-creator
+/AgenticRpg/AgenticRpg/agentThread_CharacterCreation.json
+/AgenticRpg/AgenticRpg/agentThread_GameMaster.json
+/AgenticRpg/AgenticRpg/agentThread_WorldBuilder.json
+/AgenticRpg/AgenticRpg.Client/wwwroot/appsettings.Development.json
+/AgenticRpg.Core/Data/5e-SRD-Spells.json
+/AgenticRpg.Core/Data/DndSpellCache.json
+/AgenticRpg.Core/Data/DndSpellsList.json
+/AgenticRpg.Core/Data/RpgConvertedSpells-Divination.json
+/AgenticRpg.Core/Data/RpgConvertedSpells.json
+/AgenticRpg/AgenticRpg/appsettings.Development.json

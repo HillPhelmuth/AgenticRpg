@@ -15,19 +15,15 @@ namespace AgenticRpg.Core.Agents;
 /// <summary>
 /// Agent responsible for managing economy, shops, and transactions as various merchant NPCs
 /// </summary>
-public class EconomyManagerAgent(
+public class ShopKeeperAgent(
     AgentConfiguration config,
     IAgentContextProvider contextProvider,
     IGameStateManager gameStateManager,
-    ICharacterRepository characterRepository,
-    IWorldRepository worldRepository, ILoggerFactory loggerFactory,
+    ICharacterRepository characterRepository, ILoggerFactory loggerFactory,
     IAgentThreadStore threadStore)
-    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.Economy, loggerFactory, threadStore)
+    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.ShopKeeper, loggerFactory, threadStore)
 {
-    private readonly EconomyTools _tools = new(gameStateManager, characterRepository, worldRepository);
-    private readonly IGameStateManager _gameStateManager = gameStateManager;
-    private readonly ICharacterRepository _characterRepository = characterRepository;
-    private readonly IWorldRepository _worldRepository = worldRepository;
+    private readonly ShopkeeperTools _tools = new(gameStateManager, characterRepository);
 
     protected override string Description => "Roleplays as various shopkeeper and merchant NPCs, manages shop inventories, facilitates price negotiation, processes buy/sell transactions, applies price modifiers, checks affordability, and handles item equipment.";
 
@@ -132,7 +128,7 @@ public class EconomyManagerAgent(
                                               ## Important Guidelines
 
                                               ### Stay In Character
-                                              - **Each merchant is unique** - vary speech patterns, attitudes, values
+                                              - **Each merchant is unique** - vary speech patterns, attitudes, values in your first message to set your subsequent tone
                                               - **React authentically** to player behavior (politeness, rudeness, haggling)
                                               - **Show personality** through dialogue, not just descriptions
                                               - **Use appropriate vocabulary** for the merchant type (smith vs. wizard)
@@ -174,21 +170,10 @@ public class EconomyManagerAgent(
                                               - Equipping replaces existing item in that slot
                                               - Stats recalculated immediately
                                               - Unequipped items stay in inventory
-
-                                              ## Tools Available
-                                              You have 7 tools at your disposal:
-                                              - `GetShopInventory`: Show available items with prices and quantities
-                                              - `GetItemDetails`: Detailed stats and properties for specific items
-                                              - `ProcessPurchase`: Complete a buy transaction (deduct gold, add item)
-                                              - `ProcessSale`: Complete a sell transaction (add gold, remove item)
-                                              - `ApplyPriceModifier`: Calculate final price with modifiers
-                                              - `CheckAffordability`: Verify character can afford purchase
-                                              - `EquipItem`: Equip item to character's equipment slots
-
+                                              
                                               ## Returning to Game Master:
-                                              When the player is done shopping or leaves the shop, include this in your response:
-                                              **[HANDOFF:GameMaster|Shopping concluded at {shop/merchant name}]**
-
+                                              When the player is done shopping or leaves the shop, invoke `HandbackToGameMaster` to return control to the Game Master agent.
+                                             
                                               ## Game Context
 
                                               {{ $baseContext }}
@@ -248,7 +233,10 @@ public class EconomyManagerAgent(
     {
         if (string.IsNullOrEmpty(gameState.CurrentLocationId))
         {
-            return string.Empty;
+            return """
+                **Available Merchants:**
+                None - Follow the Game Master's instructions to create shop and personality.
+                """;
         }
 
         var localMerchants = gameState.World.NPCs
@@ -260,7 +248,10 @@ public class EconomyManagerAgent(
 
         if (!localMerchants.Any())
         {
-            return string.Empty;
+            return """
+                   **Available Merchants:**
+                   None - Follow the Game Master's instructions to create shop and personality.
+                   """;
         }
 
         var contextBuilder = new StringBuilder();
@@ -287,7 +278,7 @@ public class EconomyManagerAgent(
     /// </summary>
     private static string BuildEconomyParty(GameState gameState)
     {
-        if (!gameState.Characters.Any())
+        if (gameState.Characters.Count == 0)
         {
             return string.Empty;
         }
@@ -300,9 +291,9 @@ public class EconomyManagerAgent(
             contextBuilder.AppendLine($"  Gold: {character.Gold}");
             contextBuilder.AppendLine($"  Presence: {character.Attributes[Models.Enums.AttributeType.Presence]}");
 
-            if (character.Inventory.Any())
+            if (character.Inventory.Count != 0)
             {
-                var significantItems = character.Inventory.Take(5).ToList();
+                var significantItems = character.Inventory.ToList();
                 contextBuilder.AppendLine($"  Inventory: {string.Join(", ", significantItems.Select(i => $"{i.Name} ({i.Quantity})"))}");
             }
 

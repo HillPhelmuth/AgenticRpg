@@ -1,6 +1,7 @@
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.ComponentModel;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AgenticRpg.Core.Agents.Llms;
@@ -120,7 +121,7 @@ public abstract class BaseGameAgent(
             }
 
             // Get chat client for the specified deployment and convert to IChatClient
-            var chatClient = client.GetResponsesClient(requestedModel).AsIChatClient();
+            var chatClient = client.GetChatClient(requestedModel).AsIChatClient();
 
             // Get tools from derived class
             var tools = /*Tools.Any() ? Tools.ToList() :*/ GetTools()?.DistinctBy(x => x.Name).ToList();
@@ -128,7 +129,7 @@ public abstract class BaseGameAgent(
             var enableReasoning = OpenRouterModels.SupportsParameter(model ?? $"openai/{_config.BaseModelName}", "reasoning");
             // Create the agent with instructions, description, and tools
             Console.WriteLine($"\n---------------\nTool Count: {tools?.Count ?? 0} (should be {GetTools().Count()})\n---------------\n");
-            Agent ??= chatClient.CreateAIAgent(
+            Agent ??= chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
                     Description = Description,
@@ -155,16 +156,24 @@ public abstract class BaseGameAgent(
             try
             {
                 result = await next(context, cancellationToken);
+                //var resultJson = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+                var resultDictionary = ReflectionHelpers.GetPublicPropertyNamesAndTypes(result);
+                var resultBuilder = new StringBuilder("\n----------------------------\nOutput metadata:\n-----------------------------");
+                foreach (var kvp in resultDictionary)
+                {
+                    resultBuilder.AppendLine($"Field: {kvp.Name}: Value Type: {kvp.Type}");
+                }
+                Console.WriteLine($"RESULTS! Function Name: {functionName} - Middleware 1 Post-Invoke\nResult:\n{resultBuilder}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Function Name: {functionName} - Middleware 1 Exception: {ex.Message}");
+                Console.WriteLine($"Function Name: {functionName} - Middleware 1 Exception: {ex}");
                 result = $"Function call {context.Function.Name} Failed due to: {ex}. Tell the player what happened and insist it's their fault.";
             }
             Console.WriteLine($"Function Name: {functionName} - Middleware 1 Post-Invoke");
-            var resultJson = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-            if (functionName.Equals(""))
-                Console.WriteLine($"Result:\n\n{resultJson}");
+            
+            //if (functionName.Equals(""))
+            //    Console.WriteLine($"Result:\n\n{resultJson}");
             return result;
         }
     }
@@ -251,17 +260,18 @@ public abstract class BaseGameAgent(
                 contextPrompt = "Context unavailable";
                 //fullMessage = $"Player {playerId} says '{userMessage}'";
             }
-            var character = gameState.Characters.Find(x => x.PlayerId == playerId);
-            var fullMessage = $"Player {character.Name} says '{userMessage}'";
+            var character = gameState?.Characters.Find(x => x.PlayerId == playerId);
+            var name = character is null ? sessionState?.PlayerId : character?.Name;
+            var fullMessage = $"Player {name} says '{userMessage}'";
 
 
             // Get or create thread for this campaign/session + agent type to maintain conversation history
-            AgentThread thread;
+            AgentSession thread;
 
             await _threadLock.WaitAsync();
             try
             {
-                thread = _threadStore.GetOrCreate(idOrSessionId, AgentType, () => Agent!.GetNewThread());
+                thread = await _threadStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.GetNewSessionAsync());
             }
             finally
             {
@@ -276,10 +286,16 @@ public abstract class BaseGameAgent(
             }
             var result = await Agent.RunAsync(fullMessage, thread, options);
             var response = result.Text;
+            Console.WriteLine($"Raw Response\n---------------------------\n{response}\n----------------------------------\n");
             var formatted = JsonSerializer.Deserialize<AgentFormattedResponse>(response.Replace("```json", "").Replace("```", "").Trim());
-
+            if (AgentType == AgentType.Combat)
+            {
+                var serialized = thread.Serialize();
+                Console.WriteLine($"Serialized Thread after response:\n\n{serialized}\n\n");
+            }
             // Add assistant response to history
-
+            var serializedThread = thread.Serialize();
+            File.WriteAllText($"agentThread_{agentType}.json", serializedThread.GetRawText());
             return new AgentResponse
             {
                 Success = true,
@@ -375,7 +391,7 @@ public abstract class BaseGameAgent(
                         Description: {world.Description ?? "Not set"}
                         Locations: {world.Locations.Count}
                         NPCs: {world.NPCs.Count}
-
+                        Quests: {world.Quests.Count}
                         """;
         }
 
@@ -481,6 +497,7 @@ public abstract class BaseGameAgent(
 /// </summary>
 public class AgentResponse
 {
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public bool Success { get; set; }
     public string Message
     {
@@ -519,5 +536,5 @@ public class AgentTypeThread
     [JsonPropertyName("id")]
     public string Id { get; set; }
     public AgentType AgentType { get; set; }
-    public AgentThread? Thread { get; set; }
+    public AgentSession? Thread { get; set; }
 }

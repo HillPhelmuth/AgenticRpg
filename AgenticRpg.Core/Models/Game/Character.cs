@@ -197,7 +197,7 @@ public class Character
     /// </summary>
     [Description("Character portrait URL (optional)")]
     public string? PortraitUrl { get; set; }
-
+    public string? IntroVidUrl { get; set; }
     /// <summary>
     /// Death save successes (for unconscious characters)
     /// </summary>
@@ -209,7 +209,7 @@ public class Character
     /// </summary>
     [Description("Death save failures (for unconscious characters)")]
     public int DeathSaveFailures { get; set; } = 0;
-
+    public bool RequiresLevelUp => Experience >= Level * 1000;
     /// <summary>
     /// Timestamp when character was created
     /// </summary>

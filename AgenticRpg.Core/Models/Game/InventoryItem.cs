@@ -138,7 +138,7 @@ public enum MagicEffectType
 public enum MagicEffectAreaOfEffect
 {
     SingleTarget,
-    AreaOfEffect,
+    Area,
     Cone,
     Line,
     Self

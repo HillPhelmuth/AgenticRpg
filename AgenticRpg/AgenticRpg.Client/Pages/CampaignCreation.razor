@@ -11,6 +11,7 @@
 <div class="campaign-creation">
     <div class="creation-header">
         <button @onclick="GoBack" class="btn-back">← Back to Menu</button>
+        
         <h1>Create New Campaign</h1>
     </div>
 
@@ -89,7 +90,7 @@
                     <ChatView Messages="ChatMessages" 
                               OnMessageDeleted="HandleMessageDeleted" 
                               OnMessageEdited="HandleMessageEdited"
-                              OnSuggestedActionInvoked="SendMessage" />
+                              OnSuggestedActionInvoked="SendMessage" OnSpeakText="PlaySpeechAsync" IsPlaybackActive="_speechGenerating" CancelPlayback="CancelPlayback" />
 
                     <UserInput @ref="UserInputRef"
                                OnSubmit="SendMessage" 

@@ -107,6 +107,18 @@
 .suggested-action-btn:active {
     transform: translateY(1px);
 }
+.speak-button {
+    background-color: #4dd0e1;
+    border: none;
+    color: #0a0e1a;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(77, 208, 225, 0.6);
+    transition: all 0.2s ease;
+}
 
 /* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
 

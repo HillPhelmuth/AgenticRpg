@@ -28,6 +28,8 @@ public class Campaign
     /// ID of the player who created/owns this campaign
     /// </summary>
     public string OwnerId { get; set; } = string.Empty;
+
+    public List<string> InvitedUserIds { get; set; } = [];
     
     /// <summary>
     /// ID of the world this campaign takes place in
@@ -103,11 +105,13 @@ public class Campaign
         return new string(Enumerable.Repeat(chars, 6)
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
-    
+    public Dictionary<string, PlayerReadyStatus> PlayerReadyStatuses { get; set; } = [];
     /// <summary>
     /// Checks if campaign is full
     /// </summary>
     public bool IsFull => PlayerIds.Count >= MaxPlayers;
+
+    public string SelectedModel { get; set; } = "gpt-5.1";
 }
 
 /// <summary>

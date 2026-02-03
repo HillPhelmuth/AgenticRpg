@@ -89,6 +89,38 @@ public class WorldBuilderTools(
 
                                                    ---
                                                    """;
+    [Description("Set the Name, Description, and combat frequency of the campaign world")]
+    public async Task<string> SetBasicData(
+        [Description("The unique session ID for this world building session.")] string sessionId,
+        [Description("The name of the campaign world.")] string worldName,
+        [Description("A brief description of the campaign world.")] string worldDescription,
+        [Description("The combat frequency for the campaign world.")] BattleFrequency combatFrequency)
+    {
+         var session = await sessionStateManager.GetSessionStateAsync(sessionId);
+        if (session == null)
+        {
+            return JsonSerializer.Serialize(new GenerateLocationResult
+            {
+                Success = false,
+                Message = "",
+                Error = "Session not found"
+            });
+        }
+
+        // Set the basic data for the world
+        session.Context.DraftWorld.Name = worldName;
+        session.Context.DraftWorld.Description = worldDescription;
+        session.Context.DraftWorld.BattleFrequency = combatFrequency;
+        session.LastUpdatedAt = DateTime.UtcNow;
+        await sessionStateManager.UpdateSessionStateAsync(session);
+
+        return JsonSerializer.Serialize(new GenerateLocationResult
+        {
+            Success = true,
+            Message = "Basic data set successfully",
+            Error = null
+        });
+    }
 
     [Description("Generates a new location in the world. Parameters: sessionId (world building session ID), locationName (name of location), locationType (Town/City/Dungeon/Wilderness/Castle/Village/Temple/Cave), description (detailed description of location). Returns JSON with location details and ID.")]
     public async Task<string> GenerateLocation(
@@ -383,7 +415,7 @@ public class WorldBuilderTools(
                  """;
             
             var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
-            var quickCreateAgent = chatClient.CreateAIAgent(
+            var quickCreateAgent = chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
                     

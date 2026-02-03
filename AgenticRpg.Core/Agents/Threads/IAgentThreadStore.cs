@@ -5,6 +5,6 @@ namespace AgenticRpg.Core.Agents.Threads;
 
 public interface IAgentThreadStore
 {
-    AgentThread GetOrCreate(string scopeId, AgentType agentType, Func<AgentThread> factory);
+    Task<AgentSession> GetOrCreate(string scopeId, AgentType agentType, Func<Task<AgentSession>> factory);
     bool TryRemoveScope(string scopeId);
 }

@@ -120,4 +120,6 @@ public class SessionContext
     /// Steps completed in the session
     /// </summary>
     public List<string> CompletedSteps { get; set; } = [];
+
+    public string SelectedModel { get; set; } = "gpt-5.1";
 }

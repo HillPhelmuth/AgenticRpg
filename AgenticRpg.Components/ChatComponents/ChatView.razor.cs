@@ -21,6 +21,12 @@ public partial class ChatView
 
     [Parameter]
     public string CssClass { get; set; } = string.Empty;
+    [Parameter]
+    public EventCallback<(string, string)> OnSpeakText { get; set; }
+    [Parameter]
+    public bool IsPlaybackActive { get; set; }
+    [Parameter]
+    public EventCallback CancelPlayback { get; set; }
 
     private ElementReference _messagesContainer;
     private bool _isAtBottom = true;
@@ -45,6 +51,10 @@ public partial class ChatView
         }
     }
 
+    private async Task SpeakMessage(string message, string messageId)
+    {
+        await OnSpeakText.InvokeAsync((message, messageId));
+    }
     [JSInvokable]
     public void UpdateScrollPosition(bool isAtBottom)
     {

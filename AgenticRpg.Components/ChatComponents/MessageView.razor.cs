@@ -15,6 +15,8 @@ public partial class MessageView
 
     [Parameter]
     public EventCallback<ChatMessage> OnDelete { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 
     private string _editContent = string.Empty;
     private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder()

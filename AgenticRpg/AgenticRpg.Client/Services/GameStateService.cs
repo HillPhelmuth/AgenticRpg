@@ -43,29 +43,4 @@ public class GameStateService : IGameStateService
             return null;
         }
     }
-
-    /// <inheritdoc/>
-    public async Task<bool> SaveGameStateAsync(string campaignId)
-    {
-        try
-        {
-            _logger.LogInformation("Requesting save for campaign: {CampaignId}", campaignId);
-            
-            var response = await _httpClient.PostAsync($"api/gamestate/{campaignId}/save", null);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Failed to save game state: {StatusCode}", response.StatusCode);
-                return false;
-            }
-            
-            _logger.LogInformation("Successfully saved game state for campaign: {CampaignId}", campaignId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error saving game state for campaign: {CampaignId}", campaignId);
-            return false;
-        }
-    }
 }

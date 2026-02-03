@@ -1,5 +1,6 @@
 using AgenticRpg.Core.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace AgenticRpg.Core.Agents;
 
@@ -13,7 +14,9 @@ public class AgentStaticConfiguration
         {
             OpenAIApiKey = configuration["OpenAI:ApiKey"],
             OpenRouterApiKey = configuration["OpenRouter:ApiKey"],
-            BlobStorageConnectionString = configuration["AzureStorage:ConnectionString"]
+            BlobStorageConnectionString = configuration["AzureStorage:ConnectionString"],
+            GoogleApiKey = configuration["GoogleAI:ApiKey"],
+            LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole())
         };
     }
 }
@@ -39,11 +42,13 @@ public class AgentConfiguration
     public string OpenRouterApiKey { get; set; } = string.Empty;
     public string OpenRouterEndpoint { get; set; } = "https://openrouter.ai/api/v1";
     public string BlobStorageConnectionString { get; set; } = string.Empty;
+    public string GoogleApiKey { get; set; } = string.Empty;
 
     /// <summary>
     /// Maximum conversation history to maintain
     /// </summary>
     public int MaxHistoryMessages { get; set; } = 20;
+    public ILoggerFactory LoggerFactory { get; set; }
 }
 
 /// <summary>

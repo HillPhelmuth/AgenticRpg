@@ -599,7 +599,7 @@ public class CharacterCreationTools(
              """;
         // Get chat client for the specified deployment and convert to IChatClient
         var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
-        var quickCreateAgent = chatClient.CreateAIAgent(
+        var quickCreateAgent = chatClient.AsAIAgent(
             options: new ChatClientAgentOptions()
             {
 
@@ -654,6 +654,28 @@ public class CharacterCreationTools(
         {
             Valid = true,
             Character = character
+        });
+    }
+    [Description("Generate a scathing parody video that introduces the new character based on character details and additional instructions")]
+    public async Task<string> GenerateParodyVideo([Description("The unique session ID for this character creation session (will be used to get character details).")] string sessionId, [Description("Additional instructions specific to the parody video.")] string parodyVideoInstructions)
+    {
+        // Get session and draft character
+        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
+        if (session?.Context.DraftCharacter == null)
+        {
+            return JsonSerializer.Serialize(new
+            {
+                Success = false,
+                Message = "Character creation session not found"
+            });
+        }
+
+        var character = session.Context.DraftCharacter;
+        var response = await VideoGenService.GenerateSoraFromPrompt(parodyVideoInstructions, sessionId);
+        return JsonSerializer.Serialize(new
+        {
+            Success = true,
+            Video = response
         });
     }
     [Description("Generates an image based on the character details and an optional set of instructions.")]

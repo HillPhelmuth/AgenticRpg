@@ -1,6 +1,8 @@
 using AgenticRpg.Core.Agents;
 using AgenticRpg.Core.Messaging;
 using AgenticRpg.Core.Models;
+using AgenticRpg.Core.Models.Enums;
+using AgenticRpg.Core.Services;
 using AgenticRpg.Core.State;
 using AgenticRpg.DiceRoller;
 using AgenticRpg.DiceRoller.Models;
@@ -9,8 +11,8 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using AgenticRpg.Core.Models.Enums;
 
 namespace AgenticRpg.Core.Hubs;
 
@@ -47,12 +49,17 @@ public class GameHub(
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var connectionId = Context.ConnectionId;
-
+        if (_connectionToPlayer.TryGetValue(connectionId, out var playerInfo))
+        {
+            var playerId = playerInfo.PlayerId;
+            logger.LogInformation("Player {PlayerId} disconnected from hub", playerId);
+        }
         // Clean up connection tracking
         if (_connectionToCampaign.TryGetValue(connectionId, out var campaignId))
         {
-            await LeaveCampaign(campaignId);
+            await LeaveCampaign(campaignId, playerInfo.PlayerId, playerInfo.CharacterId);
         }
+        
 
         await base.OnDisconnectedAsync(exception);
     }
@@ -160,6 +167,8 @@ public class GameHub(
                     existingReady.ConnectionId = connectionId;
                 }
                 await stateManager.UpdateCampaignStateAsync(gameState);
+                logger.LogInformation("State Updated for: Player {PlayerId} ({PlayerName}) joined campaign {CampaignId} with character {CharacterId}",
+                    playerId, playerName, campaignId, characterId);
                 await BroadcastReadyStatusSnapshot(campaignId, gameState);
 
             }
@@ -182,19 +191,20 @@ public class GameHub(
     /// Leaves a session or campaign group
     /// </summary>
     /// <param name="sessionOrCampaignId">The session/campaign ID to leave</param>
-    public async Task LeaveSession(string sessionOrCampaignId)
+    public async Task LeaveSession(string sessionOrCampaignId, string? playerId = null, string? characterId = null)
     {
         var connectionId = Context.ConnectionId;
-        string? playerId = null;
+        
 
         // Get player info before removing
         if (_connectionToPlayer.TryGetValue(connectionId, out var playerInfo))
         {
-            playerId = playerInfo.PlayerId;
+            playerId ??= playerInfo.PlayerId;
+            characterId ??= playerInfo.CharacterId;
         }
 
         logger.LogInformation("Player {PlayerId} leaving session/campaign {SessionId}", playerId, sessionOrCampaignId);
-
+       
         // Remove from SignalR group
         await Groups.RemoveFromGroupAsync(connectionId, GetCampaignGroupName(sessionOrCampaignId));
 
@@ -219,13 +229,20 @@ public class GameHub(
                 var gameState = await stateManager.GetCampaignStateAsync(sessionOrCampaignId);
                 if (gameState != null)
                 {
-                    gameState.PlayerReadyStatuses.Remove(playerId);
+                    foreach (var character in gameState.Characters.Where(x => x.PlayerId == playerId || x.Id == characterId))
+                    {
+                        character.CampaignId = string.Empty;
+                        
+                    }
+                    gameState.PlayerLeaveGame(playerId);
+                    
                     await stateManager.UpdateCampaignStateAsync(gameState);
                     await BroadcastReadyStatusSnapshot(sessionOrCampaignId, gameState);
 
                     // Notify others in the campaign
                     await Clients.OthersInGroup(GetCampaignGroupName(sessionOrCampaignId))
                         .SendAsync("PlayerLeft", playerId);
+                    await BroadcastStateUpdate(sessionOrCampaignId, gameState);
                 }
             }
             catch (Exception)
@@ -240,9 +257,11 @@ public class GameHub(
     /// Leaves a campaign group (alias for LeaveSession for backwards compatibility)
     /// </summary>
     /// <param name="campaignId">The campaign ID to leave</param>
-    public async Task LeaveCampaign(string campaignId)
+    /// <param name="playerId"></param>
+    /// <param name="characterId"></param>
+    public async Task LeaveCampaign(string campaignId, string playerId, string characterId)
     {
-        await LeaveSession(campaignId);
+        await LeaveSession(campaignId, playerId, characterId);
     }
 
     /// <summary>
@@ -358,6 +377,30 @@ public class GameHub(
                 "System",
                 new AgentResponse() { FormattedResponse = new AgentFormattedResponse() { MessageToPlayers = "An error occurred processing your message. Please try again." } },
                 DateTime.UtcNow);
+        }
+    }
+
+    /// <summary>
+    /// Streams PCM audio generated from the provided text.
+    /// </summary>
+    /// <param name="text">The text to synthesize.</param>
+    /// <param name="cancellationToken">Cancellation token to stop streaming.</param>
+    /// <returns>A stream of PCM audio chunks.</returns>
+    public async IAsyncEnumerable<byte[]> StreamSpeech(string text, string messageId, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Handling Speech Synthesis on server \n\n---\n\n {Text}", text);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            yield break;
+        }
+
+        var chunksSent = 0;
+        // # Reason: Stream chunks as they are generated to minimize latency to the client.
+        await foreach (var chunk in TextToSpeechService.GenerateSpeechAsync(text, messageId).WithCancellation(cancellationToken))
+        {
+            yield return chunk;
+            chunksSent++;
+            logger.LogInformation("Sent speech chunk {ChunkIndex}", chunksSent);
         }
     }
 

@@ -10,17 +10,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AgenticRpg.Client\AgenticRpg.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="4.2.0" />
-    <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="4.2.0" />
-    <PackageReference Include="Microsoft.Identity.Web.TokenCache" Version="4.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Identity.Web.TokenCache" Version="4.3.0" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.1" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.1" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.13.1" />
-    <PackageReference Include="System.Memory.Data" Version="10.0.1" />
+    <PackageReference Include="System.Memory.Data" Version="10.0.2" />
   </ItemGroup>
 
 </Project>

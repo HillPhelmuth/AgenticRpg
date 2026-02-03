@@ -55,4 +55,13 @@ public interface ICampaignRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of campaigns owned by the user</returns>
     Task<IEnumerable<Campaign>> GetByOwnerIdAsync(string ownerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a campaign by invitation code and records the invited user.
+    /// </summary>
+    /// <param name="invitationCode">The invitation code provided to the player</param>
+    /// <param name="userId">The user ID to record as invited</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The campaign, or null if not found</returns>
+    Task<Campaign?> GetByInvitationCodeAsync(string invitationCode, string userId, CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,60 @@
+@inherits RpgPageBase
+<div class="model-selector">
+    <label class="model-label" for="modelToggle">AI Model:</label>
+    <div class="model-dropdown-container">
+        <button id="modelToggle"
+                type="button"
+                class="model-toggle"
+                @onclick="ToggleDropdown"
+                aria-expanded="@_isDropdownOpen"
+                aria-controls="modelList">
+            <span class="model-toggle-text">@(_selectedModel ?? "-- Select Model --")</span>
+            <span class="model-caret" aria-hidden="true">▾</span>
+        </button>
+        @if (_isDropdownOpen)
+        {
+            <div id="modelList" class="model-panel" role="listbox">
+                <input type="text"
+                       @bind="_modelFilter"
+                       @bind:event="oninput"
+                       class="model-filter"
+                       placeholder="Filter models..."
+                       aria-label="Filter AI models" />
+                <div class="model-options">
+                    @if (FilteredModels.Any())
+                    {
+                        @foreach (var model in FilteredModels)
+                        {
+                            <button type="button"
+                                    class="model-option @(model == _selectedModel ? "selected" : "")"
+                                    role="option"
+                                    aria-selected="@(model == _selectedModel)"
+                                    @onclick="() => SelectModelOption(model)">
+                                @model
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <div class="model-empty">No matches</div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+    <button @onclick="SelectModel"
+            disabled="@(!CanApplyModelOverride)"
+            class="btn-select-model"
+            title="@(SelectedCampaign == null ? "Apply as default for sessions" : $"Apply to {SelectedCampaign.Name}")">
+        Set Model
+    </button>
+    @if (!string.IsNullOrEmpty(ModelSelectionMessage))
+    {
+        <div class="model-toast success">@ModelSelectionMessage</div>
+    }
+    else if (!string.IsNullOrEmpty(ModelSelectionError))
+    {
+        <div class="model-toast error">@ModelSelectionError</div>
+    }
+
+</div>

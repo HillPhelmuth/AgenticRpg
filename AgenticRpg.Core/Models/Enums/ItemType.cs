@@ -26,5 +26,6 @@ public enum ItemType
     Amulet,
     Spell,
     Miscellaneous,
+    Ability
 
 }

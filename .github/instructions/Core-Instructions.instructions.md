@@ -8,9 +8,8 @@ applyTo: '**'
 An AI-driven, agent-based RPG game platform where players can create characters, join campaigns, and engage in dynamic storytelling and combat scenarios orchestrated by intelligent agents.
 
 ## Project Awareness & Context
-- **Always read `PLANNING.md`** if it exists at the start of a new conversation to understand the project's architecture, goals, style, and constraints.
 - **Check `TASKS.md`** before starting a new task. If the task isn’t listed, add it with a brief description and today's date.
-- **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
+
 
 ## Code Structure & Modularity
 - **Never create a file longer than 500 lines of code.** If a file approaches this limit, refactor by splitting it into modules or helper files.

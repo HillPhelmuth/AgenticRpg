@@ -205,7 +205,7 @@ public partial class CharacterCreation : IAsyncDisposable
         {
             ChatMessages.Add(new ChatMessage
             {
-                Id = Guid.NewGuid().ToString(),
+                Id =message.Id,
                 Content = message.FormattedResponse?.MessageToPlayers ?? message.Message,
                 IsUser = false,
                 Timestamp = timestamp,

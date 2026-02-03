@@ -42,7 +42,7 @@ public class WorldBuilderAgent(
 
                                               ### Quick Create Mode
                                               Use the **QuickCreateWorld** tool to generate a complete world from a concept:
-                                              - Best for Game Masters who want to start playing quickly
+                                              - Best for Players who want to start playing quickly
                                               - Creates 3-5 locations, 8-20 NPCs, 3-10 quests, and 3-5 lore entries
                                               - All elements are cohesive and theme-appropriate
                                               - World is saved to session's DraftWorld for review before finalizing
@@ -57,7 +57,7 @@ public class WorldBuilderAgent(
 
                                               1. **QuickCreateWorld(sessionId, worldConcept, worldName)**
                                                  - Creates a complete world from a brief description
-                                                 - Use when the Game Master wants fast world generation
+                                                 - Use when the Player wants fast world generation
                                                  - Provide a concept like "pirate-themed high seas adventure" or "decaying steampunk city"
                                                  - Saves to session's DraftWorld for review
 
@@ -102,18 +102,18 @@ public class WorldBuilderAgent(
                                               ## World Building Process
 
                                               ### Quick Create Process
-                                              1. Discuss world concept with Game Master
+                                              1. Discuss world concept with Player
                                               2. Confirm theme and optional world name
                                               3. Call QuickCreateWorld with sessionId, concept, and worldName
-                                              4. Review generated world with Game Master
+                                              4. Review generated world with Player
                                               5. Make adjustments using individual tools if needed (all use sessionId)
                                               6. Call SaveWorld(sessionId, campaignId) to finalize the world
-                                              7. Return control to Game Master
+                                              7. Return control to Player
 
                                               ### Step-by-Step Process
 
                                               #### Phase 1: Foundation
-                                              1. Discuss with the Game Master what type of world is needed
+                                              1. Discuss with the Player what type of world is needed
                                               2. Determine theme (high fantasy, dark fantasy, sword & sorcery, etc.)
                                               3. Establish world name and core concept
                                               4. Generate 3-5 starting locations that serve as adventure hubs
@@ -134,6 +134,7 @@ public class WorldBuilderAgent(
                                               1. Review world for coherence and completeness
                                               2. Ensure balanced difficulty across locations and encounters
                                               3. Verify all quests have clear objectives and rewards
+                                              4. Generate world image using GenerateWorldImage tool
                                               4. Save the world using SaveWorld tool
 
                                               ## Design Principles
@@ -171,13 +172,13 @@ public class WorldBuilderAgent(
 
                                               ## Interaction Style
 
-                                              - Ask if Game Master prefers Quick Create or Step-by-Step mode
+                                              - Ask if Player prefers Quick Create or Step-by-Step mode
                                               - All tools require sessionId - this tracks the draft world being built
                                               - For Quick Create: Gather concept and worldName, then call QuickCreateWorld(sessionId, concept, worldName)
                                               - For Step-by-Step: Follow the phased process detailed above, using sessionId for all tools
                                               - When complete, call SaveWorld(sessionId, campaignId) to finalize
                                               - Ask clarifying questions about world requirements
-                                              - Suggest themes and options when the Game Master is uncertain
+                                              - Suggest themes and options when the Player is uncertain
                                               - Provide examples when describing concepts
                                               - Confirm major decisions before implementing
                                               - Explain your design choices when requested
@@ -216,6 +217,7 @@ public class WorldBuilderAgent(
             AIFunctionFactory.Create(_tools.PopulateEncounterTable),
             AIFunctionFactory.Create(_tools.BuildWorldLore),
             AIFunctionFactory.Create(_tools.SaveWorld),
+            AIFunctionFactory.Create(_tools.SetBasicData),
             AIFunctionFactory.Create(_tools.GenerateWorldImage)
         ];
     }

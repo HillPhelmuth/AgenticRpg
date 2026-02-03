@@ -6,12 +6,31 @@
         @if (Messages != null && Messages.Any())
         {
             var lastMessageId = Messages.LastOrDefault()?.Id;
+            var isAgent = Messages.LastOrDefault()?.IsUser == false;
             @foreach (var message in Messages)
             {
-                <MessageView 
-                    Message="@message" 
+                <MessageView
+                    Message="@message"
                     OnEdit="@HandleEdit"
-                    OnDelete="@HandleDelete" />
+                    OnDelete="@HandleDelete">
+                    @if (!string.IsNullOrEmpty(lastMessageId)
+                         && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)
+                    {
+                        if (!IsPlaybackActive)
+                        {
+                            <div style="position: absolute; right: .5rem; bottom: .2rem;">
+                                <button class="speak-button" title="Speak" @onclick="@(() => SpeakMessage(message.Content, message.Id))"><i class="bi bi-volume-up-fill"></i></button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="position: absolute; right: .5rem; bottom: .2rem;">
+                                <button class="speak-button" title="Stop Speaking" @onclick="@(CancelPlayback)"><i class="bi bi-x-circle-fill"></i></button>
+                            </div>
+                        }
+
+                    }
+                </MessageView>
 
                 @if (!string.IsNullOrEmpty(lastMessageId)
                      && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase)
@@ -34,6 +53,12 @@
                             }
                         </div>
                     }
+                }
+                @if (!string.IsNullOrEmpty(lastMessageId)
+                     && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)
+                {
+                    <div></div>
+
                 }
             }
         }

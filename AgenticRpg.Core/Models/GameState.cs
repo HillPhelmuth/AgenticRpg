@@ -12,7 +12,7 @@ public class GameState
 {
 
     [JsonPropertyName("id")]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Id { get => CampaignId; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// ID of the campaign
@@ -50,6 +50,23 @@ public class GameState
     /// </summary>
     public string? CurrentLocationId { get; set; }
 
+    public void PlayerLeaveGame(string playerId)
+    {
+        // Remove player from campaign and ready statuses
+        Campaign.PlayerIds.Remove(playerId);
+        var readyStatuses = PlayerReadyStatuses;
+        readyStatuses.Remove(playerId);
+        PlayerReadyStatuses = readyStatuses;
+        
+        var charList = Characters.ToList();
+        foreach (var character in charList.Where(character => character.PlayerId == playerId))
+        {
+            var removedChar = Characters.FirstOrDefault(c => c.Id == character.Id);
+            var removedCharId = removedChar.Id;
+            Campaign.CharacterIds.Remove(removedCharId);
+            Characters.Remove(removedChar!);
+        }
+    }
     /// <summary>
     /// Active agent type (GameMaster, Combat, Economy, etc.)
     /// </summary>
@@ -85,7 +102,11 @@ public class GameState
     /// <summary>
     /// Player ready status tracking (PlayerId -> PlayerReadyStatus)
     /// </summary>
-    public Dictionary<string, PlayerReadyStatus> PlayerReadyStatuses { get; set; } = [];
+    public Dictionary<string, PlayerReadyStatus> PlayerReadyStatuses
+    {
+        get => Campaign.PlayerReadyStatuses;
+        set => Campaign.PlayerReadyStatuses = value;
+    }
 
     /// <summary>
     /// Gets a character by ID

@@ -27,8 +27,6 @@ public class CharacterManagerAgent(
     : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.CharacterManager, loggerFactory, threadStore)
 {
     private readonly CharacterManagerTools _tools = new(gameStateManager, characterRepository);
-    private readonly IGameStateManager _gameStateManager = gameStateManager;
-    private readonly ICharacterRepository _characterRepository = characterRepository;
 
     protected override string Description => "Guides players through character level-up progression by managing skill point allocation, facilitating spell selection for spellcasters, and finalizing level advancement with proper rule validation.";
 
@@ -155,11 +153,11 @@ public class CharacterManagerAgent(
     {
         var contextBuilder = new StringBuilder();
 
-        contextBuilder.AppendLine("=== CHARACTER LEVEL UP CONTEXT ===\n");
+        
 
-        if (gameState.Characters.Any())
+        if (gameState.Characters.Count != 0)
         {
-            contextBuilder.AppendLine("**Characters in Campaign:**\n");
+            contextBuilder.AppendLine("### Characters in Campaign:\n");
 
             foreach (var character in gameState.Characters)
             {
@@ -169,8 +167,7 @@ public class CharacterManagerAgent(
                 contextBuilder.AppendLine($"  - HP: {character.CurrentHP}/{character.MaxHP}");
                 contextBuilder.AppendLine($"  - MP: {character.CurrentMP}/{character.MaxMP}");
 
-                var nextLevelXP = character.Level * 1000;
-                if (character.Experience >= nextLevelXP)
+                if (character.RequiresLevelUp)
                 {
                     contextBuilder.AppendLine($"  - **READY TO LEVEL UP to Level {character.Level + 1}!**");
                 }
@@ -191,7 +188,7 @@ public class CharacterManagerAgent(
     /// </summary>
     private static string BuildRecentEventsContext(GameState gameState)
     {
-        if (!gameState.RecentNarratives.Any())
+        if (gameState.RecentNarratives.Count == 0)
         {
             return string.Empty;
         }

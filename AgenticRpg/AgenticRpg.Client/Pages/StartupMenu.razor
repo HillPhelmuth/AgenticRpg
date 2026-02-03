@@ -11,41 +11,11 @@
     <Authorized>
         <div class="startup-menu">
             <div class="startup-header">
-                <h1>AI Agentic RPG</h1>
-                <p class="subtitle">Choose your adventure</p>
+                <h1>Skynet RPG</h1>
+                
 
                 @* Model Selection Dropdown *@
-                <div class="model-selector">
-                    <label for="modelSelect">AI Model:</label>
-                    <input type="text"
-                           @bind="_modelFilter"
-                           @bind:event="oninput"
-                           class="model-dropdown"
-                           placeholder="Filter models..."
-                           aria-label="Filter AI models" />
-                    <select id="modelSelect" @bind="_selectedModel" class="model-dropdown">
-                        <option value="">-- Select Model --</option>
-                        @foreach (var model in FilteredModels)
-                        {
-                            <option value="@model">@model</option>
-                        }
-                    </select>
-                    <button @onclick="SelectModel"
-                            disabled="@(!CanApplyModelOverride)"
-                            class="btn-select-model"
-                            title="@(SelectedCampaign == null ? "Apply as default for sessions" : $"Apply to {SelectedCampaign.Name}")">
-                        Set Model
-                    </button>
-                    @if (!string.IsNullOrEmpty(ModelSelectionMessage))
-                    {
-                        <span class="model-selection success">@ModelSelectionMessage</span>
-                    }
-                    else if (!string.IsNullOrEmpty(ModelSelectionError))
-                    {
-                        <span class="model-selection error">@ModelSelectionError</span>
-                    }
-                    <button @onclick="Refresh" class="btn-refresh">Refresh</button>
-                </div>
+                <button @onclick="Refresh" class="btn-refresh">Refresh</button>
             </div>
 
             @if (IsLoading)
@@ -69,6 +39,7 @@
                     <div class="menu-section">
                         <div class="section-header">
                             <h2>My Characters</h2>
+                            <RpgDropdown CurrentUserId="@CurrentUserId" />
                             <button @onclick="CreateNewCharacter" class="btn-create">
                                 + New Character
                             </button>
@@ -88,7 +59,7 @@
                                             else
                                             {
                                                 <div class="portrait-placeholder">
-                                                    @character.Name.Substring(0, 1)
+                                                    @character.Name[..1]
                                                 </div>
                                             }
                                         </div>
@@ -100,6 +71,9 @@
                                                 <p class="campaign-tag">In Campaign</p>
                                             }
                                         </div>
+                                        <button class="btn-view-sheet" @onclick="() => ShowCharacterIntro(character)" @onclick:stopPropagation="true" title="View Character Intro Video">
+                                            ▶️
+                                        </button>
                                         <button class="btn-view-sheet" @onclick="() => ShowCharacterSheet(character)" @onclick:stopPropagation="true" title="View Character Sheet">
                                             👁️
                                         </button>
@@ -123,6 +97,10 @@
                     <div class="menu-section">
                         <div class="section-header">
                             <h2>Available Worlds</h2>
+                            <RpgDropdown CurrentUserId="@CurrentUserId" />
+                            <button @onclick="CreateNewCampaign" class="btn-create">
+                                + New Campaign World
+                            </button>
                         </div>
 
                         @if (Worlds.Any())
@@ -162,10 +140,28 @@
                     <div class="menu-section">
                         <div class="section-header">
                             <h2>Available Campaigns</h2>
-                            <button @onclick="CreateNewCampaign" class="btn-create">
-                                + New Campaign
-                            </button>
+                            <div class="invite-code-section">
+                                <input class="invite-code-input"
+                                       placeholder="Invitation code"
+                                       @bind="InvitationCodeInput"
+                                       @bind:event="oninput" />
+                                <button class="btn-create" @onclick="AddInvitationCampaign">
+                                    Add Code
+                                </button>
+                            </div>
                         </div>
+                        @if (!string.IsNullOrWhiteSpace(InvitationCodeMessage))
+                        {
+                            <div class="invite-code-message success">
+                                @InvitationCodeMessage
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(InvitationCodeError))
+                        {
+                            <div class="invite-code-message error">
+                                @InvitationCodeError
+                            </div>
+                        }
 
                         @if (Campaigns.Any())
                         {
@@ -252,6 +248,7 @@
                     <!-- Action Buttons -->
                     @if (SelectedCampaign != null && SelectedCharacter != null)
                     {
+                        <RpgDropdown SelectedCampaign="SelectedCampaign" CurrentUserId="@CurrentUserId" />
                         <div class="action-section">
                             @if (SelectedCharacter.CampaignId == SelectedCampaign.Id)
                             {
@@ -310,6 +307,38 @@
             </div>
             <div class="modal-body">
                 <CharacterSheetView Character="@ViewingCharacter" />
+            </div>
+        </div>
+    </div>
+}
+@if (_isShowVideoModal && ViewingCharacter?.IntroVidUrl != null)
+{
+    <div class="modal-overlay" @onclick="CloseVideoModal">
+        <div class="modal-content video-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Intro Video for @ViewingCharacter.Name</h2>
+                <button class="btn-close" @onclick="CloseVideoModal" title="Close">
+                    ✕
+                </button>
+            </div>
+            <div class="modal-body">
+                <video controls>
+                    <source src="@ViewingCharacter.IntroVidUrl" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    </div>
+}
+@if (_showWaitModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p style="color:white">Creating Video...</p>
+                </div>
             </div>
         </div>
     </div>

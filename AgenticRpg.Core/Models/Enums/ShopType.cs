@@ -12,7 +12,6 @@ public enum ShopType
     Armor,
     General,
     Magic,
-    Tavern,
-    Alchemy,
-    Blacksmith
+    Tavern
+   
 }

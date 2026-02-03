@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AgenticRpg.Core.Agents;
 using AgenticRpg.Core.Hubs;
@@ -161,7 +162,8 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         }
     }
 
-    public async Task LeaveSessionAsync(string sessionOrCampaignId)
+    public async Task LeaveSessionAsync(string sessionOrCampaignId, string? playerId = null,
+        string? characterName = null)
     {
         try
         {
@@ -174,9 +176,11 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         }
     }
 
-    public async Task LeaveCampaignAsync(string campaignId)
+    public async Task LeaveCampaignAsync(string campaignId, string playerId, string characterId)
     {
-        await LeaveSessionAsync(campaignId);
+        await _connection!.SendAsync("LeaveCampaign", campaignId, playerId, characterId);
+        _logger.LogInformation("Left session/campaign {SessionId}", campaignId);
+        //await LeaveSessionAsync(campaignId, playerId, characterId);
     }
 
     public async Task SendMessageAsync(string campaignId, string playerId, string message, AgentType targetAgentType = AgentType.None, string? clientMessageId = null)
@@ -189,6 +193,31 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         {
             _logger.LogError(ex, "Error sending message to campaign {CampaignId}", campaignId);
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Streams PCM audio chunks generated from the provided text and invokes the handler for each chunk.
+    /// </summary>
+    /// <param name="text">The text to synthesize.</param>
+    /// <param name="messageId"></param>
+    /// <param name="onChunk">Callback invoked for each audio chunk.</param>
+    /// <param name="cancellationToken">Token to cancel the streaming operation.</param>
+    public async Task StreamSpeechAsync(string text, string messageId, Func<byte[], Task> onChunk,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        var stream = _connection!.StreamAsync<byte[]>("StreamSpeech", text, messageId, cancellationToken);
+        Console.WriteLine("Streaming speech...");
+        var index = 0;
+        await foreach (var chunk in stream.WithCancellation(cancellationToken))
+        {
+            Console.WriteLine($"Streaming chunk {index++}");
+            await onChunk(chunk);
         }
     }
 
