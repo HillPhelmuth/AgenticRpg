@@ -5,29 +5,26 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 var services = builder.Services;
-services.AddMsalAuthentication(options =>
-{
-    builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
-    var defaultScopes = builder.Configuration.GetSection("AzureAd:DefaultScopes").Get<string[]>();
-    if (defaultScopes is not null && defaultScopes.Length > 0)
-    {
-        foreach (var scope in defaultScopes)
-        {
-            options.ProviderOptions.DefaultAccessTokenScopes.Add(scope);
-        }
-    }
-});
+//services.AddMsalAuthentication(options =>
+//{
+//    builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+//    var defaultScopes = builder.Configuration.GetSection("AzureAd:DefaultScopes").Get<string[]>();
+//    if (defaultScopes is not null && defaultScopes.Length > 0)
+//    {
+//        foreach (var scope in defaultScopes)
+//        {
+//            options.ProviderOptions.DefaultAccessTokenScopes.Add(scope);
+//        }
+//    }
+//});
 // Configure HttpClient for API calls (same origin as host)
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthenticationStateDeserialization();
 var apiBaseUrl = builder.HostEnvironment.BaseAddress;
 services.AddHttpClient("ApiClient", client =>
     {
         client.BaseAddress = new Uri(apiBaseUrl);
-    })
-    .AddHttpMessageHandler(sp =>
-    {
-        var handler = sp.GetRequiredService<AuthorizationMessageHandler>();
-        var scopes = builder.Configuration.GetSection("AzureAd:DefaultScopes").Get<string[]>();
-        return handler.ConfigureHandler([apiBaseUrl], scopes);
     });
 services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ApiClient"));
 services.AddCascadingAuthenticationState();

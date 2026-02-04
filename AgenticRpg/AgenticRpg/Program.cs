@@ -19,6 +19,9 @@ using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Identity.Web;
+using Auth0.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Location = AgenticRpg.Core.Models.Game.Location;
 using Results = Microsoft.AspNetCore.Http.Results;
 
@@ -27,32 +30,38 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 var services = builder.Services;
 services.AddRazorComponents()
-   .AddInteractiveWebAssemblyComponents().AddInteractiveServerComponents();
+   .AddInteractiveWebAssemblyComponents().AddInteractiveServerComponents().AddAuthenticationStateSerialization();
 services.AddOpenApi();
-
-// Configure authentication and authorization for API endpoints.
-services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
-services.AddAuthorization();
-
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-services.AddCors(options =>
-{
-    options.AddPolicy("ClientCors", policy =>
+services
+    .AddAuth0WebAppAuthentication(options =>
     {
-        if (allowedOrigins.Length == 0)
-        {
-            policy.AllowAnyOrigin()
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-            return;
-        }
-
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        options.Domain = builder.Configuration["Auth0:Domain"]!;
+        options.ClientId = builder.Configuration["Auth0:ClientId"]!;
     });
-});
+services.AddCascadingAuthenticationState();
+//// Configure authentication and authorization for API endpoints.
+//services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+//services.AddAuthorization();
+
+//var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+//services.AddCors(options =>
+//{
+//    options.AddPolicy("ClientCors", policy =>
+//    {
+//        if (allowedOrigins.Length == 0)
+//        {
+//            policy.AllowAnyOrigin()
+//                .AllowAnyHeader()
+//                .AllowAnyMethod();
+//            return;
+//        }
+
+//        policy.WithOrigins(allowedOrigins)
+//            .AllowAnyHeader()
+//            .AllowAnyMethod();
+//    });
+//});
 
 
 // Add SignalR
@@ -104,13 +113,31 @@ else
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-app.UseCors("ClientCors");
+//app.UseCors("ClientCors");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/startup") =>
+{
+    var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
+        .WithRedirectUri(returnUrl)
+        .Build();
+
+    await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+});
+
+app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
+{
+    var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
+        .WithRedirectUri("/")
+        .Build();
+
+    await httpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+});
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode().AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(typeof(AgenticRpg.Client._Imports).Assembly);
@@ -134,8 +161,7 @@ dice.MapPost("/", async (IRollDiceService diceRollerService, [FromBody] DiceRoll
 // ============================================================================
 
 var campaigns = app.MapGroup("/api/campaigns")
-    .WithTags("Campaigns")
-    .RequireAuthorization();
+    .WithTags("Campaigns");
 
 // Resolves the current user ID from authenticated claims.
 static string? GetCurrentUserId(ClaimsPrincipal user)

@@ -10,6 +10,9 @@
 ## 2026-02-01
 - [x] Cache TTS audio in blob storage by `messageId` to avoid regenerating speech for repeated sends.
 
+## 2026-02-04
+- [x] Make `RedirectToLogin.razor` force a full-page navigation to `Account/Login?redirectUri=/` (equivalent to clicking the `Login.razor` link).
+
 ## 2026-01-29
 - [x] Add PCM audio JS interop for text-to-speech playback.
 - [x] Stream TTS audio from server to client via SignalR for Game chat.

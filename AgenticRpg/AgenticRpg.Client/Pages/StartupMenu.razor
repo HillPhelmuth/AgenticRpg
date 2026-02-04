@@ -173,6 +173,10 @@
                                         <div class="campaign-info">
                                             <h3>@campaign.Name</h3>
                                             <p class="campaign-desc">@campaign.Description</p>
+                                            @if (CurrentUserId == campaign.OwnerId)
+                                            {
+                                                <p class="owner-indicator">Invite Code: <span>@campaign.InvitationCode</span></p>
+                                            }
                                             <div class="campaign-meta">
                                                 <span class="status-badge @campaign.Status.ToString().ToLower()">
                                                     @campaign.Status
@@ -290,7 +294,7 @@
         </div>
     </Authorized>
     <NotAuthorized>
-        <RedirectToLogin />
+        <RedirectToLogin /> 
     </NotAuthorized>
 </AuthorizeView>
 

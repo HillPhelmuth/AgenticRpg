@@ -1,12 +1,13 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+﻿using AgenticRpg.Client.Services;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
-using AgenticRpg.DiceRoller.Models;
-using AgenticRpg.Client.Services;
 using AgenticRpg.Core.Services;
+using AgenticRpg.DiceRoller.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.SignalR.Client;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace AgenticRpg.Client.Pages;
 
@@ -18,7 +19,10 @@ public partial class Home
     private ICharacterService CharacterService { get; set; } = default!;
     [Inject]
     private HttpClient HttpClient { get; set; } = default!;
-
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
     private const string DiceUrl = "api/dice";
     private const string SessionId = "session-1";
     private string? rollResultJson;
@@ -45,10 +49,14 @@ public partial class Home
     }
     protected override async Task OnInitializedAsync()
     {
-        //Navigation.NavigateTo("/startup");
-        //HubService.OnDiceRollResult += HandleDiceRollResult;
-        Console.WriteLine($"Available Monsters: {DndApiService.GetAvailableMonsterNames()}");
-        //await HubService.StartAsync();
+        if (authenticationState is not null)
+        {
+            var state = await authenticationState;
+            if (state.User.Identity.IsAuthenticated)
+            {
+                NavigationManager.NavigateTo("startup");
+            }
+        }
         await base.OnInitializedAsync();
     }
     //private async void HandleDiceRollResult(object? sender, List<RollDiceResults> e)

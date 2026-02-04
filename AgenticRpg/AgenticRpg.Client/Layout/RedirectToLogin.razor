@@ -4,6 +4,8 @@
 @code {
     protected override void OnInitialized()
     {
-        Navigation.NavigateToLogin("authentication/login");
+        // Match the behavior of the plain <a href="Account/Login?redirectUri=/"> link in `Login.razor`
+        // by forcing a full page load to the server-side auth endpoint.
+        Navigation.NavigateTo("Account/Login?redirectUri=/", forceLoad: true);
     }
 }
