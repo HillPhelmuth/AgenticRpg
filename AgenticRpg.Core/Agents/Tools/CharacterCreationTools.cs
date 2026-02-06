@@ -455,6 +455,7 @@ public class CharacterCreationTools(
         }
 
         character.CharacterSkills = skills.ToList();
+        character.CharacterSkills.ForEach(skill => skill.Rank = 1);
         // Calculate all derived stats
         character.CurrentHP = character.MaxHP;
         character.CurrentMP = character.MaxMP;

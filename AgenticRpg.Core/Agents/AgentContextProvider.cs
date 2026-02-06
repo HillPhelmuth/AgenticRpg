@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.State;
 using Microsoft.Extensions.Logging;
@@ -18,11 +17,6 @@ public class AgentContextProvider(
     private readonly ISessionStateManager _sessionStateManager = sessionStateManager ?? throw new ArgumentNullException(nameof(sessionStateManager));
     private readonly ILogger<AgentContextProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     
-    // Conversation history cache: CampaignId -> AgentType -> Messages
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, List<Message>>> _conversationCache = new();
-    
-    // Lock for thread-safe conversation history updates
-    private readonly SemaphoreSlim _historyLock = new(1, 1);
 
     /// <inheritdoc/>
     public async Task<GameState?> GetGameStateAsync(string campaignId)
@@ -103,5 +97,49 @@ public class AgentContextProvider(
         // Check if it's a session first (sessions are more likely for this check)
         var session = await _sessionStateManager.GetSessionStateAsync(id);
         return session != null;
+    }
+    public async Task<string> GetSessionOrCampaignModel(string sessionOrCampaignId)
+    {
+        if (string.IsNullOrEmpty(sessionOrCampaignId))
+        {
+            throw new ArgumentNullException(nameof(sessionOrCampaignId));
+        }
+        // Check if it's a session
+        var session = await _sessionStateManager.GetSessionStateAsync(sessionOrCampaignId);
+        if (session != null)
+        {
+            return session.SelectedModel ?? "gpt-5.1";
+        }
+        // Otherwise, treat it as a campaign
+        var gameState = await _gameStateManager.GetCampaignStateAsync(sessionOrCampaignId);
+        if (gameState != null)
+        {
+            return gameState.SelectedModel ?? "gpt-5.1";
+        }
+        return "gpt-5.1";
+    }
+    public async Task SetSessionOrCampaignModel(string sessionOrCampaignId, string modelName)
+    {
+        if (string.IsNullOrEmpty(sessionOrCampaignId))
+        {
+            throw new ArgumentNullException(nameof(sessionOrCampaignId));
+        }
+        // Check if it's a session
+        var session = await _sessionStateManager.GetSessionStateAsync(sessionOrCampaignId);
+        if (session != null)
+        {
+            _logger.LogInformation("Saving model for session: {SessionId} to {ModelName}", sessionOrCampaignId, modelName);
+            session.SelectedModel = modelName;
+            await _sessionStateManager.UpdateSessionStateAsync(session);
+            return;
+        }
+        // Otherwise, treat it as a campaign
+        var gameState = await _gameStateManager.GetCampaignStateAsync(sessionOrCampaignId);
+        if (gameState != null)
+        {
+            _logger.LogInformation("Saving model for campaign: {CampaignId} to {ModelName}", sessionOrCampaignId, modelName);
+            gameState.SelectedModel = modelName;
+            await _gameStateManager.UpdateCampaignStateAsync(gameState);
+        }
     }
 }

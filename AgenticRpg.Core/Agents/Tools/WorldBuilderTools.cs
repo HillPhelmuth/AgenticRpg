@@ -61,8 +61,8 @@ public class WorldBuilderTools(
                                                    - Connect quests to NPCs and locations
                                                    - Include varied types: investigation, rescue, treasure hunt, combat, social
                                                    - Specify rewards:
-                                                     * XP appropriate to difficulty (100-500 XP for starter quests)
-                                                     * Gold rewards (100-5000 gold, depending on difficulty)
+                                                     * XP appropriate to difficulty (100-500 XP x starting level)
+                                                     * Gold rewards (100-5000 gold x starting level)
                                                      * Possible item rewards
 
                                                    #### Lore Entries (Create 3-5 foundational pieces)
@@ -222,6 +222,33 @@ public class WorldBuilderTools(
             Message = $"NPC '{name}' created as {role} with {disposition} disposition at {location.Name}."
         });
     }
+    [Description("Add to or replace the worlds NPCs.")]
+    public async Task<string> AddNPCs([Description("The unique session ID for this world building session.")] string sessionId,[Description("A new set of world NPCs to replace the existing ones.")] NPC[] newNPCs,[Description("Remove the current NPCs, and replace them. If `false` it will add these NPCs to the existing NPCs")] bool replaceExisting)
+    {
+        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
+        if (session?.Context.DraftWorld == null)
+        {
+            return JsonSerializer.Serialize(new CreateNPCResult()
+            {
+                Success = false,
+                Message = "",
+                Error = "Session or draft world not found"
+            });
+        }
+
+        // Replace the NPCs in the draft world
+        
+        session.Context.DraftWorld.NPCs.Clear();
+        session.Context.DraftWorld.NPCs.AddRange(newNPCs);
+        session.LastUpdatedAt = DateTime.UtcNow;
+        await sessionStateManager.UpdateSessionStateAsync(session);
+
+        return JsonSerializer.Serialize(new CreateNPCResult()
+        {
+            Success = true,
+            Message = $"Replaced NPCs in session '{sessionId}'."
+        });
+    }
 
     [Description("Designs a quest with objectives and rewards. Parameters: sessionId (world building session ID), questName (quest title), description (quest details and objectives), questGiverId (NPC who gives quest), locationId (where quest starts), rewards (XP and items awarded). Returns JSON with quest details and ID.")]
     public async Task<string> DesignQuest(
@@ -287,7 +314,30 @@ public class WorldBuilderTools(
             Message = $"Quest '{questName}' created. Given by {questGiver.Name} at {location.Name}."
         });
     }
-
+    public async Task<string> AddQuests([Description("The unique session ID for this world building session.")] string sessionId,[Description("A new set of world quests to replace the existing ones.")] Quest[] newQuests,[Description("Remove the current quests, and replace them. If `false` it will add these quests to the existing quests")] bool replaceExisting)
+    {
+        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
+        if (session?.Context.DraftWorld == null)
+        {
+            return JsonSerializer.Serialize(new DesignQuestResult()
+            {
+                Success = false,
+                Message = "",
+                Error = "Session or draft world not found"
+            });
+        }
+        // Replace the quests in the draft world
+        
+        session.Context.DraftWorld.Quests.Clear();
+        session.Context.DraftWorld.Quests.AddRange(newQuests);
+        session.LastUpdatedAt = DateTime.UtcNow;
+        await sessionStateManager.UpdateSessionStateAsync(session);
+        return JsonSerializer.Serialize(new DesignQuestResult()
+        {
+            Success = true,
+            Message = $"Replaced quests in session '{sessionId}'."
+        });
+    }
     [Description("Populates random encounter table for a location. Parameters: sessionId (world building session ID), locationId (location to add encounters to), encounterTypes (array of encounter descriptions like 'Bandits', 'Wild Animals', 'Undead'), difficultyRange (1-10 scale for encounter difficulty). Returns JSON with encounter table entries.")]
     public async Task<string> PopulateEncounterTable(
         [Description("The unique session ID for this world building session.")] string sessionId,
@@ -337,7 +387,7 @@ public class WorldBuilderTools(
             Message = $"Encounter table populated for {location.Name} with {encounters.Count} encounter types."
         });
     }
-
+    
     [Description("Adds world lore and history entries. Parameters: sessionId (world building session ID), category (History/Legend/Culture/Religion/Geography), loreName (title of lore entry), description (detailed lore content), relatedEntities (array of related location/NPC IDs). Returns JSON with lore entry details and ID.")]
     public async Task<string> BuildWorldLore(
         [Description("The unique session ID for this world building session.")] string sessionId,

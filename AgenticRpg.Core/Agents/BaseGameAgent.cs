@@ -126,10 +126,10 @@ public abstract class BaseGameAgent(
             // Get tools from derived class
             var tools = /*Tools.Any() ? Tools.ToList() :*/ GetTools()?.DistinctBy(x => x.Name).ToList();
 
-            var enableReasoning = OpenRouterModels.SupportsParameter(model ?? $"openai/{_config.BaseModelName}", "reasoning");
+            var enableReasoning = OpenRouterModels.SupportsParameter(requestedModel ?? $"openai/{_config.BaseModelName}", "reasoning");
             // Create the agent with instructions, description, and tools
             Console.WriteLine($"\n---------------\nTool Count: {tools?.Count ?? 0} (should be {GetTools().Count()})\n---------------\n");
-            Agent ??= chatClient.AsAIAgent(
+            Agent = chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
                     Description = Description,

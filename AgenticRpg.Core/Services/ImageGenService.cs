@@ -59,7 +59,7 @@ public class ImageGenService
     public static async Task<string> GenerateCharacterImage(Character character, string? additionalInstructions = null)
     {
 
-        var instructions = $"Character: {character.Name}, Race: {character.Race}, Class: {character.Class}, Background: {character.Background}. \n Facing camera, full body shot.";
+        var instructions = $"Character: {character.Name}, Race: {character.Race}, Class: {character.Class}, Background: {(string.IsNullOrEmpty(additionalInstructions) ? character.Background : additionalInstructions)}. \n Facing camera, full body shot.";
 
         if (!string.IsNullOrEmpty(additionalInstructions))
         {

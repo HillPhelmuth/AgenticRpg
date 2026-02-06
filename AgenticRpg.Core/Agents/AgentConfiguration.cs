@@ -77,6 +77,9 @@ public interface IAgentContextProvider
     /// Determines if an ID is a session or campaign
     /// </summary>
     Task<bool> IsSessionAsync(string id);
+
+    Task<string> GetSessionOrCampaignModel(string sessionOrCampaignId);
+    Task SetSessionOrCampaignModel(string sessionOrCampaignId, string modelName);
 }
 
 /// <summary>

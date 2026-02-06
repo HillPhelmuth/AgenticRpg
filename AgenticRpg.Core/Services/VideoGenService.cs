@@ -42,8 +42,8 @@ public class VideoGenService()
         string? additionalInstruction = null)
     {
         var promptData = await GenerateVideoPromptAsync(novelInfo, additionalInstruction);
-        _logger.LogInformation("Video Gen prompt reasoning: {reasoning}", promptData.Reasoning);
-        _logger.LogInformation("VideoGen instructions: {instructions}", promptData.VideoInstructions);
+        
+        _logger.LogInformation("VideoGen instructions:\n--------------\n{instructions}\n------------------\n", promptData.VideoInstructions);
         var prompt = "Combat video. Side view profile perspective throughout. " + promptData.VideoInstructions;
         return await GenerateSoraFromPrompt(prompt, campaignId);
     }
@@ -185,7 +185,7 @@ public class VideoGenService()
             Resolution = "720p",
             ReferenceImages = [new VideoGenerationReferenceImage(){ReferenceType = VideoGenerationReferenceType.ASSET, Image = new Image(){ImageBytes = imageBytes, MimeType = imageMimeType}}]
         };
-        var videoBytes = await GenerateVideoFromPrompt(instructions, "veo-3.1-fast-generate-preview", config);
+        var videoBytes = await GenerateVideoFromPrompt(instructions, "veo-3.1-generate-preview", config);
         var blobName = @$"CharacterIntros\{ConvertNonAlphaNumericToUnderscore(character.Id)}_IntroVideo_{Guid.NewGuid():N}.mp4";
         return await SaveAsUrl(blobName, videoBytes);
     }
@@ -706,10 +706,10 @@ public class IntroPrompts
         ACTION:
         {{$CHARACTER_NAME}}, a {{$RACE}} {{$CLASS}} rises dramatically into frame, eyes glowing, weapon or focus radiating power. The music swells to its peak.
         
-        At the height of the buildup, the following happens:
+        At the height of the buildup, the following happens (failure moment):
         – The character sneezes
-        – Drops their weapon
-        – Realizes something is missing and looks down in concern
+        - Then farts loudly
+        - Then scratches themselves, looking embarrassed
         
         CAMERA:
         Extreme low angle during the rise. Sudden neutral framing at the failure moment.
@@ -718,7 +718,7 @@ public class IntroPrompts
         Thunder, choir, magic hum. Abrupt stop or comedic silence at the anticlimax.
         
         ENDING:
-        Cut to black mid-reaction. The character’s name, {{$CHARACTER_NAME}}, fades in quietly.
+        Freeze mid-reaction at most embarrasing point. Off-camera narrator says "{{$CHARACTER_NAME}} - Bumbling Fool, I guess".
         
         """;
     public static string GetPrompt(IntroPromptType type)

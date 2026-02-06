@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 using AgenticRpg.Core.Models.Enums;
 
 namespace AgenticRpg.Core.Models.Game;
@@ -31,4 +32,22 @@ public class NPC
     
     [Description("Additional NPC attributes and properties")]
     public Dictionary<string, object> Attributes { get; set; } = [];
+
+    public string AsMarkdown()
+    {
+                var sb = new StringBuilder();
+                sb.AppendLine($"## NPC: {Name}");
+        sb.AppendLine($"**Description:** {Description}");
+        sb.AppendLine($"**Role:** {Role}");
+        sb.AppendLine($"**Disposition:** {Disposition}");
+        sb.AppendLine($"**Status:** {Status}");
+        sb.AppendLine($"**Location:** {CurrentLocationId}");
+        if (Attributes.Count == 0) return sb.ToString();
+        sb.AppendLine("### Attributes");
+        foreach (var attribute in Attributes)
+        {
+            sb.AppendLine($"- **{attribute.Key}:** {attribute.Value}");
+        }
+        return sb.ToString();
+    }
 }

@@ -96,13 +96,13 @@ public class GameHub(
         logger.LogInformation("Player {PlayerId} successfully joined session {SessionId}", playerId, sessionId);
     }
 
-    public void ChangeModel(string? sessionOrCampaignId, string? modelId)
+    public async Task ChangeModel(string? sessionOrCampaignId, string? modelId)
     {
         var scopeLabel = string.IsNullOrWhiteSpace(sessionOrCampaignId) ? "<global>" : sessionOrCampaignId;
 
         // Allow clients to clear overrides by sending empty/whitespace model IDs.
         var resolvedModel = string.IsNullOrWhiteSpace(modelId) ? null : modelId;
-        orchestrationService.ChangeModel(sessionOrCampaignId, resolvedModel);
+        await orchestrationService.ChangeModel(sessionOrCampaignId, resolvedModel);
 
         logger.LogInformation(
             "Connection {ConnectionId} set model override for {ScopeId} to {ModelId}",

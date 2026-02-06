@@ -1,15 +1,18 @@
-using System.Collections.Concurrent;
+using AgenticRpg.Core.Agents; // For Message class
+using AgenticRpg.Core.Hubs;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
-using AgenticRpg.Core.Agents; // For Message class
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace AgenticRpg.Core.State;
 
 /// <summary>
 /// Manages pre-game session state with in-memory caching
 /// </summary>
-public class SessionStateManager(ILogger<SessionStateManager> logger) : ISessionStateManager
+public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContext<GameHub> hubContext) : ISessionStateManager
 {
     private readonly ILogger<SessionStateManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, SessionState> _sessionCache = new();

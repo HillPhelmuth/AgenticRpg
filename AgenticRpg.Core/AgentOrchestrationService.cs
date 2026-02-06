@@ -17,6 +17,7 @@ public class AgentOrchestrationService
 {
     private readonly IGameStateManager _stateManager;
     private readonly ILogger<AgentOrchestrationService> _logger;
+    private readonly IAgentContextProvider _agentContextProvider;
 
     // Agent instances
     private readonly GameMasterAgent _gameMasterAgent;
@@ -29,8 +30,6 @@ public class AgentOrchestrationService
     private readonly Dictionary<string, CampaignMessageQueue> _messageQueues = [];
     private readonly Lock _lock = new();
     private const string GlobalModelScope = "__global__";
-    private readonly Dictionary<string, string> _modelOverridesByScope = [];
-    private readonly Dictionary<string, string?> _latestMessageForGameMaster = [];
 
     /// <summary>
     /// Creates and manages orchestration of AI agents within the RPG system using Microsoft Agent Framework (Microsoft.Agents.AI.OpenAI)
@@ -43,7 +42,7 @@ public class AgentOrchestrationService
         CharacterCreationAgent characterCreationAgent,
         CharacterManagerAgent characterLevelUpAgent,
         ShopKeeperAgent economyManagerAgent,
-        WorldBuilderAgent worldBuilderAgent)
+        WorldBuilderAgent worldBuilderAgent, IAgentContextProvider agentContextProvider)
     {
         _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -53,6 +52,7 @@ public class AgentOrchestrationService
         _characterLevelUpAgent = characterLevelUpAgent ?? throw new ArgumentNullException(nameof(characterLevelUpAgent));
         _economyManagerAgent = economyManagerAgent ?? throw new ArgumentNullException(nameof(economyManagerAgent));
         _worldBuilderAgent = worldBuilderAgent ?? throw new ArgumentNullException(nameof(worldBuilderAgent));
+        _agentContextProvider = agentContextProvider;
         _combatAgent.MessageForGameMaster += HandleMessageForGameMaster;
         _characterLevelUpAgent.MessageForGameMaster += HandleMessageForGameMaster;
         _economyManagerAgent.MessageForGameMaster += HandleMessageForGameMaster;
@@ -72,21 +72,11 @@ public class AgentOrchestrationService
         }
     }
 
-    public void ChangeModel(string? scopeId, string? modelId)
+    public async Task ChangeModel(string? scopeId, string? modelId)
     {
         var resolvedScope = string.IsNullOrWhiteSpace(scopeId) ? GlobalModelScope : scopeId;
-
-        lock (_lock)
-        {
-            if (string.IsNullOrWhiteSpace(modelId))
-            {
-                _modelOverridesByScope.Remove(resolvedScope);
-            }
-            else
-            {
-                _modelOverridesByScope[resolvedScope] = modelId;
-            }
-        }
+        await _agentContextProvider.SetSessionOrCampaignModel(scopeId, modelId);
+        
     }
 
     /// <summary>
@@ -144,7 +134,7 @@ public class AgentOrchestrationService
             _logger.LogInformation(
                 "Processing message for campaign {CampaignId} from player {PlayerId} using {AgentType}", 
                 campaignId, playerId, activeAgent.AgentType);
-            var model = GetEffectiveModel(campaignId);
+            var model = await GetEffectiveModel(campaignId);
             // Process the message through the active agent
 
 
@@ -194,18 +184,10 @@ public class AgentOrchestrationService
         }
     }
 
-    private string? GetEffectiveModel(string? scopeId)
+    private async Task<string?> GetEffectiveModel(string? scopeId)
     {
-        lock (_lock)
-        {
-            if (!string.IsNullOrWhiteSpace(scopeId) &&
-                _modelOverridesByScope.TryGetValue(scopeId, out var scopedValue))
-            {
-                return scopedValue;
-            }
-
-            return _modelOverridesByScope.GetValueOrDefault(GlobalModelScope);
-        }
+        return await _agentContextProvider.GetSessionOrCampaignModel(scopeId);
+        
     }
 
     private Task<AgentResponse> ProcessQueuedMessageAsync(PlayerMessageRequest request)
@@ -326,37 +308,6 @@ public class AgentOrchestrationService
             _ => throw new ArgumentException($"Unknown agent type: {agentType}", nameof(agentType))
         };
     }
-}
-
-/// <summary>
-/// Context information about an agent handoff
-/// </summary>
-public class AgentHandoffContext
-{
-    /// <summary>
-    /// The agent that initiated the handoff
-    /// </summary>
-    public string SourceAgent { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// The agent receiving control
-    /// </summary>
-    public string TargetAgent { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// Reason or context for the handoff
-    /// </summary>
-    public string HandoffReason { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// When the handoff occurred
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-    
-    /// <summary>
-    /// Additional metadata about the handoff
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
