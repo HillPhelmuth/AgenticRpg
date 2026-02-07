@@ -581,7 +581,15 @@
     color: #8b7355;
     font-size: 0.875rem;
 }
-
+.world-button {
+    background-color: #062D15;
+    border-radius: 12px;
+    color: #d4af37;
+    padding: 0.5rem 1rem;
+}
+.world-button img {
+    margin-right:6px;
+}
 /* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
 
 /* Small Mobile (320px - 480px) */
@@ -709,4 +717,10 @@
     .world-card:active {
         transform: scale(0.98);
     }
+}
+.auth-view {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
 }

@@ -1,5 +1,4 @@
 using AgenticRpg.Client.Services;
-using AgenticRpg.Core.Agents.Llms;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Game;
 using AgenticRpg.Core.Services;
@@ -14,6 +13,7 @@ public partial class StartupMenu
     [Inject] private IWorldService WorldService { get; set; } = null!;
     [Inject] private ILogger<StartupMenu> Logger { get; set; } = null!;
     [Inject] private AuthenticationStateProvider AuthenticationState { get; set; } = null!;
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
     private List<Campaign> Campaigns { get; set; } = [];
     private List<Campaign> OwnerCampaigns { get; set; } = [];
     private List<Campaign> InvitationCampaigns { get; set; } = [];
@@ -36,19 +36,14 @@ public partial class StartupMenu
     private string CurrentUserId { get; set; } = "player-1"; // TODO: Replace with actual authentication
 
     // Modal state
-    private bool ShowCharacterModal { get; set; } = false;
-    private Character? ViewingCharacter { get; set; }
-    private IReadOnlyList<string> AvailableModels { get; set; } = OpenRouterModels.GetAllModelsFromEmbeddedFile();
-    private string? _selectedModel;
-    private string _modelFilter = string.Empty;
+    private bool _showCharacterModal;
+    private bool _showWorldModal;
+    private Character? _viewingCharacter;
+
+    private World? _viewingWorld;
     private string InvitationCodeInput { get; set; } = string.Empty;
     private string? InvitationCodeMessage { get; set; }
     private string? InvitationCodeError { get; set; }
-
-    private IEnumerable<string> FilteredModels => string.IsNullOrWhiteSpace(_modelFilter)
-        ? AvailableModels
-        : AvailableModels.Where(model => model.Contains(_modelFilter, StringComparison.OrdinalIgnoreCase));
-    private bool CanApplyModelOverride => !string.IsNullOrEmpty(_selectedModel);
 
     protected override async Task OnInitializedAsync()
     {
@@ -191,11 +186,12 @@ public partial class StartupMenu
         Navigation.NavigateTo($"/campaign-creation?worldOnly={true}");
     }
 
-    private void CreateCampaignFromWorld()
+    private void CreateCampaignFromWorld(string? worldId = null)
     {
         if (SelectedWorld != null)
         {
-            Navigation.NavigateTo($"/campaign-creation?worldId={SelectedWorld.Id}");
+            worldId ??= SelectedWorld.Id;
+            Navigation.NavigateTo($"/campaign-creation?worldId={worldId}");
         }
     }
 
@@ -253,23 +249,34 @@ public partial class StartupMenu
 
     private void ShowCharacterSheet(Character character)
     {
-        ViewingCharacter = character;
-        ShowCharacterModal = true;
+        _viewingCharacter = character;
+        _showCharacterModal = true;
     }
 
     private void CloseCharacterModal()
     {
-        ShowCharacterModal = false;
-        ViewingCharacter = null;
+        _showCharacterModal = false;
+        _viewingCharacter = null;
     }
 
+    private void ShowWorldDetails(World world)
+    {
+        _showWorldModal = true;
+        _viewingWorld = world;
+    }
+
+    private void CloseWorldModal()
+    {
+        _showWorldModal =false;
+        _viewingWorld = null;
+    }
     private bool _showWaitModal;
     private async Task ShowCharacterIntro(Character character)
     {
         if (!string.IsNullOrEmpty(character.IntroVidUrl))
         {
 
-            ViewingCharacter = character;
+            _viewingCharacter = character;
             _isShowVideoModal = true;
             StateHasChanged();
             return;
@@ -278,7 +285,7 @@ public partial class StartupMenu
         StateHasChanged();
         await Task.Delay(1);
         var characterUpdate = await CharacterService.GenerateCharacterVideo(character.Id);
-        ViewingCharacter = characterUpdate;
+        _viewingCharacter = characterUpdate;
         _showWaitModal = false;
 
         _isShowVideoModal = true;
@@ -288,6 +295,6 @@ public partial class StartupMenu
     private void CloseVideoModal()
     {
         _isShowVideoModal = false;
-        ViewingCharacter = null;
+        _viewingCharacter = null;
     }
 }

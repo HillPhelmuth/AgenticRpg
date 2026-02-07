@@ -372,3 +372,4 @@ FodyWeavers.xsd
 /AgenticRpg.Core/Data/RpgConvertedSpells-Divination.json
 /AgenticRpg.Core/Data/RpgConvertedSpells.json
 /AgenticRpg/AgenticRpg/appsettings.Development.json
+/.github/skills/refactor-csharp/SKILL.md

@@ -8,15 +8,17 @@
         <div class="character-creation-container">
             <div class="header-section">
                 <h2>Character Creation</h2>
-                <div class="button-group">
-                    <button class="btn-secondary" @onclick="TriggerRoll">
-                        <span class="icon">📋</span> Roll
-                    </button>
-                    <button class="btn-secondary" @onclick="GoBack" disabled="@IsProcessing">
-                        <span class="icon">←</span> Back
-                    </button>
-                    <button class="btn-primary" @onclick="SaveCharacter" disabled="@(!CanSaveCharacter || IsProcessing)">
-                        <span class="icon">💾</span> Save Character
+                <div class="header-actions">
+                    <div class="button-group">
+                        <button class="btn-secondary" @onclick="GoBack" disabled="@IsProcessing">
+                            <span class="icon">←</span> Back
+                        </button>
+                       @*  <button class="btn-primary" @onclick="SaveCharacter" disabled="@(!CanSaveCharacter || IsProcessing)">
+                            <span class="icon">💾</span> Save
+                        </button> *@
+                    </div>
+                    <button class="menu-button" @onclick="ToggleModelMenu" title="Model settings" aria-label="Open model settings">
+                        <span class="menu-icon" aria-hidden="true">☰</span>
                     </button>
                 </div>
             </div>
@@ -31,11 +33,11 @@
             <!-- Mobile View Toggle (visible only on mobile/tablet) -->
             <div class="mobile-view-toggle">
                 <button class="toggle-btn @(CurrentMobileView == MobileView.Character ? "active" : "")"
-                        @onclick='() => SetMobileView(MobileView.Character)'>
+                        @onclick="() => SetMobileView(MobileView.Character)">
                     📋 Character
                 </button>
                 <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")"
-                        @onclick='() => SetMobileView(MobileView.Chat)'>
+                        @onclick="() => SetMobileView(MobileView.Chat)">
                     💬 Chat
                 </button>
             </div>
@@ -90,3 +92,9 @@
         <RedirectToLogin />
     </NotAuthorized>
 </AuthorizeView>
+
+@if (ShowModelMenu)
+{ 
+    <RpgModalMenu SessionOrCampaignId="@SessionId" CurrentUserId="@CurrentUserId" OnCloseModalMenu="CloseModelMenu"></RpgModalMenu>
+    
+}

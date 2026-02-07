@@ -8,6 +8,14 @@
     color: #e0f2f1;
     padding: 1rem;
     overflow: hidden;
+    --model-menu-bg: linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 26, 0.98) 100%);
+    --model-menu-border: #4dd0e1;
+    --model-menu-shadow: rgba(77, 208, 225, 0.35);
+    --model-menu-title-color: #d4af37;
+    --model-menu-close-color: #c9b89a;
+    --model-menu-z: 1200;
+    --menu-section-border: rgba(77, 208, 225, 0.3);
+    --menu-section-title: #d4af37;
 }
 
 .header-section {
@@ -33,6 +41,13 @@
     display: flex;
     gap: 0.75rem;
 }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 
 .btn-primary,
 .btn-secondary {
@@ -258,6 +273,7 @@
 .toggle-btn.active:hover {
     background: rgba(139, 115, 85, 0.5);
 }
+
 /* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
 
 /* Small Mobile (320px - 480px) */
@@ -280,17 +296,26 @@
         text-align: center;
     }
 
-    .button-group {
+    /*.button-group {
         flex-direction: column;
         width: 100%;
         gap: 0.5rem;
     }
 
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }*/
+
+    .menu-button {
+        width: 100%;
+    }
+
     .btn-primary,
     .btn-secondary {
-        width: 100%;
+        /*width: 100%;*/
         justify-content: center;
-        padding: 0.6rem 1rem;
+        padding: 0.3rem 0.5rem;
         font-size: 0.9rem;
     }
 
@@ -394,6 +419,15 @@
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
+        width: 100%;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .menu-button {
         width: 100%;
     }
 

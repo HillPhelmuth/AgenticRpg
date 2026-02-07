@@ -30,6 +30,7 @@ public class AgentOrchestrationService
     private readonly Dictionary<string, CampaignMessageQueue> _messageQueues = [];
     private readonly Lock _lock = new();
     private const string GlobalModelScope = "__global__";
+    private const string HandoffContextKey = "HandoffContext";
 
     /// <summary>
     /// Creates and manages orchestration of AI agents within the RPG system using Microsoft Agent Framework (Microsoft.Agents.AI.OpenAI)
@@ -53,18 +54,20 @@ public class AgentOrchestrationService
         _economyManagerAgent = economyManagerAgent ?? throw new ArgumentNullException(nameof(economyManagerAgent));
         _worldBuilderAgent = worldBuilderAgent ?? throw new ArgumentNullException(nameof(worldBuilderAgent));
         _agentContextProvider = agentContextProvider;
-        _combatAgent.MessageForGameMaster += HandleMessageForGameMaster;
-        _characterLevelUpAgent.MessageForGameMaster += HandleMessageForGameMaster;
-        _economyManagerAgent.MessageForGameMaster += HandleMessageForGameMaster;
-
     }
 
-    private async void HandleMessageForGameMaster(string campaignId, string message)
+    // # Reason: Event handlers should avoid async void to prevent unobserved exceptions.
+    private async Task HandleMessageForGameMasterAsync(string campaignId, string message)
     {
         try
         {
             var state = await _stateManager.GetCampaignStateAsync(campaignId);
-            state.Metadata["HandoffContext"] = message;
+            if (state is null)
+            {
+                return;
+            }
+
+            state.Metadata[HandoffContextKey] = message;
         }
         catch (Exception e)
         {
@@ -75,7 +78,7 @@ public class AgentOrchestrationService
     public async Task ChangeModel(string? scopeId, string? modelId)
     {
         var resolvedScope = string.IsNullOrWhiteSpace(scopeId) ? GlobalModelScope : scopeId;
-        await _agentContextProvider.SetSessionOrCampaignModel(scopeId, modelId);
+        await _agentContextProvider.SetSessionOrCampaignModel(resolvedScope, modelId);
         
     }
 
@@ -145,11 +148,10 @@ public class AgentOrchestrationService
             _logger.LogInformation(
                 "Agent handoff detected for campaign {CampaignId} from {SourceAgent} to {TargetAgent}", 
                 campaignId, currentActiveAgent, updatedState.ActiveAgentType);
-            if (updatedState.Metadata.TryGetValue("HandoffContext", out var handoffContext))
+            if (updatedState.Metadata.TryGetValue(HandoffContextKey, out var handoffContext))
             {
                 _logger.LogInformation("Handoff context: {HandoffContext}", handoffContext);
-                var originalMessage = message;
-                message = $"[Handoff from {currentActiveAgent} to {updatedState.ActiveAgentType}]\nOriginal User Message: {originalMessage}\n\n**Instructions from Game Master:** {handoffContext}";
+                message = BuildHandoffMessage(currentActiveAgent, updatedState.ActiveAgentType, message, handoffContext.ToString()!);
             }
             var newAgent = GetAgentByType(updatedState.ActiveAgentType);
             response = await newAgent.ProcessMessageAsync(campaignId, message, playerId, model);
@@ -188,6 +190,13 @@ public class AgentOrchestrationService
     {
         return await _agentContextProvider.GetSessionOrCampaignModel(scopeId);
         
+    }
+
+    // # Reason: Centralize handoff formatting so future changes remain consistent.
+    private static string BuildHandoffMessage(AgentType? sourceAgent, AgentType targetAgent, string originalMessage, string handoffContext)
+    {
+        var sourceLabel = sourceAgent?.ToString() ?? AgentType.GameMaster.ToString();
+        return $"[Handoff from {sourceLabel} to {targetAgent}]\nOriginal User Message: {originalMessage}\n\n**Instructions from Game Master:** {handoffContext}";
     }
 
     private Task<AgentResponse> ProcessQueuedMessageAsync(PlayerMessageRequest request)
@@ -284,10 +293,10 @@ public class AgentOrchestrationService
         _logger.LogInformation(
             "Handing off campaign {CampaignId} from {SourceAgent} to {TargetAgent}. Context: {Context}",
             campaignId, sourceAgentType, targetAgentType, handoffContext);
-        
+
         // Update the active agent in GameState
         var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
-        gameState.ActiveAgent = targetAgentType;
+        gameState.ActiveAgentType = Enum.Parse<AgentType>(targetAgentType, ignoreCase: true);
         await _stateManager.UpdateCampaignStateAsync(gameState);
         // await _stateManager.SaveStateAsync(campaignId);
     }

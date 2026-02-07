@@ -7,6 +7,14 @@
     background: linear-gradient(135deg, #2c1810 0%, #1a0f08 100%);
     color: #f5e6d3;
     overflow: hidden;
+    --model-menu-bg: linear-gradient(135deg, #2c1810 0%, #1a0f08 100%);
+    --model-menu-border: #8b7355;
+    --model-menu-shadow: rgba(139, 115, 85, 0.35);
+    --model-menu-title-color: #f5e6d3;
+    --model-menu-close-color: #c9b89a;
+    --model-menu-z: 1100;
+    --menu-section-border: rgba(139, 115, 85, 0.3);
+    --menu-section-title: #f5e6d3;
 }
 
 .game-header {
@@ -62,6 +70,7 @@
     display: flex;
     gap: 0.75rem;
 }
+
 
 .btn-party,
 .btn-leave {
@@ -324,6 +333,7 @@
     animation: slideUp 0.3s ease-out;
 }
 
+
 @keyframes slideUp {
     from {
         transform: translateY(50px);
@@ -408,7 +418,7 @@
     /* Fix button spacing - use grid for side-by-side */
     .header-actions {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
         width: 100%;
     }
@@ -419,6 +429,11 @@
         justify-content: center;
         padding: 0.6rem;
         font-size: 0.9rem;
+        min-height: 44px;
+    }
+
+    .menu-button {
+        width: 100%;
         min-height: 44px;
     }
 
@@ -545,6 +560,11 @@
         max-width: 200px;
         min-height: 44px;
         justify-content: center;
+    }
+
+    .menu-button {
+        min-width: 44px;
+        min-height: 44px;
     }
 
     /* Show mobile view toggle on tablets */

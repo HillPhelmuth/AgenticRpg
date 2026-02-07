@@ -41,7 +41,8 @@ public partial class CampaignCreation : IAsyncDisposable
     // Session ID for world building
     private string? SessionId { get; set; }
 
-    private MobileView CurrentMobileView { get; set; } = MobileView.World;
+    private MobileView CurrentMobileView { get; set; } = MobileView.Chat;
+    private bool ShowModelMenu { get; set; }
 
     private enum MobileView
     {
@@ -49,9 +50,9 @@ public partial class CampaignCreation : IAsyncDisposable
         Chat
     }
 
-    private bool CanSaveCampaign => 
-        !string.IsNullOrWhiteSpace(CampaignName) && 
-        CurrentWorld != null && 
+    private bool CanSaveCampaign =>
+        !string.IsNullOrWhiteSpace(CampaignName) &&
+        CurrentWorld != null &&
         !string.IsNullOrWhiteSpace(CurrentWorld.Name) &&
         (!string.IsNullOrEmpty(WorldId) || !string.IsNullOrEmpty(SessionId));
 
@@ -61,7 +62,7 @@ public partial class CampaignCreation : IAsyncDisposable
         var user = await AuthStateProvider.GetAuthenticationStateAsync();
         if (string.IsNullOrEmpty(user.User.Identity?.Name)) throw new Exception("User not authenticated");
         CurrentUserId = user.User.Identity?.Name ?? "player-1";
-        
+
         try
         {
             // Check if we're using an existing world
@@ -69,7 +70,7 @@ public partial class CampaignCreation : IAsyncDisposable
             {
                 // Load existing world
                 CurrentWorld = await WorldService.GetWorldByIdAsync(WorldId);
-                
+
                 if (CurrentWorld == null)
                 {
                     SaveMessage = "World not found. Starting fresh world creation.";
@@ -87,21 +88,21 @@ public partial class CampaignCreation : IAsyncDisposable
                     return;
                 }
             }
-            
+
             // Create world building session via API
             var sessionResponse = await HttpClient.PostAsJsonAsync("/api/sessions", new CreateSessionRequest
             {
                 SessionType = SessionType.WorldBuilding, // WorldBuilding = 1
                 PlayerId = CurrentUserId
             });
-            
+
             if (!sessionResponse.IsSuccessStatusCode)
             {
                 SaveMessage = "Failed to create session. Please refresh and try again.";
                 IsSaveError = true;
                 return;
             }
-            
+
             CurrentSessionState = await sessionResponse.Content.ReadFromJsonAsync<SessionState>();
             if (CurrentSessionState == null)
             {
@@ -109,23 +110,23 @@ public partial class CampaignCreation : IAsyncDisposable
                 IsSaveError = true;
                 return;
             }
-            
+
             SessionId = CurrentSessionState.SessionId;
             Logger.LogInformation("Created world building session: {SessionId}", SessionId);
-            
+
             // Connect to SignalR hub
             await HubService.StartAsync();
-            
+
             // Subscribe to session state updates
             HubService.OnSessionStateUpdated(HandleSessionStateUpdated);
             HubService.OnReceiveMessage(HandleReceiveMessage);
             HubService.OnSessionCompleted(HandleSessionCompleted);
-            
+
             // Join session for real-time updates
             await HubService.JoinSessionAsync(SessionId, CurrentUserId, "World Creator");
             IsConnected = true;
             await HubService.SendMessageAsync(SessionId, CurrentUserId, "Introduce yourself, your purpose and begin the world building process", AgentType.WorldBuilder);
-            
+
         }
         catch (Exception ex)
         {
@@ -140,26 +141,35 @@ public partial class CampaignCreation : IAsyncDisposable
             });
         }
     }
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !WorldOnly)
+        {
+            CurrentMobileView = MobileView.World;
+            StateHasChanged();
+        }
+        return base.OnAfterRenderAsync(firstRender);
+    }
 
     private void HandleSessionStateUpdated(SessionState sessionState)
     {
         // Update session state and extract draft world
         CurrentSessionState = sessionState;
-        
+
         if (sessionState?.Context?.DraftWorld != null)
         {
             CurrentWorld = sessionState.Context.DraftWorld;
             Logger.LogInformation("World draft updated: {Name}", CurrentWorld.Name ?? "(unnamed)");
         }
-        
+
         InvokeAsync(StateHasChanged);
     }
-    
+
     private void HandleSessionCompleted(string sessionId, string resultEntityId)
     {
-        Logger.LogInformation("Session {SessionId} completed with world {WorldId}", 
+        Logger.LogInformation("Session {SessionId} completed with world {WorldId}",
             sessionId, resultEntityId);
-        
+
         // Session completed - navigate back
         InvokeAsync(async () =>
         {
@@ -229,9 +239,9 @@ public partial class CampaignCreation : IAsyncDisposable
             {
                 throw new InvalidOperationException("Session not initialized");
             }
-            
-            await HubService.SendMessageAsync(SessionId, CurrentUserId, message,AgentType.WorldBuilder);
-            
+
+            await HubService.SendMessageAsync(SessionId, CurrentUserId, message, AgentType.WorldBuilder);
+
             // The response will come through the HandleReceiveMessage callback
         }
         catch (Exception ex)
@@ -284,7 +294,7 @@ public partial class CampaignCreation : IAsyncDisposable
             StateHasChanged();
 
             string worldId;
-            
+
             // Check if we're using an existing world or need to finalize from session
             if (!string.IsNullOrEmpty(WorldId))
             {
@@ -295,13 +305,13 @@ public partial class CampaignCreation : IAsyncDisposable
             {
                 // Finalize the world from the session
                 var worldResponse = await HttpClient.PostAsync($"/api/sessions/{SessionId}/finalize-world", null);
-                
+
                 if (!worldResponse.IsSuccessStatusCode)
                 {
                     var errorContent = await worldResponse.Content.ReadAsStringAsync();
                     throw new Exception($"Failed to finalize world: {errorContent}");
                 }
-                
+
                 var worldResult = await worldResponse.Content.ReadFromJsonAsync<FinalizeWorldResult>();
                 worldId = worldResult?.WorldId ?? CurrentWorld.Id;
             }
@@ -322,10 +332,10 @@ public partial class CampaignCreation : IAsyncDisposable
             };
 
             await CampaignService.CreateCampaignAsync(campaign);
-            
+
             SaveMessage = "Campaign saved successfully!";
             Logger.LogInformation("Campaign {CampaignId} created with world {WorldId}", campaign.Id, worldId);
-            
+
             // Navigate back to startup menu after short delay
             await Task.Delay(1500);
             NavManager.NavigateTo("/startup");
@@ -337,7 +347,7 @@ public partial class CampaignCreation : IAsyncDisposable
             IsSaveError = true;
         }
     }
-    
+
     // Result type for API response
     private class FinalizeWorldResult
     {
@@ -353,5 +363,15 @@ public partial class CampaignCreation : IAsyncDisposable
     {
         CurrentMobileView = view;
         StateHasChanged();
+    }
+
+    private void ToggleModelMenu()
+    {
+        ShowModelMenu = !ShowModelMenu;
+    }
+
+    private void CloseModelMenu()
+    {
+        ShowModelMenu = false;
     }
 }

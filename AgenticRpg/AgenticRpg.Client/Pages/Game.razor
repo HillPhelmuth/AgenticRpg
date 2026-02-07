@@ -21,6 +21,9 @@
                 <span class="icon">🚪</span>
                 Leave
             </button>
+            <button class="menu-button" @onclick="ToggleModelMenu" title="Model settings" aria-label="Open model settings">
+                <span class="menu-icon" aria-hidden="true">☰</span>
+            </button>
         </div>
     </div>
 
@@ -131,5 +134,10 @@
                 <PartyView Characters="@GameState.Characters" OnClose="TogglePartyView" />
             </div>
         </div>
+    }
+
+    @if (ShowModelMenu)
+    {
+        <RpgModalMenu CurrentUserId="@CurrentUserId" SelectedCampaign="@Campaign" SessionOrCampaignId="@CampaignId" OnCloseModalMenu="CloseModelMenu" />
     }
 </div>

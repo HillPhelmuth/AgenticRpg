@@ -28,7 +28,7 @@ public partial class Game : IAsyncDisposable
     [Inject] private IGameStateService GameStateService { get; set; } = default!;
     [Inject] private ILogger<Game> Logger { get; set; } = default!;
     [Inject] private NavigationManager NavManager { get; set; } = default!;
-    [Inject] private AudioInterop AudioInterop { get; set; } = default!;
+   
 
     private Campaign? Campaign { get; set; }
     private Character? CurrentCharacter { get; set; }
@@ -43,6 +43,7 @@ public partial class Game : IAsyncDisposable
     private bool ShowPartyView { get; set; }
     private new UserInput? UserInputRef { get; set; }
     private MobileView CurrentMobileView { get; set; } = MobileView.Game;
+    private bool ShowModelMenu { get; set; }
     private CancellationTokenSource? _speechCts;
     [Inject]
     private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
@@ -391,6 +392,16 @@ public partial class Game : IAsyncDisposable
     {
         CurrentMobileView = view;
         StateHasChanged();
+    }
+
+    private void ToggleModelMenu()
+    {
+        ShowModelMenu = !ShowModelMenu;
+    }
+
+    private void CloseModelMenu()
+    {
+        ShowModelMenu = false;
     }
 
     private async void LeaveCampaign()

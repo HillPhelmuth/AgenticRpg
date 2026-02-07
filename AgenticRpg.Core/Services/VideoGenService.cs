@@ -89,7 +89,7 @@ public class VideoGenService()
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine("Task was cancelled while waiting.");
+                _logger.LogWarning("Video generation task was cancelled while waiting");
                 break;
             }
             finally
@@ -173,7 +173,7 @@ public class VideoGenService()
         var template = IntroPrompts.GetPrompt(promptType);
         var templateConfig = new PromptTemplateConfig(template);
         var instructions = await promptTemplateFactory.Create(templateConfig).RenderAsync(kernel, args);
-        Console.WriteLine($"Rendered instructions for {character.Name} Intro: {instructions}");
+        _logger.LogDebug("Rendered instructions for {CharacterName} Intro: {Instructions}", character.Name, instructions);
         // Get byte[] from character.ImageUrl;
         using var client = new HttpClient();
         var imageBytes = await client.GetByteArrayAsync(character.PortraitUrl!);
@@ -209,7 +209,7 @@ public class VideoGenService()
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine("Task was cancelled while waiting.");
+                _logger.LogWarning("Video generation task was cancelled while waiting");
                 break;
             }
             finally

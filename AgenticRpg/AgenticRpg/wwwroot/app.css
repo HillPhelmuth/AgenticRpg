@@ -68,3 +68,93 @@ video {
 img {
     max-width: 100%
 }
+
+.model-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--model-menu-overlay-bg, rgba(0, 0, 0, 0.7));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--model-menu-z, 1200);
+}
+
+.model-menu-content {
+    width: min(520px, 92vw);
+    background: var(--model-menu-bg, #1a1f2e);
+    border: 2px solid var(--model-menu-border, #4dd0e1);
+    border-radius: 10px;
+    padding: 1.25rem;
+    box-shadow: 0 0 30px var(--model-menu-shadow, rgba(77, 208, 225, 0.35));
+}
+
+.model-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.model-menu-header h3 {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    color: var(--model-menu-title-color, #d4af37);
+}
+
+.model-menu-close {
+    border: none;
+    background: transparent;
+    color: var(--model-menu-close-color, #c9b89a);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.menu-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 2px solid var(--menu-button-border, #4dd0e1);
+    background: var(--menu-button-bg, rgba(77, 208, 225, 0.12));
+    color: var(--menu-button-color, #4dd0e1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 12px var(--menu-button-shadow, rgba(77, 208, 225, 0.25));
+}
+
+.menu-button:hover {
+    background: var(--menu-button-hover-bg, rgba(77, 208, 225, 0.22));
+    box-shadow: 0 0 18px var(--menu-button-hover-shadow, rgba(77, 208, 225, 0.4));
+}
+
+.menu-icon {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.menu-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--menu-section-border, rgba(139, 115, 85, 0.3));
+}
+
+.menu-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.menu-section h4 {
+    margin: 0 0 0.75rem 0;
+    font-family: 'Cinzel', serif;
+    color: var(--menu-section-title, #d4af37);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.menu-item {
+    padding: 0.5rem 0;
+}

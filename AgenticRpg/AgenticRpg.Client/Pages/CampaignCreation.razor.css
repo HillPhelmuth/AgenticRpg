@@ -2,6 +2,14 @@
     min-height: 100vh;
     background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0a0e1a 100%);
     color: #e0f2f1;
+    --model-menu-bg: linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 26, 0.98) 100%);
+    --model-menu-border: #4dd0e1;
+    --model-menu-shadow: rgba(77, 208, 225, 0.35);
+    --model-menu-title-color: #d4af37;
+    --model-menu-close-color: #c9b89a;
+    --model-menu-z: 1200;
+    --menu-section-border: rgba(77, 208, 225, 0.3);
+    --menu-section-title: #d4af37;
 }
 
 .creation-header {
@@ -13,6 +21,13 @@
     border-bottom: 2px solid #4dd0e1;
     box-shadow: 0 0 20px rgba(77, 208, 225, 0.3);
 }
+
+.header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
 
 .btn-back {
     padding: 0.5rem 1rem;
@@ -291,6 +306,7 @@ textarea.form-input {
 .toggle-btn.active:hover {
     background: rgba(139, 115, 85, 0.5);
 }
+
 /* ===== RESPONSIVE DESIGN - MOBILE FIRST ===== */
 
 /* Small Mobile (320px - 480px) */
@@ -310,6 +326,15 @@ textarea.form-input {
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
         align-self: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .menu-button {
+        width: 100%;
     }
 
     /* Show mobile toggle */
@@ -399,6 +424,15 @@ textarea.form-input {
         padding: 0.75rem;
         background: rgba(245, 230, 211, 0.02);
         border-bottom: 2px solid #8b7355;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .menu-button {
+        width: 100%;
     }
 
     /* Tablet view switching */

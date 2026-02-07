@@ -58,13 +58,12 @@ public class DndApiService
 
     public static IEnumerable<string> GetMonstersBasicInfo(string challengeRating = "")
     {
-        var challengeRatings = challengeRating.Split(',').Where(x => double.TryParse(x, out _)).Select(double.Parse).ToArray() ?? [];
-
+        var challengeRatings = ParseChallengeRatings(challengeRating);
         return GetMonstersByChallengeRating(challengeRatings).Select(m => m.ToBasicInfoMarkdown());
     }
     public static async Task<MonsterEncounter> CreateRandomMonsterEncounter(int count, string challengeRating = "")
     {
-        var challengeRatings = challengeRating.Split(',').Where(x => double.TryParse(x, out _)).Select(double.Parse).ToArray() ?? [];
+        var challengeRatings = ParseChallengeRatings(challengeRating);
         return await CreateRandomMonsterEncounter(count, challengeRatings);
     }
     public static async Task<MonsterEncounter> CreateRandomMonsterEncounter(int count, params double[] challengeRatings)
@@ -99,6 +98,21 @@ public class DndApiService
             result.Add(spellJson);
         }
         return result;
+    }
+
+    // # Reason: Keep challenge rating parsing consistent across entry points.
+    private static double[] ParseChallengeRatings(string challengeRating)
+    {
+        if (string.IsNullOrWhiteSpace(challengeRating))
+        {
+            return [];
+        }
+
+        return challengeRating
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => double.TryParse(x, out _))
+            .Select(double.Parse)
+            .ToArray();
     }
 
     public static async Task<Spell> ConvertSpellAsync(JsonElement spellData)
@@ -169,12 +183,10 @@ public class DndApiService
 #if DEBUG
 
 #endif
-            // TEMP Console.WriteLine($"Monster {rpgMonster.Name} - {rpgMonster.Description} Created.");
             return rpgMonster;
         }
         catch
         {
-            // TEMP Console.WriteLine($"Error converting monster: {monster.Name}. Please check the input data.");
             return null;
         }
     }

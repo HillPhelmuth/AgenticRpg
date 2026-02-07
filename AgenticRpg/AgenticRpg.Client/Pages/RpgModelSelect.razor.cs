@@ -4,13 +4,15 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 
 namespace AgenticRpg.Client.Pages;
-public partial class RpgDropdown
+public partial class RpgModelSelect
 {
     [Parameter]
     public Campaign? SelectedCampaign { get; set; }
     [Parameter]
     public string? CurrentUserId { get; set; }
-    [Inject] private ILogger<RpgDropdown> Logger { get; set; } = null!;
+    [Parameter]
+    public string? SessionOrCampaignId { get; set; }
+    [Inject] private ILogger<RpgModelSelect> Logger { get; set; } = null!;
     private IReadOnlyList<string> AvailableModels { get; set; } = OpenRouterModels.GetAllModelsFromEmbeddedFile();
     private string? _selectedModel;
     private string _modelFilter = string.Empty;
@@ -50,7 +52,6 @@ public partial class RpgDropdown
             return;
         }
 
-        var campaignId = SelectedCampaign?.Id;
         var campaignName = SelectedCampaign?.Name;
         var scopeDescription = SelectedCampaign != null
             ? $"campaign {campaignName}"
@@ -59,7 +60,7 @@ public partial class RpgDropdown
         try
         {
             await HubService.StartAsync();
-            await HubService.ChangeModelAsync(campaignId, _selectedModel);
+            await HubService.ChangeModelAsync(SessionOrCampaignId, _selectedModel);
             ModelSelectionMessage = SelectedCampaign != null
                 ? $"Applied {_selectedModel} to {campaignName}."
                 : $"Applied {_selectedModel} as default for future sessions.";

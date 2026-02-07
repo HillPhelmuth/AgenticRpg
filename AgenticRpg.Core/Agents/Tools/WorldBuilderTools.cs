@@ -46,7 +46,7 @@ public class WorldBuilderTools(
                                                      * Notable features and landmarks
                                                      * Clear purpose in the world
 
-                                                   #### NPCs (Create 2-4 NPCs per location)
+                                                   #### NPCs (Create 6-8 NPCs)
                                                    - Include variety of roles: Merchant, Guard, QuestGiver, Innkeeper, Blacksmith, Priest, Noble, Commoner
                                                    - Mix of dispositions: Friendly, Neutral, Hostile, Suspicious, Helpful
                                                    - Each NPC should have:
@@ -55,7 +55,7 @@ public class WorldBuilderTools(
                                                      * Backstory that connects to world
                                                      * Motivations and goals
 
-                                                   #### Quests (Create 1-2 starter quests per major location)
+                                                   #### Quests (Create 3-4 starter quests)
                                                    - Clear objectives and story hooks
                                                    - Appropriate difficulty for starting characters (levels 1-3)
                                                    - Connect quests to NPCs and locations
@@ -170,7 +170,7 @@ public class WorldBuilderTools(
         });
     }
 
-    [Description("Creates an NPC in the world. Parameters: sessionId (world building session ID), name (NPC name), role (Merchant/Guard/QuestGiver/Innkeeper/Blacksmith/Priest/Noble/Commoner), disposition (Friendly/Neutral/Hostile/Suspicious/Helpful), locationId (where NPC is located), backstory (NPC background and personality). Returns JSON with NPC details and ID.")]
+    [Description("Creates an NPC in the world.")]
     public async Task<string> CreateNPC(
         [Description("The unique session ID for this world building session.")] string sessionId,
         [Description("The name of the NPC to create (e.g., 'Elara the Wise', 'Grunk the Blacksmith').")] string name,
@@ -257,7 +257,7 @@ public class WorldBuilderTools(
         [Description("A detailed description of the quest including objectives, story context, and what the characters need to accomplish.")] string description,
         [Description("The unique ID of the NPC who offers this quest to the players.")] string questGiverId,
         [Description("The unique ID of the location where this quest begins or is offered.")] string locationId,
-        [Description("A description of rewards for completing the quest, including XP amounts and item rewards (e.g., '500 XP, Magic Sword, 100 gold').")] string rewards)
+        [Description("Rewards for completing the quest, including XP amounts and item rewards (e.g., '500 XP, Magic Sword, 100 gold').")] QuestReward rewards)
     {
         var session = await sessionStateManager.GetSessionStateAsync(sessionId);
         if (session?.Context.DraftWorld == null)
@@ -270,28 +270,6 @@ public class WorldBuilderTools(
             });
         }
 
-        var questGiver = session.Context.DraftWorld.NPCs.FirstOrDefault(n => n.Id == questGiverId);
-        if (questGiver == null)
-        {
-            return JsonSerializer.Serialize(new DesignQuestResult
-            {
-                Success = false,
-                Message = "",
-                Error = $"Quest giver NPC with ID '{questGiverId}' not found"
-            });
-        }
-
-        var location = session.Context.DraftWorld.Locations.FirstOrDefault(l => l.Id == locationId);
-        if (location == null)
-        {
-            return JsonSerializer.Serialize(new DesignQuestResult
-            {
-                Success = false,
-                Message = "",
-                Error = $"Location with ID '{locationId}' not found"
-            });
-        }
-
         var quest = new Quest
         {
             Id = Guid.NewGuid().ToString(),
@@ -300,7 +278,7 @@ public class WorldBuilderTools(
             QuestGiver = questGiverId,  // Store as string ID
             LocationId = locationId,
             Status = QuestStatus.Available,
-            Reward = new QuestReward()  // Initialize empty reward, parse rewards string if needed
+            Reward = rewards
         };
 
         session.Context.DraftWorld.Quests.Add(quest);
@@ -311,7 +289,7 @@ public class WorldBuilderTools(
         {
             Success = true,
             Quest = quest,
-            Message = $"Quest '{questName}' created. Given by {questGiver.Name} at {location.Name}."
+            Message = $"Quest '{questName}' created."
         });
     }
     public async Task<string> AddQuests([Description("The unique session ID for this world building session.")] string sessionId,[Description("A new set of world quests to replace the existing ones.")] Quest[] newQuests,[Description("Remove the current quests, and replace them. If `false` it will add these quests to the existing quests")] bool replaceExisting)
@@ -484,8 +462,6 @@ public class WorldBuilderTools(
 
             var response = await quickCreateAgent.RunAsync<World>();
             var world = response.Result;
-            Console.WriteLine(
-                $"World Created:\n\n{JsonSerializer.Serialize(world, new JsonSerializerOptions { WriteIndented = true })}");
             // Set world properties
             world.Id = Guid.NewGuid().ToString();
             world.CreatedAt = DateTime.UtcNow;
@@ -533,7 +509,6 @@ public class WorldBuilderTools(
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
             return JsonSerializer.Serialize(new QuickCreateWorldResult
             {
                 Error = ex.ToString(),

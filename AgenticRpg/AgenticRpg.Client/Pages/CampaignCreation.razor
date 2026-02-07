@@ -11,17 +11,22 @@
 <div class="campaign-creation">
     <div class="creation-header">
         <button @onclick="GoBack" class="btn-back">← Back to Menu</button>
-        
+
         <h1>Create New Campaign</h1>
+        <div class="header-actions">
+            <button class="menu-button" @onclick="ToggleModelMenu" title="Model settings" aria-label="Open model settings">
+                <span class="menu-icon" aria-hidden="true">☰</span>
+            </button>
+        </div>
     </div>
 
     <!-- Mobile View Toggle (visible only on mobile/tablet) -->
     <div class="mobile-view-toggle">
-        <button class="toggle-btn @(CurrentMobileView == MobileView.World ? "active" : "")" 
+        <button class="toggle-btn @(CurrentMobileView == MobileView.World ? "active" : "")"
                 @onclick='() => SetMobileView(MobileView.World)'>
             🗺️ World
         </button>
-        <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")" 
+        <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")"
                 @onclick='() => SetMobileView(MobileView.Chat)'>
             💬 Chat
         </button>
@@ -37,7 +42,7 @@
                     <h2>Campaign Information</h2>
                     <div class="form-group">
                         <label>Campaign Name</label>
-                        <input type="text" @bind="CampaignName" placeholder="Enter campaign name..." class="form-input"/>
+                        <input type="text" @bind="CampaignName" placeholder="Enter campaign name..." class="form-input" />
                     </div>
                     <div class="form-group">
                         <label>Description</label>
@@ -45,7 +50,7 @@
                     </div>
                     <div class="form-group">
                         <label>Max Players</label>
-                        <input type="number" @bind="MaxPlayers" min="2" max="8" class="form-input"/>
+                        <input type="number" @bind="MaxPlayers" min="2" max="8" class="form-input" />
                     </div>
 
                 </div>
@@ -66,8 +71,8 @@
 
             <!-- Save Button -->
             <div class="action-buttons">
-                <button @onclick="SaveCampaign" 
-                        disabled="@(!CanSaveCampaign)" 
+                <button @onclick="SaveCampaign"
+                        disabled="@(!CanSaveCampaign)"
                         class="btn-save">
                     Save Campaign
                 </button>
@@ -87,13 +92,13 @@
                     <p class="chat-subtitle">Work with the AI to create your campaign world</p>
                 </div>
                 <div class="chat-container">
-                    <ChatView Messages="ChatMessages" 
-                              OnMessageDeleted="HandleMessageDeleted" 
+                    <ChatView Messages="ChatMessages"
+                              OnMessageDeleted="HandleMessageDeleted"
                               OnMessageEdited="HandleMessageEdited"
                               OnSuggestedActionInvoked="SendMessage" OnSpeakText="PlaySpeechAsync" IsPlaybackActive="_speechGenerating" CancelPlayback="CancelPlayback" />
 
                     <UserInput @ref="UserInputRef"
-                               OnSubmit="SendMessage" 
+                               OnSubmit="SendMessage"
                                IsProcessing="IsProcessing"
                                Placeholder="Describe the world you want to create..."
                                HintText="Ask the AI to generate locations, NPCs, quests, and lore for your world" />
@@ -102,3 +107,9 @@
         }
     </div>
 </div>
+
+@if (ShowModelMenu)
+{
+    <RpgModalMenu CurrentUserId="@CurrentUserId" SessionOrCampaignId="@SessionId" OnCloseModalMenu="CloseModelMenu" />
+
+}

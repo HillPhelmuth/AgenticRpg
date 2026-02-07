@@ -2,19 +2,19 @@
 @using AgenticRpg.Core.Models
 @using AgenticRpg.Core.Models.Enums
 @using AgenticRpg.Components.GameComponents
-@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components
+
 
 @inherits RpgPageBase
 <PageTitle>AI Agentic RPG - Startup</PageTitle>
-
+<div class="auth-view">
+    <Login></Login>
+</div>
 <AuthorizeView>
     <Authorized>
         <div class="startup-menu">
             <div class="startup-header">
                 <h1>Skynet RPG</h1>
-                
-
-                @* Model Selection Dropdown *@
                 <button @onclick="Refresh" class="btn-refresh">Refresh</button>
             </div>
 
@@ -39,7 +39,6 @@
                     <div class="menu-section">
                         <div class="section-header">
                             <h2>My Characters</h2>
-                            <RpgDropdown CurrentUserId="@CurrentUserId" />
                             <button @onclick="CreateNewCharacter" class="btn-create">
                                 + New Character
                             </button>
@@ -88,16 +87,15 @@
                             </div>
                         }
                     </div>
-
+@* 
                     <div class="divider">
-                        <span>Join a Campaign</span>
-                    </div>
+                        <span>Create or Join a Campaign</span>
+                    </div> *@
 
                     <!-- Available Worlds Section -->
                     <div class="menu-section">
                         <div class="section-header">
-                            <h2>Available Worlds</h2>
-                            <RpgDropdown CurrentUserId="@CurrentUserId" />
+                            <h2>Available Campaign Worlds</h2>
                             <button @onclick="CreateNewCampaign" class="btn-create">
                                 + New Campaign World
                             </button>
@@ -122,7 +120,18 @@
                                                 <span class="world-stats">
                                                     @world.Locations.Count locations · @world.NPCs.Count NPCs · @world.Quests.Count quests
                                                 </span>
+                                                <button class="btn-view-sheet" @onclick="@(() => ShowWorldDetails(world))" @onclick:stopPropagation="true" title="View World Deets">
+                                                    👁️
+                                                </button>
+                                                @if (world.Id == SelectedWorld?.Id)
+                                                {
+                                                    <button class="world-button" @onclick="@(() => CreateCampaignFromWorld(world.Id))" title="@($"Create Campaign in {world.Name}")">
+                                                        <img src="add-new.svg" alt="Create Campaign" />Create Campaign in @world.Name
+                                                    </button>
+                                                }
                                             </div>
+                                            
+            
                                         </div>
                                     </div>
                                 }
@@ -221,7 +230,7 @@
                                                 else
                                                 {
                                                     <div class="portrait-placeholder">
-                                                        @character.Name.Substring(0, 1)
+                                                        @character.Name[..1]
                                                     </div>
                                                 }
                                             </div>
@@ -252,11 +261,10 @@
                     <!-- Action Buttons -->
                     @if (SelectedCampaign != null && SelectedCharacter != null)
                     {
-                        <RpgDropdown SelectedCampaign="SelectedCampaign" CurrentUserId="@CurrentUserId" />
                         <div class="action-section">
                             @if (SelectedCharacter.CampaignId == SelectedCampaign.Id)
                             {
-                                @if (SelectedCampaign.Status == CampaignStatus.Setup || SelectedCampaign.Status == CampaignStatus.Lobby)
+                                @if (SelectedCampaign.Status is CampaignStatus.Setup or CampaignStatus.Lobby)
                                 {
                                     <button @onclick="JoinLobby" class="btn-primary btn-large">
                                         Join Lobby
@@ -284,7 +292,7 @@
                     else if (SelectedWorld != null)
                     {
                         <div class="action-section">
-                            <button @onclick="CreateCampaignFromWorld" class="btn-primary btn-large">
+                            <button @onclick="() => CreateCampaignFromWorld(SelectedWorld.Id)" class="btn-primary btn-large">
                                 Create Campaign in @SelectedWorld.Name
                             </button>
                         </div>
@@ -299,35 +307,51 @@
 </AuthorizeView>
 
 @* Character Sheet Modal *@
-@if (ShowCharacterModal && ViewingCharacter != null)
+@if (_showCharacterModal && _viewingCharacter != null)
 {
     <div class="modal-overlay" @onclick="CloseCharacterModal">
         <div class="modal-content character-sheet-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2>@ViewingCharacter.Name</h2>
+                <h2>@_viewingCharacter.Name</h2>
                 <button class="btn-close" @onclick="CloseCharacterModal" title="Close">
                     ✕
                 </button>
             </div>
             <div class="modal-body">
-                <CharacterSheetView Character="@ViewingCharacter" />
+                <CharacterSheetView Character="@_viewingCharacter" />
             </div>
         </div>
     </div>
 }
-@if (_isShowVideoModal && ViewingCharacter?.IntroVidUrl != null)
+@if (_showWorldModal && _viewingWorld != null)
+{
+    <div class="modal-overlay" @onclick="CloseWorldModal">
+        <div class="modal-content world-sheet-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@_viewingWorld.Name</h2>
+                <button class="btn-close" @onclick="CloseWorldModal" title="Close">
+                    ✕
+                </button>
+            </div>
+            <div class="modal-body">
+                <WorldDetails World="@_viewingWorld" />
+            </div>
+        </div>
+    </div>
+}
+@if (_isShowVideoModal && _viewingCharacter?.IntroVidUrl != null)
 {
     <div class="modal-overlay" @onclick="CloseVideoModal">
         <div class="modal-content video-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2>Intro Video for @ViewingCharacter.Name</h2>
+                <h2>Intro Video for @_viewingCharacter.Name</h2>
                 <button class="btn-close" @onclick="CloseVideoModal" title="Close">
                     ✕
                 </button>
             </div>
             <div class="modal-body">
                 <video controls>
-                    <source src="@ViewingCharacter.IntroVidUrl" type="video/mp4" />
+                    <source src="@_viewingCharacter.IntroVidUrl" type="video/mp4" />
                     Your browser does not support the video tag.
                 </video>
             </div>

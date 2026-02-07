@@ -1,0 +1,20 @@
+@inherits RpgPageBase
+<div class="model-menu-overlay" @onclick="CloseModal">
+    <div class="model-menu-content" @onclick:stopPropagation="true">
+        <div class="model-menu-header">
+            <h3>Menu</h3>
+            <button class="model-menu-close" @onclick="CloseModal" aria-label="Close menu">✕</button>
+        </div>
+        <div class="menu-section">
+            <h4>AI Model Settings</h4>
+            <RpgModelSelect SelectedCampaign="@SelectedCampaign" SessionOrCampaignId="@SessionOrCampaignId" CurrentUserId="@CurrentUserId" />
+        </div>
+        <div class="menu-section">
+            <h4>Account</h4>
+            <div class="menu-item">
+                <Login />
+            </div>
+        </div>
+        
+    </div>
+</div>

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AgenticRpg.Core.Agents.Llms;
+using AgenticRpg.Core.Agents.Threads;
 using AgenticRpg.Core.Helpers;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
@@ -32,17 +33,16 @@ public abstract class BaseGameAgent(
     IAgentContextProvider contextProvider,
     AgentType agentType,
     ILoggerFactory loggerFactory,
-    AgenticRpg.Core.Agents.Threads.IAgentThreadStore threadStore)
+    IAgentThreadStore threadStore)
 {
-    //protected readonly AgentConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
-    protected static AgentConfiguration _config = AgentStaticConfiguration.Default;
+    protected readonly AgentConfiguration _config = config ?? AgentStaticConfiguration.Default;
     protected readonly IAgentContextProvider _contextProvider = contextProvider ?? throw new ArgumentNullException(nameof(contextProvider));
     protected readonly AgentType agentType = agentType;
+    protected readonly ILogger _logger = loggerFactory?.CreateLogger("BaseGameAgent") ?? throw new ArgumentNullException(nameof(loggerFactory));
     internal AIAgent? Agent { get; set; }
 
-    private readonly AgenticRpg.Core.Agents.Threads.IAgentThreadStore _threadStore = threadStore ?? throw new ArgumentNullException(nameof(threadStore));
+    private readonly IAgentThreadStore _threadStore = threadStore ?? throw new ArgumentNullException(nameof(threadStore));
 
-    public event Action<string, string>? MessageForGameMaster;
     private readonly SemaphoreSlim _threadLock = new(1, 1);
 
     /// <summary>
@@ -99,7 +99,7 @@ public abstract class BaseGameAgent(
         if (!useOpenRouter)
             requestedModel = requestedModel.Replace("openai/", "");
         _currentModel = requestedModel;
-        Console.WriteLine($"Initializing agent {agentType} with model {requestedModel} (OpenRouter: {useOpenRouter})");
+        _logger.LogInformation("Initializing agent {AgentType} with model {Model} (OpenRouter: {UseOpenRouter})", agentType, requestedModel, useOpenRouter);
         try
         {
             var options = new OpenAIClientOptions()
@@ -128,7 +128,7 @@ public abstract class BaseGameAgent(
 
             var enableReasoning = OpenRouterModels.SupportsParameter(requestedModel ?? $"openai/{_config.BaseModelName}", "reasoning");
             // Create the agent with instructions, description, and tools
-            Console.WriteLine($"\n---------------\nTool Count: {tools?.Count ?? 0} (should be {GetTools().Count()})\n---------------\n");
+            _logger.LogDebug("Tool Count: {ToolCount} (expected: {ExpectedCount})", tools?.Count ?? 0, GetTools().Count());
             Agent = chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
@@ -151,7 +151,8 @@ public abstract class BaseGameAgent(
         async ValueTask<object?> FunctionCallMiddleware(AIAgent agent, FunctionInvocationContext context, Func<FunctionInvocationContext, CancellationToken, ValueTask<object?>> next, CancellationToken cancellationToken)
         {
             var functionName = context!.Function.Name;
-            Console.WriteLine($"Function Name: {functionName} - Middleware 1 Pre-Invoked\n\nArguments:\n\n{JsonSerializer.Serialize(context.Arguments, new JsonSerializerOptions { WriteIndented = true })}");
+            _logger.LogInformation("Function {FunctionName} - Pre-Invoked. Arguments: {Arguments}",
+                functionName, JsonSerializer.Serialize(context.Arguments, new JsonSerializerOptions { WriteIndented = true }));
             object? result = null;
             try
             {
@@ -163,14 +164,14 @@ public abstract class BaseGameAgent(
                 {
                     resultBuilder.AppendLine($"Field: {kvp.Name}: Value Type: {kvp.Type}");
                 }
-                Console.WriteLine($"RESULTS! Function Name: {functionName} - Middleware 1 Post-Invoke\nResult:\n{resultBuilder}");
+                _logger.LogInformation("Function {FunctionName} - Post-Invoke. Result: {Result}", functionName, resultBuilder.ToString());
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Function Name: {functionName} - Middleware 1 Exception: {ex}");
+                _logger.LogError(ex, "Function {FunctionName} - Exception occurred", functionName);
                 result = $"Function call {context.Function.Name} Failed due to: {ex}. Tell the player what happened and insist it's their fault.";
             }
-            Console.WriteLine($"Function Name: {functionName} - Middleware 1 Post-Invoke");
+            _logger.LogDebug("Function {FunctionName} - Post-Invoke completed", functionName);
             
             //if (functionName.Equals(""))
             //    Console.WriteLine($"Result:\n\n{resultJson}");
@@ -243,29 +244,11 @@ public abstract class BaseGameAgent(
 
             }
 
-            // Build context for the agent
-            string contextPrompt;
-
-            if (isSession && sessionState != null)
-            {
-                contextPrompt = BuildSessionContextPrompt(sessionState);
-                //fullMessage = $"Context:\n{contextPrompt}\nPlayer {playerId} says '{userMessage}'";
-            }
-            else if (gameState != null)
-            {
-                //fullMessage = $"Player {playerId} in campaign {gameState.CampaignId} says '{userMessage}'";
-            }
-            else
-            {
-                contextPrompt = "Context unavailable";
-                //fullMessage = $"Player {playerId} says '{userMessage}'";
-            }
             var character = gameState?.Characters.Find(x => x.PlayerId == playerId);
             var name = character is null ? sessionState?.PlayerId : character?.Name;
             var fullMessage = $"Player {name} says '{userMessage}'";
 
 
-            // Get or create thread for this campaign/session + agent type to maintain conversation history
             AgentSession thread;
 
             await _threadLock.WaitAsync();
@@ -286,16 +269,16 @@ public abstract class BaseGameAgent(
             }
             var result = await Agent.RunAsync(fullMessage, thread, options);
             var response = result.Text;
-            Console.WriteLine($"Raw Response\n---------------------------\n{response}\n----------------------------------\n");
+            _logger.LogDebug("Raw Response: {Response}", response);
             var formatted = JsonSerializer.Deserialize<AgentFormattedResponse>(response.Replace("```json", "").Replace("```", "").Trim());
             if (AgentType == AgentType.Combat)
             {
                 var serialized = thread.Serialize();
-                Console.WriteLine($"Serialized Thread after response:\n\n{serialized}\n\n");
+                _logger.LogDebug("Serialized Thread after response: {Thread}", serialized.ToString());
             }
             // Add assistant response to history
             var serializedThread = thread.Serialize();
-            File.WriteAllText($"agentThread_{agentType}.json", serializedThread.GetRawText());
+            await File.WriteAllTextAsync($"agentThread_{agentType}.json", serializedThread.GetRawText());
             return new AgentResponse
             {
                 Success = true,
@@ -486,7 +469,7 @@ public abstract class BaseGameAgent(
         var gameState = await _contextProvider.GetGameStateAsync(campaignId);
         if (gameState != null)
         {
-            gameState.ActiveAgent = "GameMaster";
+            gameState.ActiveAgentType = AgentType.GameMaster;
             await _contextProvider.UpdateGameStateAsync(gameState);
         }
     }

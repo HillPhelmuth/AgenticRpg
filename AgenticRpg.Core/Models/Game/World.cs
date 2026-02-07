@@ -69,7 +69,7 @@ public class World
     /// <summary>
     /// List of world events
     /// </summary>
-    [Description("List of world events")]
+    [Description("List of world lore and historical events")]
     public List<WorldEvent> Events { get; set; } = [];
     
     /// <summary>

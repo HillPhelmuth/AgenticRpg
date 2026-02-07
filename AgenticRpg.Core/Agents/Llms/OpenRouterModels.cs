@@ -26,7 +26,6 @@ public class OpenRouterModels
         var allModels = FileHelper.ExtractFromAssembly<OpenRouterModels>("OpenRouterModels.json");
         var model = allModels.Data.FirstOrDefault(x => x.Id.Equals(modelName, StringComparison.OrdinalIgnoreCase));
         var supportsParameter = model?.SupportsParameter(parameter) ?? false;
-        Console.WriteLine($"Model '{modelName}' supports parameter '{parameter}': {supportsParameter}");
         return supportsParameter;
     }
 }

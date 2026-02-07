@@ -48,7 +48,6 @@ public abstract class CosmosDbRepository<T> where T : class
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            Console.WriteLine($"Entity not found: {id}");
             return null;
         }
     }
@@ -107,7 +106,6 @@ public abstract class CosmosDbRepository<T> where T : class
         string partitionKey,
         CancellationToken cancellationToken = default)
     {
-        Console.WriteLine($"Creating entity {entity.GetType().Name} with partition key {partitionKey}");
         var response = await _container.UpsertItemAsync(
             entity,
             new PartitionKey(partitionKey),

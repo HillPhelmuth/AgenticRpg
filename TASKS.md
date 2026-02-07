@@ -1,5 +1,8 @@
 # Tasks
 
+## 2026-02-06
+- [x] Refactor agent handoff handling and challenge rating parsing cleanup in AgenticRpg.Core.
+
 ## 2026-01-31
 - [x] Compact the model dropdown with in-panel filtering and transient popup messages.
 - [x] Limit StartupMenu campaign visibility to owner or invitation code.
@@ -12,6 +15,9 @@
 
 ## 2026-02-04
 - [x] Make `RedirectToLogin.razor` force a full-page navigation to `Account/Login?redirectUri=/` (equivalent to clicking the `Login.razor` link).
+- [x] Move model selection into a top-right menu modal on Character/Campaign/Game pages and remove it from StartupMenu.
+- [x] Centralize modal and menu button styles using CSS variables in app.css.
+- [x] Move Login component from MainLayout to RpgModalMenu and style consistently with app theme.
 
 ## 2026-01-29
 - [x] Add PCM audio JS interop for text-to-speech playback.

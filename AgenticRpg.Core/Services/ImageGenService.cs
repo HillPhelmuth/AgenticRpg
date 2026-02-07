@@ -19,6 +19,8 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AgenticRpg.Core.Models.Game;
 using OpenAI.Images;
+using Google.GenAI;
+using Google.GenAI.Types;
 using ImageGenerationOptions = Microsoft.Extensions.AI.ImageGenerationOptions;
 using OpenAIImageGenerationOptions = OpenAI.Images.ImageGenerationOptions;
 
@@ -31,11 +33,13 @@ public class ImageGenService
     private static readonly AgentConfiguration Configuration = AgentStaticConfiguration.Default;
     private const string ImageContainerUrl = "https://npcimages.z20.web.core.windows.net/";
     private const string ImageDataPrefix = "data:image/png;base64,";
+    private static string _apiKey = Configuration.GoogleApiKey;
+    private static Client Client => new(apiKey: _apiKey);
     private static BlobServiceClient BlobServiceClient => new(Configuration.BlobStorageConnectionString);
     private static BlobContainerClient BlobContainerClient => BlobServiceClient.GetBlobContainerClient("$web");
     public static async Task<string> GenerateCharacterImage(string instructions, string playerId, string characterName)
     {
-        var data = await GenerateImageData(instructions);
+        var data = await GoogleGenerateImageData(instructions);
         var fileName = $"{playerId}/{ConvertNonAlphaNumericToUnderscore(characterName)}.png";
         return await SaveAsUrl(fileName, data.ToArray());
         //return url.First().Uri.ToString();
@@ -56,6 +60,50 @@ public class ImageGenService
         return data;
     }
 
+    private static async Task<ReadOnlyMemory<byte>> GoogleGenerateImageData(string instructions)
+    {
+        var model = "gemini-2.5-flash-image";
+        
+        List<SafetySetting> safetySettings =
+        [
+            new()
+            {
+                Category = HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                Threshold = HarmBlockThreshold.BLOCK_ONLY_HIGH
+            }
+        ];
+
+
+        var config = new GenerateContentConfig
+        {
+            ResponseModalities = new List<string>
+            {
+                "IMAGE",
+                "TEXT"
+            },
+            SafetySettings = safetySettings,
+            ImageConfig = new ImageConfig(){AspectRatio = "4:3"}
+        };
+        ReadOnlyMemory<byte> imageData = new();
+        int fileIndex = 0;
+        var response = await Client.Models.GenerateContentAsync(model, instructions, config);
+        foreach (var part in response.Candidates[0].Content.Parts)
+        {
+            if (part.InlineData != null && part.InlineData.MimeType.Contains("image/"))
+            {
+                // The image data is base64 encoded, convert it to bytes
+                byte[] imageBytes = part.InlineData.Data;
+                string fileName = "generated_image.png"; // Or use the actual mimetype extension if available
+
+                
+                Console.WriteLine($"Image found as {imageBytes.Length}");
+                imageData = imageBytes;
+                break;
+            }
+        }
+
+        return imageData;
+    }
     public static async Task<string> GenerateCharacterImage(Character character, string? additionalInstructions = null)
     {
 

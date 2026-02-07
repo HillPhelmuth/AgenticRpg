@@ -37,7 +37,8 @@ public partial class CharacterCreation : IAsyncDisposable
     // Session ID for character creation (created via API)
     private string? SessionId { get; set; }
 
-    private MobileView CurrentMobileView { get; set; } = MobileView.Character;
+    private MobileView CurrentMobileView { get; set; } = MobileView.Chat;
+    private bool ShowModelMenu { get; set; }
 
     private enum MobileView
     {
@@ -135,32 +136,8 @@ public partial class CharacterCreation : IAsyncDisposable
             });
         }
     }
-    //-------------------------------------Temp for testing ----------------------------------------
-    private const string DiceUrl = "api/dice";
-    private async Task TriggerRoll()
-    {
-        //await HubService.JoinSessionAsync(SessionId, "test-user", "Character Creator");
-        var request = new DiceRollRequest()
-        {
-            SessionId = SessionId,
-            CampaignId = SessionId,
-            NumberOfDice = 2,
-            NumberOfRollWindows = 2,
-            DieType = DieType.D6
-        };
-        var response = await HttpClient.PostAsJsonAsync(DiceUrl, request);
-        if (response.IsSuccessStatusCode)
-        {
-            var rollResults = await response.Content.ReadFromJsonAsync<List<RollDiceResults>>();
-            
-            StateHasChanged();
-            //if (rollResults != null)
-            //{
-            //    await HubService.Connection.InvokeAsync("SubmitRollResult", rollResults);
-            //}
-        }
-    }
-    //----------------------------------------------------------------------------------------------
+
+    
     private void HandleSessionStateUpdated(SessionState sessionState)
     {
         // Update session state and extract draft character
@@ -348,6 +325,16 @@ public partial class CharacterCreation : IAsyncDisposable
     {
         CurrentMobileView = view;
         StateHasChanged();
+    }
+
+    private void ToggleModelMenu()
+    {
+        ShowModelMenu = !ShowModelMenu;
+    }
+
+    private void CloseModelMenu()
+    {
+        ShowModelMenu = false;
     }
 
     public async ValueTask DisposeAsync()
