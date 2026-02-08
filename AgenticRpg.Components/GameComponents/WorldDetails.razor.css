@@ -46,12 +46,13 @@
     border-bottom: 1px solid rgba(77, 208, 225, 0.3);
 }
 
-.world-section summary h3 {
-    margin: 0;
-    color: #d4af37;
-    display: inline;
-    text-shadow: 0 0 10px rgba(77, 208, 225, 0.4);
-}
+    .world-section summary h3 {
+        margin: 0;
+        color: #d4af37;
+        display: inline;
+        text-shadow: 0 0 10px rgba(77, 208, 225, 0.4);
+        font-size: 1.25rem;
+    }
 
 .section-content {
     padding: 1rem 1.5rem;

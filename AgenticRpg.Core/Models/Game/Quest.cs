@@ -34,6 +34,8 @@ public class Quest
     
     [Description("Rewards given upon quest completion")]
     public QuestReward Reward { get; set; } = new();
+    [Description("List of monsters involved in the quest, either as targets or allies")]
+    public List<string> MonsterNames { get; set; } = [];
 }
 /// <summary>
 /// Quest reward information

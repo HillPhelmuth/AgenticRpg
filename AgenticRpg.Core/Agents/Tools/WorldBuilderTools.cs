@@ -255,7 +255,8 @@ public class WorldBuilderTools(
         [Description("The unique session ID for this world building session.")] string sessionId,
         [Description("The title of the quest (e.g., 'Rescue the Missing Villagers', 'The Tomb of Ancients').")] string questName,
         [Description("A detailed description of the quest including objectives, story context, and what the characters need to accomplish.")] string description,
-        [Description("The unique ID of the NPC who offers this quest to the players.")] string questGiverId,
+        [Description("The unique ID of the NPC who offers this quest to the players.")] int difficultyLevel,
+        [Description("The number of monsters to be encountered in this quest.")] int monsterCount,
         [Description("The unique ID of the location where this quest begins or is offered.")] string locationId,
         [Description("Rewards for completing the quest, including XP amounts and item rewards (e.g., '500 XP, Magic Sword, 100 gold').")] QuestReward rewards)
     {
@@ -269,16 +270,21 @@ public class WorldBuilderTools(
                 Error = "Session or draft world not found"
             });
         }
+        // find all monsters in the world and select a random list based on difficulty level (+-1 of difficulty) and monster count
+        // using `public static List<RpgMonster> GetAllRpgMonsters(params int[] monsterChallengeRatings)` to get the monsters and randomize selection.
+        var monsters = RpgMonster.GetAllRpgMonsters(difficultyLevel - 1, difficultyLevel, difficultyLevel + 1);
+        var random = new Random();
+        var selectedMonsters = monsters.OrderBy(m => random.Next()).Take(monsterCount).Select(m => m.Name).ToList();
 
         var quest = new Quest
         {
             Id = Guid.NewGuid().ToString(),
             Name = questName,
             Description = description,
-            QuestGiver = questGiverId,  // Store as string ID
             LocationId = locationId,
             Status = QuestStatus.Available,
-            Reward = rewards
+            Reward = rewards,
+            MonsterNames = selectedMonsters
         };
 
         session.Context.DraftWorld.Quests.Add(quest);
