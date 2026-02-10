@@ -12,202 +12,262 @@
     {
         <div class="world-header">
             <h2>@World.Name</h2>
-            @* @if (!string.IsNullOrEmpty(World.ImageUrl))
-            {
-                <div class="world-image">
-                    <img width="400" height="300" src="@World.ImageUrl" alt="@World.Name" />
-                </div>
-            } *@
+            <div class="world-navigation">
+                <button class="@(CurrentPage == 1 ? "active" : "")" @onclick="() => SetPage(1)">
+                    Overview
+                </button>
+                <button class="@(CurrentPage == 2 ? "active" : "")" @onclick="() => SetPage(2)">
+                    People & Places
+                </button>
+                <button class="@(CurrentPage == 3 ? "active" : "")" @onclick="() => SetPage(3)">
+                    Quests & Lore
+                </button>
+                <button class="@(CurrentPage == 4 ? "active" : "")" @onclick="() => SetPage(4)">
+                    World Map
+                </button>
+            </div>
         </div>
 
         <div class="world-content">
-            <!-- World Description -->
-            <details class="world-section" open>
-                <summary><h3>World Description</h3></summary>
-                <div class="section-content">
-                    <p>@World.Description</p>
-                    @if (!string.IsNullOrEmpty(World.Theme))
-                    {
-                        <p><strong>Theme:</strong> @World.Theme</p>
-                    }
-                </div>
-            </details>
-
-            <!-- Locations -->
-            <details class="world-section">
-                <summary><h3>Locations (@World.Locations.Count)</h3></summary>
-                <div class="section-content">
-                    @if (World.Locations.Any())
-                    {
-                        <div class="locations-grid">
-                            @foreach (var location in World.Locations)
-                            {
-                                <div class="location-card" @onclick="() => SelectLocation(location)">
-                                    <h4>@location.Name</h4>
-                                    <p class="location-type">@location.Type</p>
-                                    <p class="location-desc">@location.Description</p>
-                                    @if (location.Tags.Any())
-                                    {
-                                        <div class="tags">
-                                            @foreach (var tag in location.Tags)
-                                            {
-                                                <span class="tag">@tag</span>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </details>
-
-            <!-- NPCs -->
-            <details class="world-section">
-                <summary><h3>NPCs (@World.NPCs.Count)</h3></summary>
-                <div class="section-content">
-                    @if (World.NPCs.Any())
-                    {
-                        <div class="npc-grid">
-                            @foreach (var npc in World.NPCs)
-                            {
-                                <div class="npc-card">
-                                    <div class="npc-header">
-                                        <h4>@npc.Name</h4>
-                                        <span class="disposition @npc.Disposition.ToString().ToLower()">@npc.Disposition</span>
-                                    </div>
-                                    <p class="npc-role">@npc.Role</p>
-                                    <p class="npc-desc">@npc.Description</p>
-                                    <div class="npc-status">
-                                        <span class="status @npc.Status.ToLower()">@npc.Status</span>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </details>
-
-            <!-- Quests -->
-            <details class="world-section">
-                <summary><h3>Quests (@World.Quests.Count)</h3></summary>
-                <div class="section-content">
-                    @if (World.Quests.Any())
-                    {
-                        <div class="quest-list">
-                            @foreach (var quest in World.Quests)
-                            {
-                                <div class="quest-card">
-                                    <div class="quest-header">
-                                        <h4>@quest.Name</h4>
-                                        <span class="quest-status @quest.Status.ToString().ToLower()">@quest.Status</span>
-                                    </div>
-                                    <p class="quest-giver">Quest Giver: @quest.QuestGiver</p>
-                                    <p class="quest-desc">@quest.Description</p>
-                                    @if (quest.Reward != null && quest.Reward.Gold > 0)
-                                    {
-                                        <div class="quest-reward">
-                                            Reward: @quest.Reward.Gold GP
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </details>
-
-            <!-- Events -->
-            <details class="world-section">
-                <summary><h3>Lore (@World.Events.Count)</h3></summary>
-                <div class="section-content">
-                    @if (World.Events.Any())
-                    {
-                        <div class="event-list">
-                            @foreach (var evt in World.Events)
-                            {
-                                <div class="event-card @(evt.Status == "Lore" ? "lore-entry" : "")">
-                                    <div class="event-header">
-                                        <h4>@evt.Name</h4>
-                                        <span class="event-status @evt.Status.ToLower()">@evt.Status</span>
-                                    </div>
-                                    <p class="event-desc">@evt.Description</p>
-                                    @if (evt.Status != "Lore")
-                                    {
-                                        <div class="event-timing">
-                                            <span class="timing-label">Started:</span>
-                                            <span class="timing-value">@evt.StartTime.ToString("MMM dd, yyyy")</span>
-                                        </div>
-                                    }
-                                    @if (evt.AffectedLocationIds.Any() || evt.AffectedNPCIds.Any())
-                                    {
-                                        <div class="event-affected">
-                                            @if (evt.AffectedLocationIds.Any())
-                                            {
-                                                <div class="affected-section">
-                                                    <strong>Locations:</strong>
-                                                    @foreach (var locId in evt.AffectedLocationIds)
-                                                    {
-                                                        var loc = World.Locations.FirstOrDefault(l => l.Id == locId);
-                                                        if (loc != null)
-                                                        {
-                                                            <span class="affected-item">@loc.Name</span>
-                                                        }
-                                                    }
-                                                </div>
-                                            }
-                                            @if (evt.AffectedNPCIds.Any())
-                                            {
-                                                <div class="affected-section">
-                                                    <strong>NPCs:</strong>
-                                                    @foreach (var npcId in evt.AffectedNPCIds)
-                                                    {
-                                                        var npc = World.NPCs.FirstOrDefault(n => n.Id == npcId);
-                                                        if (npc != null)
-                                                        {
-                                                            <span class="affected-item">@npc.Name</span>
-                                                        }
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                    @if (evt.Tags.Any())
-                                    {
-                                        <div class="tags">
-                                            @foreach (var tag in evt.Tags)
-                                            {
-                                                <span class="tag">@tag</span>
-                                            }
-                                        </div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(evt.Notes))
-                                    {
-                                        <div class="event-notes">
-                                            <em>@evt.Notes</em>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="empty-message">No events recorded</p>
-                    }
-                </div>
-            </details>
-            @if (!string.IsNullOrEmpty(World.ImageUrl))
+            @if (CurrentPage == 1)
             {
-                <details class="world-section">
-
-                    <summary>
-                        <h3>Image</h3>
-                    </summary>
-                    <div class="section-content">
-                        <img src="@World.ImageUrl" alt="world image" />
+                
+                <div class="page page-1">
+                    <div class="world-section">
+                        <p style="padding:0.5rem">@World.Description</p>
                     </div>
-                </details>
+                    <div class="world-summary">
+                        <div class="world-info-grid">
+                            <div class="world-info-field">
+                                <label>Theme</label>
+                                <span>@(string.IsNullOrWhiteSpace(World.Theme) ? "Unknown" : World.Theme)</span>
+                            </div>
+                            <div class="world-info-field">
+                                <label>Battle Frequency</label>
+                                <span>@World.BattleFrequency</span>
+                            </div>
+                            <div class="world-info-field">
+                                <label>Geography</label>
+                                <span>@(string.IsNullOrWhiteSpace(World.Geography) ? "Unknown" : World.Geography)</span>
+                            </div>
+                            <div class="world-info-field">
+                                <label>Politics</label>
+                                <span>@(string.IsNullOrWhiteSpace(World.Politics) ? "Unknown" : World.Politics)</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            }
+            else if (CurrentPage == 2)
+            {
+                <div class="page page-2">
+                    <div class="world-section">
+                        <h3>Locations (@World.Locations.Count)</h3>
+                        @if (World.Locations.Any())
+                        {
+                            <div class="world-card-grid">
+                                @foreach (var location in World.Locations)
+                                {
+                                    <div class="world-card location-card @(SelectedLocation?.Id == location.Id ? "selected" : "")" @onclick="() => SelectLocation(location)">
+                                        <h4>@location.Name</h4>
+                                        <p class="world-meta">@location.Type</p>
+                                        <p class="world-desc">@location.Description</p>
+                                        @if (location.Tags.Any())
+                                        {
+                                            <div class="tags">
+                                                @foreach (var tag in location.Tags)
+                                                {
+                                                    <span class="tag">@tag</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-message">No locations recorded</p>
+                        }
+
+                        @if (SelectedLocation != null)
+                        {
+                            <div class="selected-location">
+                                <h4>@SelectedLocation.Name</h4>
+                                <p class="world-meta">@SelectedLocation.Type</p>
+                                <p class="world-desc">@SelectedLocation.Description</p>
+                                @if (SelectedLocation.Tags.Any())
+                                {
+                                    <div class="tags">
+                                        @foreach (var tag in SelectedLocation.Tags)
+                                        {
+                                            <span class="tag">@tag</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="world-section">
+                        <h3>NPCs (@World.NPCs.Count)</h3>
+                        @if (World.NPCs.Any())
+                        {
+                            <div class="world-card-grid">
+                                @foreach (var npc in World.NPCs)
+                                {
+                                    <div class="world-card npc-card">
+                                        <div class="npc-header">
+                                            <h4>@npc.Name</h4>
+                                            <span class="disposition @npc.Disposition.ToString().ToLower()">@npc.Disposition</span>
+                                        </div>
+                                        <p class="world-meta">@npc.Role</p>
+                                        <p class="world-desc">@npc.Description</p>
+                                        <div class="npc-status">
+                                            <span class="status @npc.Status.ToLower()">@npc.Status</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-message">No NPCs recorded</p>
+                        }
+                    </div>
+                </div>
+            }
+            else if (CurrentPage == 3)
+            {
+                <div class="page page-3">
+                    <div class="world-section">
+                        <h3>Quests (@World.Quests.Count)</h3>
+                        @if (World.Quests.Any())
+                        {
+                            <div class="world-card-grid">
+                                @foreach (var quest in World.Quests)
+                                {
+                                    <div class="quest-card">
+                                        <div class="quest-header">
+                                            <h4>@quest.Name</h4>
+                                            <span class="quest-status @quest.Status.ToString().ToLower()">@quest.Status</span>
+                                        </div>
+                                        <p class="world-meta">Quest Giver: @quest.QuestGiver</p>
+                                        <p class="world-desc">@quest.Description</p>
+                                        @if (quest.Reward != null && quest.Reward.Gold > 0)
+                                        {
+                                            <div class="quest-reward">
+                                                Reward: @quest.Reward.Gold GP
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-message">No quests recorded</p>
+                        }
+                    </div>
+
+                    <div class="world-section">
+                        <h3>Lore (@World.Events.Count)</h3>
+                        @if (World.Events.Any())
+                        {
+                            <div class="world-card-grid">
+                                @foreach (var evt in World.Events)
+                                {
+                                    <div class="event-card @(evt.Status == "Lore" ? "lore-entry" : "")">
+                                        <div class="event-header">
+                                            <h4>@evt.Name</h4>
+                                            <span class="event-status @evt.Status.ToLower()">@evt.Status</span>
+                                        </div>
+                                        <p class="world-desc">@evt.Description</p>
+                                        @if (evt.Status != "Lore")
+                                        {
+                                            <div class="event-timing">
+                                                <span class="timing-label">Started:</span>
+                                                <span class="timing-value">@evt.StartTime.ToString("MMM dd, yyyy")</span>
+                                            </div>
+                                        }
+                                        @if (evt.AffectedLocationIds.Any() || evt.AffectedNPCIds.Any())
+                                        {
+                                            <div class="event-affected">
+                                                @if (evt.AffectedLocationIds.Any())
+                                                {
+                                                    <div class="affected-section">
+                                                        <strong>Locations:</strong>
+                                                        @foreach (var locId in evt.AffectedLocationIds)
+                                                        {
+                                                            var loc = World.Locations.FirstOrDefault(l => l.Id == locId);
+                                                            if (loc != null)
+                                                            {
+                                                                <span class="affected-item">@loc.Name</span>
+                                                            }
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (evt.AffectedNPCIds.Any())
+                                                {
+                                                    <div class="affected-section">
+                                                        <strong>NPCs:</strong>
+                                                        @foreach (var npcId in evt.AffectedNPCIds)
+                                                        {
+                                                            var npc = World.NPCs.FirstOrDefault(n => n.Id == npcId);
+                                                            if (npc != null)
+                                                            {
+                                                                <span class="affected-item">@npc.Name</span>
+                                                            }
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        @if (evt.Tags.Any())
+                                        {
+                                            <div class="tags">
+                                                @foreach (var tag in evt.Tags)
+                                                {
+                                                    <span class="tag">@tag</span>
+                                                }
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(evt.Notes))
+                                        {
+                                            <div class="event-notes">
+                                                <em>@evt.Notes</em>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-message">No events recorded</p>
+                        }
+                    </div>
+
+                </div>
+            }
+            else if (CurrentPage == 4)
+            {
+                <div class="page page-4">
+                    <div class="world-section">
+                        @if (!string.IsNullOrEmpty(World.ImageUrl))
+                        {
+                            <div class="world-image">
+                                <img src="@World.ImageUrl" alt="@World.Name" />
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-message">No world image available</p>
+                        }
+                    </div>
+                </div>
             }
         </div>
     }

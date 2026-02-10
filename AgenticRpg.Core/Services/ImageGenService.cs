@@ -37,9 +37,10 @@ public class ImageGenService
     private static Client Client => new(apiKey: _apiKey);
     private static BlobServiceClient BlobServiceClient => new(Configuration.BlobStorageConnectionString);
     private static BlobContainerClient BlobContainerClient => BlobServiceClient.GetBlobContainerClient("$web");
-    public static async Task<string> GenerateCharacterImage(string instructions, string playerId, string characterName)
+    public static async Task<string> GenerateGameImage(string instructions, string playerId, string characterName)
     {
-        var data = await GoogleGenerateImageData(instructions);
+        string? aspectRatio = playerId == "worlds" ? "16:9" : null;
+        var data = await GoogleGenerateImageData(instructions, aspectRatio);
         var fileName = $"{playerId}/{ConvertNonAlphaNumericToUnderscore(characterName)}.png";
         return await SaveAsUrl(fileName, data.ToArray());
         //return url.First().Uri.ToString();
@@ -60,10 +61,10 @@ public class ImageGenService
         return data;
     }
 
-    private static async Task<ReadOnlyMemory<byte>> GoogleGenerateImageData(string instructions)
+    private static async Task<ReadOnlyMemory<byte>> GoogleGenerateImageData(string instructions, string? aspectRatio = null)
     {
-        var model = "gemini-2.5-flash-image";
-        
+
+        aspectRatio ??= "3:4";
         List<SafetySetting> safetySettings =
         [
             new()
@@ -82,18 +83,18 @@ public class ImageGenService
                 "TEXT"
             },
             SafetySettings = safetySettings,
-            ImageConfig = new ImageConfig(){AspectRatio = "4:3"}
+            ImageConfig = new ImageConfig(){AspectRatio = aspectRatio}
         };
         ReadOnlyMemory<byte> imageData = new();
-        int fileIndex = 0;
-        var response = await Client.Models.GenerateContentAsync(model, instructions, config);
+        var fileIndex = 0;
+        var response = await Client.Models.GenerateContentAsync("gemini-3-pro-image-preview", instructions, config);
         foreach (var part in response.Candidates[0].Content.Parts)
         {
-            if (part.InlineData != null && part.InlineData.MimeType.Contains("image/"))
+            if (part.InlineData != null && part.InlineData.MimeType?.Contains("image/") == true)
             {
                 // The image data is base64 encoded, convert it to bytes
-                byte[] imageBytes = part.InlineData.Data;
-                string fileName = "generated_image.png"; // Or use the actual mimetype extension if available
+                var imageBytes = part.InlineData.Data;
+                var fileName = "generated_image.png"; // Or use the actual mimetype extension if available
 
                 
                 Console.WriteLine($"Image found as {imageBytes.Length}");
@@ -114,16 +115,16 @@ public class ImageGenService
             instructions += $", Additional Instructions: {additionalInstructions}";
         }
 
-        return await GenerateCharacterImage(instructions, character.PlayerId, character.Name);
+        return await GenerateGameImage(instructions, character.PlayerId, character.Name);
     }
     public static async Task<string>GenerateWorldImage(World world, string additionalInstructions = "")
     {
-        var instructions = $"World Name: {world.Name}, Description: {world.Description}. Geography: {world.Geography}.";
+        var instructions = $"Generate a world map based on the following details:\nWorld Name: {world.Name}, Description: {world.Description}. Geography: {world.Geography}.";
         if (!string.IsNullOrEmpty(additionalInstructions))
         {
             instructions += $" Additional Instructions: {additionalInstructions}";
         }
-        return await GenerateCharacterImage(instructions, "worlds", world.Name);
+        return await GenerateGameImage(instructions, "worlds", world.Name);
     }
     public static async Task<string> GenerateCampaignImage(string imageDescription, string campaignId)
     {

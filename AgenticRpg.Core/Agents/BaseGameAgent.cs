@@ -328,6 +328,7 @@ public abstract class BaseGameAgent(
                        **Session Information:**
                        SessionId: {sessionState.SessionId}
                        Session Type: {sessionState.SessionType}
+                       PlayerId: {sessionState.PlayerId}
                        Current Step: {sessionState.Context.CurrentStep}
                        Completed Steps: {string.Join(", ", sessionState.Context.CompletedSteps)}
                        Created: {sessionState.CreatedAt:yyyy-MM-dd HH:mm}

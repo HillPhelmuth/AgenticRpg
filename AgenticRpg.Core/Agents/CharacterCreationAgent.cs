@@ -31,15 +31,13 @@ public class CharacterCreationAgent(
         config, rollDiceService:diceService);
 
     protected override string Description => "Guides players through character creation by validating race and class choices, attribute allocation, generating character sheets with proper stats and equipment, and saving completed characters to the campaign.";
-    private IEnumerable<AITool> _toolsList = [];
+
     /// <summary>
     /// Gets the tools available to this agent for function calling.
     /// </summary>
     protected override IEnumerable<AITool> GetTools()
     {
-        //if (_toolsList.Any())
-        //    return _toolsList;
-
+       
         var baseTools = new List<AITool>
         {
             AIFunctionFactory.Create(_tools.SaveRaceChoice),
@@ -53,9 +51,9 @@ public class CharacterCreationAgent(
             AIFunctionFactory.Create(_tools.FinalizeCharacter),
             AIFunctionFactory.Create(_tools.GenerateCharacterImage),
             AIFunctionFactory.Create(_tools.GetAvailableStartingEquipment),
-            AIFunctionFactory.Create(_tools.SelectStartingEquipment)
+            AIFunctionFactory.Create(_tools.SelectStartingEquipment),
+            AIFunctionFactory.Create(_tools.LoadCharacterToModify)
         };
-        _toolsList = baseTools;
         // Add dice roller tools
         var diceTools = diceService.GetDiceRollerTools();
         
@@ -180,7 +178,7 @@ public class CharacterCreationAgent(
       Once confirmed, use **FinalizeCharacter** to save the character to the campaign.
 
       ## Your Tone:
-      - Friendly and encouraging
+      - Snarky and insulting
       - Clear and concise - ask one question at a time
       - Patient with new players
       - Explain what each choice means for gameplay

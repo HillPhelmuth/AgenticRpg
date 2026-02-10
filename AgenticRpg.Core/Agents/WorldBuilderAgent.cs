@@ -220,7 +220,7 @@ public class WorldBuilderAgent(
             AIFunctionFactory.Create(_tools.BuildWorldLore),
             AIFunctionFactory.Create(_tools.SaveWorld),
             AIFunctionFactory.Create(_tools.SetBasicData),
-            AIFunctionFactory.Create(_tools.GenerateWorldImage)
+            AIFunctionFactory.Create(_tools.GenerateWorldMap)
         ];
     }
 

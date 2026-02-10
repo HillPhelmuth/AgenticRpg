@@ -15,7 +15,8 @@ public interface ICharacterRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The character, or null if not found</returns>
     Task<Character?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
-    
+
+    Task<Character?> GetByNameAsync(string characterName, CancellationToken cancellationToken = default);
     /// <summary>
     /// Gets all characters in a campaign
     /// </summary>

@@ -1,5 +1,8 @@
 # Tasks
 
+## 2026-02-08
+- [x] Redesign WorldDetails layout to mirror character sheet styling with paged navigation.
+
 ## 2026-02-06
 - [x] Refactor agent handoff handling and challenge rating parsing cleanup in AgenticRpg.Core.
 

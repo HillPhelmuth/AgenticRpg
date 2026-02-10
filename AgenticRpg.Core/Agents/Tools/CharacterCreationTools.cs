@@ -82,6 +82,39 @@ public class CharacterCreationTools(
 
                                                     """;
 
+    [Description("Find a character owned by the player by name to modify or complete")]
+    public async Task<string> LoadCharacterToModify([Description("The unique session ID for this character creation session. This tracks the character being created.")] string sessionId, [Description("The unique player ID for this character creation session.")] string playerId, [Description("The name of the character to modify or complete.")] string characterName)
+    {
+        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
+        if (session == null)
+        {
+            return JsonSerializer.Serialize(new CharacterSheetResult
+            {
+                Valid = false,
+                Error = "Session not found"
+            });
+        }
+        var characters = await characterRepository.GetByPlayerIdAsync(playerId);
+        var character = characters.FirstOrDefault(c => c.Name.Equals(characterName, StringComparison.OrdinalIgnoreCase));
+        if (character == null)
+        {
+            return JsonSerializer.Serialize(new CharacterSheetResult
+            {
+                Valid = false,
+                Error = "Character not found"
+            });
+        }
+        session.Context.DraftCharacter = character;
+        session.Context.CurrentStep = "modify";
+
+        await sessionStateManager.UpdateSessionStateAsync(session);
+        return JsonSerializer.Serialize(new CharacterSheetResult
+        {
+            Valid = true,
+            Character = character
+        });
+    }
+
     [Description("Saves the chosen race to the character in progress and returns the race details including attribute modifiers, movement speed, special abilities, and available classes. Valid races are: Humans, Duskborn, Ironforged, Wildkin, Emberfolk, Stoneborn. Requires sessionId.")]
     public async Task<string> SaveRaceChoice(
         [Description("The unique session ID for this character creation session. This tracks the character being created.")] string sessionId,
@@ -625,7 +658,7 @@ public class CharacterCreationTools(
             character.Skills[skill.Key] = 1;
         }
 
-        character.Skills = character.Skills.Take(5).ToDictionary();
+        character.Skills = character.Skills.Take(4).ToDictionary();
         var session = await sessionStateManager.GetSessionStateAsync(sessionId);
         if (session == null)
         {

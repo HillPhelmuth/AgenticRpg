@@ -523,8 +523,8 @@ public class WorldBuilderTools(
             });
         }
     }
-    [Description("Generates an image based on the world details and an optional set of instructions.")]
-    public async Task<string> GenerateWorldImage([Description("The unique session ID for this world creation session.")] string sessionId, [Description("Additional instructions for image generation.")] string? additionalInstructions = null)
+    [Description("Generates a world map image based on the world details and an optional set of instructions.")]
+    public async Task<string> GenerateWorldMap([Description("The unique session ID for this world creation session.")] string sessionId, [Description("Additional instructions for map image generation.")] string? additionalInstructions = null)
     {
         // Get session and draft world
         var session = await sessionStateManager.GetSessionStateAsync(sessionId);

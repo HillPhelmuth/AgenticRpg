@@ -22,6 +22,11 @@ public class CharacterRepository(CosmosClient cosmosClient)
         return results;
     }
 
+    public async Task<Character?> GetByNameAsync(string characterName, CancellationToken cancellationToken = default)
+    {
+        return (await QueryAsync(q => q.Where(c => c.Name == characterName), cancellationToken)).FirstOrDefault();
+    }
+
     public async Task<IEnumerable<Character>> GetByCampaignIdAsync(
         string campaignId,
         CancellationToken cancellationToken = default)

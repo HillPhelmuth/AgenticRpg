@@ -311,14 +311,17 @@
 {
     <div class="modal-overlay" @onclick="CloseCharacterModal">
         <div class="modal-content character-sheet-modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h2>@_viewingCharacter.Name</h2>
+            @* <div class="modal-header">
                 <button class="btn-close" @onclick="CloseCharacterModal" title="Close">
                     ✕
                 </button>
-            </div>
+            </div> *@
+           
             <div class="modal-body">
-                <CharacterSheetView Character="@_viewingCharacter" />
+                <button class="btn-close" @onclick="CloseCharacterModal" title="Close">
+                    ✕
+                </button>
+                <CharacterSheetView Character="@_viewingCharacter"/>
             </div>
         </div>
     </div>
@@ -327,13 +330,14 @@
 {
     <div class="modal-overlay" @onclick="CloseWorldModal">
         <div class="modal-content world-sheet-modal" @onclick:stopPropagation="true">
-            <div class="world-modal-header">
+            @* <div class="modal-header">
+                
+            </div> *@
+            <div class="modal-body">
                 <button class="btn-close" @onclick="CloseWorldModal" title="Close">
                     ✕
                 </button>
-            </div>
-            <div class="modal-body">
-                <WorldDetails World="@_viewingWorld" />
+                <WorldDetails World="@_viewingWorld"/>
             </div>
         </div>
     </div>

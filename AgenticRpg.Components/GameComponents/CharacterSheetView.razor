@@ -83,12 +83,7 @@
                                     <div class="hp-fill" style="width: @(Character.MaxHP > 0 ? (Character.CurrentHP * 100.0 / Character.MaxHP) : 0)%"></div>
                                     <span>@Character.CurrentHP / @Character.MaxHP</span>
                                 </div>
-                                @if (Character.CurrentHP > 0)
-                                {
-                                    <div class="temp-hp">
-                                        <small>+@Character.CurrentHP Temp HP</small>
-                                    </div>
-                                }
+                                
                             </div>
                             <div class="stat-box">
                                 <label>Magic Points</label>
