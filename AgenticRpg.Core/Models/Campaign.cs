@@ -1,5 +1,6 @@
 using AgenticRpg.Core.Models.Enums;
 using System.Text.Json.Serialization;
+using AgenticRpg.Core.Models.Game;
 
 namespace AgenticRpg.Core.Models;
 
@@ -94,6 +95,7 @@ public class Campaign
     /// Session count
     /// </summary>
     public int SessionCount { get; set; } = 0;
+    public Quest? PrimaryQuest { get; set; }
     
     /// <summary>
     /// Generates a random invitation code for campaign joining
@@ -125,11 +127,6 @@ public class CampaignSettings
     public bool AllowLateJoining { get; set; } = true;
     
     /// <summary>
-    /// Whether to allow spectators
-    /// </summary>
-    public bool AllowSpectators { get; set; } = false;
-    
-    /// <summary>
     /// Starting character level
     /// </summary>
     public int StartingLevel { get; set; } = 1;
@@ -139,13 +136,6 @@ public class CampaignSettings
     /// </summary>
     public int Difficulty { get; set; } = 1;
     
-    /// <summary>
-    /// Whether to use critical hit rules
-    /// </summary>
-    public bool UseCriticalHits { get; set; } = true;
-    
-    /// <summary>
-    /// Whether to track encumbrance
-    /// </summary>
-    public bool TrackEncumbrance { get; set; } = false;
+    public string DefaultModel { get; set; } = "gpt-5.1";
+    public string? PrimaryQuestDescription { get; set; }
 }

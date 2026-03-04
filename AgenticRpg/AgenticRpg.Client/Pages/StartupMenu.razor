@@ -15,7 +15,7 @@
         <div class="startup-menu">
             <div class="startup-header">
                 <h1>Skynet RPG</h1>
-                <button @onclick="Refresh" class="btn-refresh">Refresh</button>
+                <button @onclick="Refresh" class="btn-refresh"><i class="bi bi-arrow-clockwise"></i></button>
             </div>
 
             @if (IsLoading)
@@ -118,7 +118,7 @@
                                                     <span class="template-badge">Template</span>
                                                 }
                                                 <span class="world-stats">
-                                                    @world.Locations.Count locations · @world.NPCs.Count NPCs · @world.Quests.Count quests
+                                                    @world.Locations.Count locations · @world.NPCs.Count NPCs · @world.SideQuests.Count quests
                                                 </span>
                                                 <button class="btn-view-sheet" @onclick="@(() => ShowWorldDetails(world))" @onclick:stopPropagation="true" title="View World Deets">
                                                     👁️

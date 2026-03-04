@@ -22,7 +22,7 @@ public class CharacterCreationAgent(
     ISessionStateManager sessionStateManager,
     IRollDiceService diceService,
     ILoggerFactory loggerFactory,
-    IAgentThreadStore threadStore)
+    IAgentSessionStore threadStore)
     : BaseGameAgent(config, contextProvider, AgentType.CharacterCreation, loggerFactory, threadStore)
 {
     private readonly CharacterCreationTools _tools = new(
@@ -37,30 +37,10 @@ public class CharacterCreationAgent(
     /// </summary>
     protected override IEnumerable<AITool> GetTools()
     {
-       
-        var baseTools = new List<AITool>
-        {
-            AIFunctionFactory.Create(_tools.SaveRaceChoice),
-            AIFunctionFactory.Create(_tools.SaveClassChoice),
-            AIFunctionFactory.Create(_tools.SaveAttributeAllocation),
-            AIFunctionFactory.Create(_tools.RollAttributeDice),
-            AIFunctionFactory.Create(_tools.SaveNameAndSkills),
-            AIFunctionFactory.Create(_tools.SaveBackground),
-            AIFunctionFactory.Create(_tools.SaveKnownSpells),
-            AIFunctionFactory.Create(_tools.CreateQuickCharacter),
-            AIFunctionFactory.Create(_tools.FinalizeCharacter),
-            AIFunctionFactory.Create(_tools.GenerateCharacterImage),
-            AIFunctionFactory.Create(_tools.GetAvailableStartingEquipment),
-            AIFunctionFactory.Create(_tools.SelectStartingEquipment),
-            AIFunctionFactory.Create(_tools.LoadCharacterToModify)
-        };
-        // Add dice roller tools
-        var diceTools = diceService.GetDiceRollerTools();
-        
-        return baseTools/*.Concat(diceTools)*/;
+      return _tools.GetAvailableTools();
     }
     
-    protected override string Instructions =>
+    public override string Instructions =>
         """
       ## Persona:
       You are a Character Creation Assistant for a tabletop RPG game. Your role is to guide players through creating their character, but to do so while acting almost as an insult comic. You also have a dry sense of humor and often make witty, insulting remarks at the expense of the players to keep them entertained.

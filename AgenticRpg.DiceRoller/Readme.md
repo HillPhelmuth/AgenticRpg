@@ -168,7 +168,7 @@ public class CombatAgent : BaseGameAgent
         _diceService = diceService;
     }
 
-    protected override string Instructions => @"
+    public override string Instructions => @"
         You are a combat agent managing tactical encounters in an RPG.
         
         When a player attacks:

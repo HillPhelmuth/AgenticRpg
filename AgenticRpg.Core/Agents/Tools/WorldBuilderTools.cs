@@ -23,9 +23,8 @@ namespace AgenticRpg.Core.Agents.Tools;
 /// World building tools for the WorldBuilderAgent to create locations, NPCs, quests, and lore.
 /// </summary>
 public class WorldBuilderTools(
-    IWorldRepository worldRepository,
-    IGameStateManager stateManager, ISessionStateManager sessionStateManager,
-    AgentConfiguration configuration)
+    IWorldRepository worldRepository, ISessionStateManager sessionStateManager,
+    AgentConfiguration configuration) : IAITools
 {
     private const string QuickCreateInstructions = """
                                                    Using the provided world concept, create a complete campaign world.
@@ -71,12 +70,6 @@ public class WorldBuilderTools(
                                                    - Connect lore to tangible locations and NPCs
                                                    - Leave some mysteries unexplained for discovery
 
-                                                   #### Encounter Tables (For dangerous locations)
-                                                   - Match encounters to location type and theme
-                                                   - Set appropriate difficulty (1-5 for starter areas)
-                                                   - Include variety: combat, social, environmental
-                                                   - 2-4 encounter types per dangerous location
-                                                   
                                                    #### Combat Frequency
                                                    - Define how often combat encounters occur in the location
 
@@ -89,11 +82,33 @@ public class WorldBuilderTools(
 
                                                    ---
                                                    """;
+
+    public List<AITool> GetAvailableTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(QuickCreateWorld),
+            AIFunctionFactory.Create(GenerateLocation),
+            AIFunctionFactory.Create(CreateNPC),
+            AIFunctionFactory.Create(AddNPCs),
+            AIFunctionFactory.Create(DesignQuest),
+            AIFunctionFactory.Create(AddQuests),
+            AIFunctionFactory.Create(PopulateEncounterTable),
+            AIFunctionFactory.Create(BuildWorldLore),
+            AIFunctionFactory.Create(SaveWorld),
+            AIFunctionFactory.Create(SetBasicData),
+            AIFunctionFactory.Create(GenerateWorldMap)
+        ];
+    }
+
     [Description("Set the Name, Description, and combat frequency of the campaign world")]
     public async Task<string> SetBasicData(
         [Description("The unique session ID for this world building session.")] string sessionId,
         [Description("The name of the campaign world.")] string worldName,
         [Description("A brief description of the campaign world.")] string worldDescription,
+        [Description("The theme of the campaign world.")] string theme,
+        [Description("The geography of the campaign world.")] string geography,
+        [Description("The politics of the campaign world.")] string politics,   
         [Description("The combat frequency for the campaign world.")] BattleFrequency combatFrequency)
     {
          var session = await sessionStateManager.GetSessionStateAsync(sessionId);
@@ -108,9 +123,17 @@ public class WorldBuilderTools(
         }
 
         // Set the basic data for the world
+        session.Context.DraftWorld ??= new World
+        {
+            Id = Guid.NewGuid().ToString(),
+            CreatedAt = DateTime.UtcNow
+        };
         session.Context.DraftWorld.Name = worldName;
         session.Context.DraftWorld.Description = worldDescription;
         session.Context.DraftWorld.BattleFrequency = combatFrequency;
+        session.Context.DraftWorld.Theme = theme;
+        session.Context.DraftWorld.Geography = geography;
+        session.Context.DraftWorld.Politics = politics;
         session.LastUpdatedAt = DateTime.UtcNow;
         await sessionStateManager.UpdateSessionStateAsync(session);
 
@@ -287,7 +310,7 @@ public class WorldBuilderTools(
             MonsterNames = selectedMonsters
         };
 
-        session.Context.DraftWorld.Quests.Add(quest);
+        session.Context.DraftWorld.SideQuests.Add(quest);
         session.LastUpdatedAt = DateTime.UtcNow;
         await sessionStateManager.UpdateSessionStateAsync(session);
 
@@ -312,8 +335,8 @@ public class WorldBuilderTools(
         }
         // Replace the quests in the draft world
         
-        session.Context.DraftWorld.Quests.Clear();
-        session.Context.DraftWorld.Quests.AddRange(newQuests);
+        session.Context.DraftWorld.SideQuests.Clear();
+        session.Context.DraftWorld.SideQuests.AddRange(newQuests);
         session.LastUpdatedAt = DateTime.UtcNow;
         await sessionStateManager.UpdateSessionStateAsync(session);
         return JsonSerializer.Serialize(new DesignQuestResult()
@@ -392,7 +415,7 @@ public class WorldBuilderTools(
         }
 
         // Use WorldEvent to store lore entries
-        var loreEvent = new WorldEvent
+        var loreEvent = new WorldLore
         {
             Id = Guid.NewGuid().ToString(),
             Name = loreName,
@@ -420,7 +443,7 @@ public class WorldBuilderTools(
         [Description("The unique session ID for this world building session.")] string sessionId,
         [Description("A description of the desired world concept, theme, and setting based on the Game Master's preferences.")] string worldConcept,
         [Description("Optional world name. If not provided, a default name will be generated based on the concept.")] string? worldName = null, 
-        [Description("The frequency of combat encounters in the world.")] BattleFrequency combatFrequency = BattleFrequency.Medium)
+        [Description("The frequency of combat encounters in the world.")] BattleFrequency combatFrequency = BattleFrequency.High)
     {
         try
         {
@@ -448,7 +471,7 @@ public class WorldBuilderTools(
                  **Combat Frequency:** {combatFrequency.ToString()} - {combatFrequency.GetDescription()}
                  """;
             
-            var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
+            var chatClient = client.GetChatClient("x-ai/grok-4.1-fast").AsIChatClient();
             var quickCreateAgent = chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
@@ -488,7 +511,7 @@ public class WorldBuilderTools(
                 npc.Id = Guid.NewGuid().ToString();
             }
 
-            foreach (var quest in world.Quests.Where(quest => string.IsNullOrEmpty(quest.Id)))
+            foreach (var quest in world.SideQuests.Where(quest => string.IsNullOrEmpty(quest.Id)))
             {
                 quest.Id = Guid.NewGuid().ToString();
             }
@@ -510,7 +533,7 @@ public class WorldBuilderTools(
                 Success = true,
                 World = world,
                 Message =
-                    $"World '{world.Name}' created successfully with {world.Locations.Count} locations, {world.NPCs.Count} NPCs, {world.Quests.Count} quests, and {loreCount} lore entries."
+                    $"World '{world.Name}' created successfully with {world.Locations.Count} locations, {world.NPCs.Count} NPCs, {world.SideQuests.Count} quests, and {loreCount} lore entries."
             });
         }
         catch (Exception ex)
@@ -587,9 +610,9 @@ public class WorldBuilderTools(
             WorldName = world.Name,
             LocationCount = world.Locations.Count,
             NPCCount = world.NPCs.Count,
-            QuestCount = world.Quests.Count,
+            QuestCount = world.SideQuests.Count,
             LoreEntryCount = loreCount,
-            Message = $"World '{world.Name}' saved successfully with {world.Locations.Count} locations, {world.NPCs.Count} NPCs, {world.Quests.Count} quests, and {loreCount} lore entries."
+            Message = $"World '{world.Name}' saved successfully with {world.Locations.Count} locations, {world.NPCs.Count} NPCs, {world.SideQuests.Count} quests, and {loreCount} lore entries."
         });
     }
 }

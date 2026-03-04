@@ -183,7 +183,7 @@ public class VideoGenService()
             NumberOfVideos = 1,
             DurationSeconds = 8,
             Resolution = "720p",
-            ReferenceImages = [new VideoGenerationReferenceImage(){ReferenceType = VideoGenerationReferenceType.ASSET, Image = new Image(){ImageBytes = imageBytes, MimeType = imageMimeType}}]
+            ReferenceImages = [new VideoGenerationReferenceImage(){ReferenceType = VideoGenerationReferenceType.Asset, Image = new Image(){ImageBytes = imageBytes, MimeType = imageMimeType}}]
         };
         var videoBytes = await GenerateVideoFromPrompt(instructions, "veo-3.1-generate-preview", config);
         var blobName = @$"CharacterIntros\{ConvertNonAlphaNumericToUnderscore(character.Id)}_IntroVideo_{Guid.NewGuid():N}.mp4";

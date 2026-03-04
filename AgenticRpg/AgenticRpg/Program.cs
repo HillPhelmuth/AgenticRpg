@@ -147,7 +147,7 @@ dice.MapPost("/", async (IRollDiceService diceRollerService, [FromBody] DiceRoll
 {
     Console.WriteLine($"Dice Roll Request from API:\n\n {JsonSerializer.Serialize(request)}");
     var diceParameters = request.Parameters ?? new RollDiceParameters();
-    diceParameters.Set("DieType", DieType.D20);
+    diceParameters.Set("DieType",request.DieType);
     diceParameters.Set("NumberOfRolls", request.NumberOfRollWindows);
     diceParameters.Set("NumberOfDice", request.NumberOfDice);
     diceParameters.Set("IsManual", true);
@@ -285,7 +285,9 @@ campaigns.MapGet("/invitation/{invitationCode}", async (
 campaigns.MapPost("/", async (
         [FromBody] Campaign campaign,
         ClaimsPrincipal user,
-        ICampaignRepository repo) =>
+        ICampaignRepository repo,
+        IWorldRepository worldRepository,
+        ILogger<Program> logger) =>
 {
     var userId = GetCurrentUserId(user);
     if (string.IsNullOrWhiteSpace(userId))
@@ -295,6 +297,37 @@ campaigns.MapPost("/", async (
 
     // Reason: Enforce ownership server-side regardless of client input.
     campaign.OwnerId = userId;
+
+    if (campaign.Settings is null)
+    {
+        campaign.Settings = new CampaignSettings();
+    }
+
+    var questDescription = campaign.Settings.PrimaryQuestDescription;
+    if (string.IsNullOrWhiteSpace(questDescription))
+    {
+        questDescription = campaign.Description;
+    }
+
+    if (!string.IsNullOrWhiteSpace(questDescription))
+    {
+        var world = await worldRepository.GetByIdAsync(campaign.WorldId);
+        if (world is null)
+        {
+            return Results.BadRequest("World not found for campaign.");
+        }
+
+        try
+        {
+            campaign.PrimaryQuest = await QuestGenService.GeneratePrimaryQuest(world, questDescription, campaign.Settings.Difficulty);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate primary quest for campaign {CampaignId}", campaign.Id);
+            return Results.Problem("Failed to generate primary quest.");
+        }
+    }
+
     var created = await repo.CreateAsync(campaign);
     return Results.Created($"/api/campaigns/{created.Id}", created);
 })
@@ -580,7 +613,7 @@ worlds.MapGet("/{id}/quests", async (
     {
         return Results.NotFound();
     }
-    return Results.Ok(world.Quests);
+    return Results.Ok(world.SideQuests);
 })
     .WithName("GetWorldQuests")
     .Produces<IEnumerable<Quest>>()

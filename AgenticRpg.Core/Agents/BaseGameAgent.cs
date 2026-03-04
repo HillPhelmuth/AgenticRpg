@@ -95,7 +95,7 @@ public abstract class BaseGameAgent(
     {
         var requestedModel = string.IsNullOrWhiteSpace(model) ? _config.BaseModelName : model;
 
-        var useOpenRouter = !string.IsNullOrWhiteSpace(model) && (model?.Contains("gpt-oss") == true || !model?.Contains("openai") == true);
+        var useOpenRouter = (requestedModel != _config.BaseModelName && !requestedModel?.Contains("openai") == true) || requestedModel?.Contains("gpt-oss") == true;
         if (!useOpenRouter)
             requestedModel = requestedModel.Replace("openai/", "");
         _currentModel = requestedModel;
@@ -124,7 +124,7 @@ public abstract class BaseGameAgent(
             var chatClient = client.GetChatClient(requestedModel).AsIChatClient();
 
             // Get tools from derived class
-            var tools = /*Tools.Any() ? Tools.ToList() :*/ GetTools()?.DistinctBy(x => x.Name).ToList();
+            var tools = GetTools()?.DistinctBy(x => x.Name).ToList();
 
             var enableReasoning = OpenRouterModels.SupportsParameter(requestedModel ?? $"openai/{_config.BaseModelName}", "reasoning");
             // Create the agent with instructions, description, and tools
@@ -188,14 +188,11 @@ public abstract class BaseGameAgent(
     /// <param name="model"></param>
     /// <param name="additionalMessage"></param>
     /// <returns>The agent's response</returns>
-    public virtual async Task<AgentResponse> ProcessMessageAsync(string idOrSessionId,
-        string userMessage,
-        string playerId, string? model = null, string? additionalMessage = null)
+    public virtual async Task<AgentResponse> ProcessMessageAsync(string idOrSessionId, string userMessage,
+        string playerId, string? model = null, string? additionalMessage = null, AgentSession? agentSession = null)
     {
         try
         {
-            // Ensure agent is initialized
-            //if (model != _currentModel && model != _config.BaseModelName)
             await InitializeAgentAsync(model);
 
             if (Agent == null)
@@ -249,12 +246,12 @@ public abstract class BaseGameAgent(
             var fullMessage = $"Player {name} says '{userMessage}'";
 
 
-            AgentSession thread;
+            //AgentSession thread;
 
             await _threadLock.WaitAsync();
             try
             {
-                thread = await _threadStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.GetNewSessionAsync());
+                agentSession ??= await _agentSessionStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.CreateSessionAsync());
             }
             finally
             {
@@ -267,17 +264,20 @@ public abstract class BaseGameAgent(
             {
                 options = await OptionsWithInstructions(sessionState);
             }
-            var result = await Agent.RunAsync(fullMessage, thread, options);
+            var result = await Agent.RunAsync(fullMessage, agentSession, options);
+            //var formattedResponse = await AgentFormattedResponse(agentSession, fullMessage, options, gameState, sessionState);
             var response = result.Text;
+            var items = result.Messages.Where(x => x.Role == ChatRole.Assistant).ToList();
+            if (items.Count > 1)
+            {
+                _logger.LogInformation("Multiple assistant messages in response. Sending final response to client. Total responses: {count}", items.Count);
+                response = items.Last().Text;
+            }
             _logger.LogDebug("Raw Response: {Response}", response);
             var formatted = JsonSerializer.Deserialize<AgentFormattedResponse>(response.Replace("```json", "").Replace("```", "").Trim());
-            if (AgentType == AgentType.Combat)
-            {
-                var serialized = thread.Serialize();
-                _logger.LogDebug("Serialized Thread after response: {Thread}", serialized.ToString());
-            }
+
             // Add assistant response to history
-            var serializedThread = thread.Serialize();
+            var serializedThread = await Agent.SerializeSessionAsync(agentSession);
             await File.WriteAllTextAsync($"agentThread_{agentType}.json", serializedThread.GetRawText());
             return new AgentResponse
             {
@@ -297,7 +297,7 @@ public abstract class BaseGameAgent(
         }
     }
 
-    private async Task<ChatClientAgentRunOptions> OptionsWithInstructions(GameState? gameState)
+    internal async Task<ChatClientAgentRunOptions> OptionsWithInstructions(GameState? gameState)
     {
         var promptTemplateFactory = new KernelPromptTemplateFactory();
         var args = new KernelArguments(BuildContextVariables(gameState));
@@ -375,7 +375,7 @@ public abstract class BaseGameAgent(
                         Description: {world.Description ?? "Not set"}
                         Locations: {world.Locations.Count}
                         NPCs: {world.NPCs.Count}
-                        Quests: {world.Quests.Count}
+                        Quests: {world.SideQuests.Count}
                         """;
         }
 
@@ -433,35 +433,6 @@ public abstract class BaseGameAgent(
     {
         //await Task.CompletedTask;
         return Task.FromResult(currentState)!; // No state changes by default
-    }
-
-    /// <summary>
-    /// Determines if this agent should hand off to another agent
-    /// </summary>
-    public virtual async Task<string?> ShouldHandoffAsync(string userMessage, GameState gameState)
-    {
-        await Task.CompletedTask;
-        return null; // No handoff by default
-    }
-
-    /// <summary>
-    /// Loads rules documents for agent context
-    /// </summary>
-    protected async Task<string> LoadRulesDocumentAsync(string documentName)
-    {
-        try
-        {
-            var path = Path.Combine(AppContext.BaseDirectory, "RulesDocuments", documentName);
-            if (File.Exists(path))
-            {
-                return await File.ReadAllTextAsync(path);
-            }
-            return string.Empty;
-        }
-        catch
-        {
-            return string.Empty;
-        }
     }
 
     [Description("When you have completed your task, use this tool to hand control back to GameMaster agent")]

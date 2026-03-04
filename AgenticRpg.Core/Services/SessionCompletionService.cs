@@ -37,7 +37,7 @@ public class SessionCompletionService(
     IWorldRepository worldRepository,
     ICampaignRepository campaignRepository,
     ILogger<SessionCompletionService> logger,
-    IAgentThreadStore threadStore)
+    IAgentSessionStore threadStore)
     : ISessionCompletionService
 {
     /// <summary>

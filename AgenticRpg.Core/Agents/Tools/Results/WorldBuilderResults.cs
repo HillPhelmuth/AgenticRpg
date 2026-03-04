@@ -52,7 +52,7 @@ public class EncounterEntry
 public class BuildWorldLoreResult
 {
     public bool Success { get; set; }
-    public WorldEvent? LoreEntry { get; set; }
+    public WorldLore? LoreEntry { get; set; }
     public required string Message { get; set; }
     public string? Error { get; set; }
 }

@@ -138,14 +138,15 @@
     margin-bottom: 1rem;
 }
 
-.world-section h3 {
-    margin: 0 0 0.75rem 0;
-    color: #3a2f26;
-    font-size: 1.1rem;
-    border-bottom: 2px solid #d4c4a8;
-    padding-bottom: 0.4rem;
-    font-weight: bold;
-}
+    .world-section h3 {
+        margin: 0 0 0.75rem 0;
+        color: #3a2f26;
+        font-size: 1.1rem;
+        border-bottom: 2px solid #d4c4a8;
+        padding-bottom: 0.4rem;
+        font-weight: bold;
+        text-align: center;
+    }
 
 .world-section > p {
     color: #2a1f16;
@@ -370,12 +371,13 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.4rem;
+    
 }
 
-.event-header h4 {
-    margin: 0;
-    color: #6f5a44;
-}
+    .event-header h4 {
+        margin: 0;
+        color: #d4af37;
+    }
 
 .event-status {
     padding: 0.2rem 0.5rem;
@@ -404,7 +406,7 @@
     gap: 0.5rem;
     font-size: 0.85rem;
     margin-bottom: 0.4rem;
-    color: #8b7355;
+    color: #d4af37;
 }
 
 .timing-label {

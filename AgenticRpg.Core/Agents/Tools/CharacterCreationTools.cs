@@ -30,7 +30,7 @@ namespace AgenticRpg.Core.Agents.Tools;
 public class CharacterCreationTools(
     ICharacterRepository characterRepository,
     ISessionStateManager sessionStateManager,
-    AgentConfiguration configuration, IRollDiceService rollDiceService)
+    AgentConfiguration configuration, IRollDiceService rollDiceService) : IAITools
 {
     private const string? QuickCreateInstructions = $"""
                                                     Using the provided character concept, create a detailed character profile.
@@ -920,4 +920,24 @@ public class CharacterCreationTools(
         - **Void Lash**: Manifest a whip of hungry darkness.
         
         """;
+
+    public List<AITool> GetAvailableTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(SaveRaceChoice),
+            AIFunctionFactory.Create(SaveClassChoice),
+            AIFunctionFactory.Create(SaveAttributeAllocation),
+            AIFunctionFactory.Create(RollAttributeDice),
+            AIFunctionFactory.Create(SaveNameAndSkills),
+            AIFunctionFactory.Create(SaveBackground),
+            AIFunctionFactory.Create(SaveKnownSpells),
+            AIFunctionFactory.Create(CreateQuickCharacter),
+            AIFunctionFactory.Create(FinalizeCharacter),
+            AIFunctionFactory.Create(GenerateCharacterImage),
+            AIFunctionFactory.Create(GetAvailableStartingEquipment),
+            AIFunctionFactory.Create(SelectStartingEquipment),
+            AIFunctionFactory.Create(LoadCharacterToModify)
+        ];
+    }
 }

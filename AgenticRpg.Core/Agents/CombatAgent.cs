@@ -27,15 +27,14 @@ public class CombatAgent : BaseGameAgent
     public CombatAgent(AgentConfiguration config,
         IAgentContextProvider contextProvider,
         IGameStateManager stateManager,
-        CombatRulesEngine rulesEngine,
         ICharacterRepository characterRepository,
         INarrativeRepository narrativeRepository,
         IRollDiceService diceService,
         ILoggerFactory loggerFactory,
-        IAgentThreadStore threadStore, VideoGenService videoGenService) : base(config, contextProvider, AgentType.Combat, loggerFactory, threadStore)
+        IAgentSessionStore threadStore, VideoGenService videoGenService) : base(config, contextProvider, AgentType.Combat, loggerFactory, threadStore)
     {
         _diceService = diceService;
-        _tools = new CombatTools(stateManager, rulesEngine, characterRepository, narrativeRepository, diceService, videoGenService);
+        _tools = new CombatTools(stateManager, new CombatRulesEngine(), characterRepository, narrativeRepository, diceService, videoGenService);
         //Agent = InitializeAgent(AgentType.Combat);
     }
 
@@ -43,16 +42,7 @@ public class CombatAgent : BaseGameAgent
 
     protected override IEnumerable<AITool> GetTools()
     {
-        var baseTools = new List<AITool>
-        {
-            AIFunctionFactory.Create(_tools.ExecutePlayerWeaponAttack),
-            AIFunctionFactory.Create(_tools.ExecuteMonsterWeaponAttack),
-            AIFunctionFactory.Create(_tools.ExecutePlayerSpellAttack),
-            AIFunctionFactory.Create(_tools.ProcessSavingThrow),
-            AIFunctionFactory.Create(_tools.DetermineInitiative),
-            AIFunctionFactory.Create(_tools.ResolveSpecialAbility),
-            AIFunctionFactory.Create(_tools.EndCombat)
-        };
+        var baseTools = _tools.GetAvailableTools();
         
         // Add dice roller tools
         var diceTools = _diceService.GetDiceRollerTools();
@@ -61,7 +51,7 @@ public class CombatAgent : BaseGameAgent
         return baseTools.Concat(diceTools);
     }
 
-    protected override string Instructions => """
+    public override string Instructions => """
 
                                               Developer: # Role and Objective
                                               You are the Combat Agent for a tactical, turn-based RPG combat system. Your task is to manage combat encounters strictly by the mechanics and provide vivid, present-tense narration.
@@ -179,7 +169,7 @@ public class CombatAgent : BaseGameAgent
     {
         if (gameState.CurrentCombat is null || !gameState.CurrentCombat.InitiativeOrder.Any())
         {
-            return string.Empty;
+            return "No Initiative Order. Invoke `DetermineInitiative` to start combat.";
         }
 
         var sb = new StringBuilder();

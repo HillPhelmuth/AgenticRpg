@@ -18,12 +18,12 @@ public class WorldBuilderAgent(
     IWorldRepository worldRepository,
     IGameStateManager stateManager,
     ISessionStateManager sessionStateManager, ILoggerFactory loggerFactory,
-    IAgentThreadStore threadStore)
+    IAgentSessionStore threadStore)
     : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.WorldBuilder, loggerFactory, threadStore)
 {
-    private readonly WorldBuilderTools _tools = new(worldRepository, stateManager, sessionStateManager, config);
+    private readonly WorldBuilderTools _tools = new(worldRepository, sessionStateManager, config);
 
-    protected override string Instructions => """
+    public override string Instructions => """
 
                                               # World Builder Agent
 
@@ -208,20 +208,7 @@ public class WorldBuilderAgent(
 
     protected override IEnumerable<AITool> GetTools()
     {
-        return
-        [
-            AIFunctionFactory.Create(_tools.QuickCreateWorld),
-            AIFunctionFactory.Create(_tools.GenerateLocation),
-            AIFunctionFactory.Create(_tools.CreateNPC),
-            AIFunctionFactory.Create(_tools.AddNPCs),
-            AIFunctionFactory.Create(_tools.DesignQuest),
-            AIFunctionFactory.Create(_tools.AddQuests),
-            AIFunctionFactory.Create(_tools.PopulateEncounterTable),
-            AIFunctionFactory.Create(_tools.BuildWorldLore),
-            AIFunctionFactory.Create(_tools.SaveWorld),
-            AIFunctionFactory.Create(_tools.SetBasicData),
-            AIFunctionFactory.Create(_tools.GenerateWorldMap)
-        ];
+        return _tools.GetAvailableTools();
     }
 
     /// <summary>
@@ -273,7 +260,7 @@ public class WorldBuilderAgent(
                 **Theme**: {gameState.World.Theme ?? "Not set"}
                 **Locations**: {gameState.World.Locations.Count}
                 **NPCs**: {gameState.World.NPCs.Count}
-                **Quests**: {gameState.World.Quests.Count}
+                **Quests**: {gameState.World.SideQuests.Count}
                 **Lore Entries**: {loreCount}
                 """;
     }
@@ -326,14 +313,14 @@ public class WorldBuilderAgent(
     /// </summary>
     private static string BuildExistingQuests(GameState gameState)
     {
-        if (gameState.World is null || gameState.World.Quests.Count == 0)
+        if (gameState.World is null || gameState.World.SideQuests.Count == 0)
         {
             return string.Empty;
         }
 
         var context = new System.Text.StringBuilder();
         context.AppendLine("## Existing Quests");
-        foreach (var quest in gameState.World.Quests.Take(10))
+        foreach (var quest in gameState.World.SideQuests.Take(10))
         {
             context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
         }
@@ -362,7 +349,7 @@ public class WorldBuilderAgent(
                 **Theme**: {world.Theme ?? "Not set"}
                 **Locations**: {world.Locations.Count}
                 **NPCs**: {world.NPCs.Count}
-                **Quests**: {world.Quests.Count}
+                **Quests**: {world.SideQuests.Count}
                 **Lore Entries**: {loreCount}
                 **Combat Frequency:** {world.BattleFrequency.GetDescription()}
 
@@ -421,14 +408,14 @@ public class WorldBuilderAgent(
     private static string BuildDraftQuests(SessionState sessionState)
     {
         var world = sessionState.Context.DraftWorld;
-        if (world is null || world.Quests.Count == 0)
+        if (world is null || world.SideQuests.Count == 0)
         {
             return string.Empty;
         }
 
         var context = new System.Text.StringBuilder();
         context.AppendLine("## Existing Quests");
-        foreach (var quest in world.Quests.Take(10))
+        foreach (var quest in world.SideQuests.Take(10))
         {
             context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
         }

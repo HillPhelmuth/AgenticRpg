@@ -213,7 +213,7 @@ public partial class GameMasterTools
 
         if (includeQuests)
         {
-            snapshot.Quests = world.Quests.ToList();
+            snapshot.Quests = world.SideQuests.ToList();
         }
 
         if (includeEvents)

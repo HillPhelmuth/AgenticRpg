@@ -349,7 +349,6 @@ public class GameHub(
                 await BroadcastStateUpdate(sessionOrCampaignId, gameState);
 
                 // Check for new narratives in the updated game state
-                //var gameState = response.UpdatedGameState;
                 if (gameState.RecentNarratives.Count != 0)
                 {
                     foreach (var narrative in gameState.RecentNarratives)
@@ -359,7 +358,7 @@ public class GameHub(
                 }
 
                 // Check if combat started
-                if (gameState.IsInCombat && gameState.CurrentCombat != null)
+                if (gameState is { IsInCombat: true, CurrentCombat: not null })
                 {
                     await BroadcastCombatStart(sessionOrCampaignId, gameState.CurrentCombat);
                 }

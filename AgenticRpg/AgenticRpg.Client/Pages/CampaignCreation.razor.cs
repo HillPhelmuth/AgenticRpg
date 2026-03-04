@@ -34,6 +34,7 @@ public partial class CampaignCreation : IAsyncDisposable
     private string? SaveMessage { get; set; }
     private bool IsSaveError { get; set; }
     private bool IsConnected { get; set; }
+    private CampaignSettings _createCampaignSettings = new();
 
     // TODO: Get from authentication/user context
     private string CurrentUserId { get; set; } = "player-1";
@@ -328,7 +329,10 @@ public partial class CampaignCreation : IAsyncDisposable
                 Description = CampaignDescription,
                 OwnerId = CurrentUserId,
                 WorldId = worldId,
-                Status = CampaignStatus.Setup
+                Status = CampaignStatus.Setup,
+                Settings = _createCampaignSettings,
+                SelectedModel = _createCampaignSettings.DefaultModel
+                
             };
 
             await CampaignService.CreateCampaignAsync(campaign);

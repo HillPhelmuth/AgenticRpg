@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
 using AgenticRpg.Core.Agents.Tools.Results;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
@@ -11,15 +5,21 @@ using AgenticRpg.Core.Models.Game;
 using AgenticRpg.Core.Repositories;
 using AgenticRpg.Core.Rules;
 using AgenticRpg.Core.State;
+using Google.GenAI.Types;
+using Microsoft.Extensions.AI;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace AgenticRpg.Core.Agents.Tools;
 
 /// <summary>
 /// Tools for managing economy, shops, and item transactions
 /// </summary>
-public class ShopkeeperTools(
-    IGameStateManager gameStateManager,
-    ICharacterRepository characterRepository)
+public class ShopkeeperTools(IGameStateManager gameStateManager, ICharacterRepository characterRepository) : IAITools
 {
     /// <summary>
     /// Gets the inventory of a shop with available items and prices
@@ -925,4 +925,25 @@ public class ShopkeeperTools(
     }
 
     #endregion
+
+    public List<AITool> GetAvailableTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(GetShopInventory),
+
+            AIFunctionFactory.Create(GetItemDetails),
+
+            AIFunctionFactory.Create(ProcessPurchase),
+
+            AIFunctionFactory.Create(ProcessSale),
+
+            AIFunctionFactory.Create(ApplyPriceModifier),
+
+            AIFunctionFactory.Create(CheckAffordability),
+
+            AIFunctionFactory.Create(EquipItem),
+            
+        ];
+    }
 }

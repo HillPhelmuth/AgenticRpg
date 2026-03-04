@@ -326,7 +326,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         {
             _logger.LogInformation("Submitted dice roll result for request {RequestId} rolls: {Rolls}", results.Count, JsonSerializer.Serialize(results.Select(x => x.Results)));
             await EnsureSubmitConnectionStartedAsync().ConfigureAwait(false);
-            await _submitConnection.InvokeAsync("SubmitDiceRollResult", new RollDiceResultsList { Results = results }).ConfigureAwait(false);
+            await _submitConnection!.InvokeAsync("SubmitDiceRollResult", new RollDiceResultsList { Results = results }).ConfigureAwait(false);
             //OnDiceRollResult?.Invoke(this, results);
 
         }

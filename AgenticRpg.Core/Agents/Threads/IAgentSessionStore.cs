@@ -3,7 +3,7 @@ using Microsoft.Agents.AI;
 
 namespace AgenticRpg.Core.Agents.Threads;
 
-public interface IAgentThreadStore
+public interface IAgentSessionStore
 {
     Task<AgentSession> GetOrCreate(string scopeId, AgentType agentType, Func<Task<AgentSession>> factory);
     bool TryRemoveScope(string scopeId);

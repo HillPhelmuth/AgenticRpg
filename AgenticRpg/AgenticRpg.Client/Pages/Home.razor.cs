@@ -29,11 +29,12 @@ public partial class Home
     
     private async Task TriggerRoll()
     {
+        await HubService.StartAsync();
         await HubService.JoinSessionAsync(SessionId, "test-user", "Character Creator");
         var request = new DiceRollRequest()
         {
             SessionId = SessionId, CampaignId = SessionId, NumberOfDice = 2, NumberOfRollWindows = 2,
-            DieType = DieType.D20
+            DieType = _selectedDie
         };
         var response = await HttpClient.PostAsJsonAsync(DiceUrl, request);
         if (response.IsSuccessStatusCode)

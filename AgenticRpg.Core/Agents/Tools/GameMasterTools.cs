@@ -28,8 +28,29 @@ namespace AgenticRpg.Core.Agents.Tools;
 /// </summary>
 public partial class GameMasterTools(
     IGameStateManager stateManager,
-    INarrativeRepository narrativeRepository)
+    INarrativeRepository narrativeRepository) : IAITools
 {
+    public List<AITool> GetAvailableTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(RollSkillCheck),
+            AIFunctionFactory.Create(GetAvailableMonsterNames),
+            AIFunctionFactory.Create(GenerateCampaignEventImage),
+            AIFunctionFactory.Create(InitiateCombat),
+            AIFunctionFactory.Create(RecordNarrative),
+            AIFunctionFactory.Create(AwardExperience),
+            AIFunctionFactory.Create(GetCharacterDetails),
+            AIFunctionFactory.Create(GetWorldDetails),
+            AIFunctionFactory.Create(GetNarrativeSummary),
+            AIFunctionFactory.Create(UpdateCharacterDetails),
+            AIFunctionFactory.Create(UpdateWorldState),
+            AIFunctionFactory.Create(UpdateWorldDetails),
+            AIFunctionFactory.Create(HandoffToAgent),
+            AIFunctionFactory.Create(ApplyRest)
+        ];
+    }
+
     [Description("Rolls a skill check for a character. Parameters: characterId, skillName (Athletics, Stealth, Perception, Persuasion, etc.), attribute (Might, Agility, Vitality, Wits, Presence), difficultyClass (DC: Easy=10, Moderate=15, Hard=20, Very Hard=25), hasAdvantage (true/false), hasDisadvantage (true/false), campaignId. Returns roll result, total, and success/failure.")]
     public async Task<string> RollSkillCheck(
         [Description("The unique ID of the character performing the skill check.")] string characterId,
@@ -91,9 +112,9 @@ public partial class GameMasterTools(
     [Description("Gets a list of available monster names for a given difficulty level (0-15). Returns a comma-separated string of monster names. Must be called before `InitiateCombat`.")]
     public string GetAvailableMonsterNames(int difficultyLevel = 0)
     {
-        if (difficultyLevel > 1)
-            difficultyLevel--;
-        var rpgMonsters = RpgMonster.GetAllRpgMonsters(difficultyLevel);
+        //if (difficultyLevel > 1)
+        //    difficultyLevel--;
+        var rpgMonsters = RpgMonster.GetAllRpgMonsters(difficultyLevel - 1, difficultyLevel, difficultyLevel + 1);
         var names = string.Join(", ", rpgMonsters.Select(m => m.Name).ToList().Shuffle());
         return names;
     }
@@ -197,7 +218,7 @@ public partial class GameMasterTools(
                 });
             }
             var campaignState = await stateManager.GetCampaignStateAsync(campaignId);
-
+            campaignState.Campaign.Status = CampaignStatus.Active;
             var narrative = new Narrative
             {
                 CampaignId = campaignId,
@@ -290,5 +311,26 @@ public partial class GameMasterTools(
 
         await stateManager.UpdateCampaignStateAsync(campaignState);
         return string.Join("\n", characterSummaries);
+    }
+
+    [Description("Add new NPCs and/or Quests to the campaign")]
+    public async Task<string> AddNpcOrQuest([Description("The unique ID of the campaign")]string campaignId,[Description("Quests to add to the campaign")] Quest[]? quests = null, [Description("NPCs to add to the campaign")] NPC[]? npcs = null)
+    {
+        var campaign = await stateManager.GetCampaignStateAsync(campaignId);
+        if (campaign is null)
+        {
+            return $"Campaign with ID {campaignId} not found.";
+        }
+
+        if (quests != null)
+        {
+            campaign.World.SideQuests.AddRange(quests);
+        }
+        if (npcs != null)
+        {
+            campaign.World.NPCs.AddRange(npcs);
+        }
+        await stateManager.UpdateCampaignStateAsync(campaign);
+        return $"Added {quests?.Length ?? 0} quests and {npcs?.Length ?? 0} NPCs to the campaign.";
     }
 }

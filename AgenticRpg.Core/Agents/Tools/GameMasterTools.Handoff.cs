@@ -10,7 +10,7 @@ public partial class GameMasterTools
     [Description("Transfers control to a specialized agent. Parameters: targetAgent (CharacterCreation, Combat, Economy, WorldBuilder, CharacterManager), context (brief description of why handoff is needed), campaignId. Returns confirmation that the specified agent is now active.")]
     public async Task<string> HandoffToAgent(
         [Description("The specialized agent to transfer control to. Will usually be one of: Economy or CharacterManager.")] AgentType targetAgent,
-        [Description("A brief explanation of why control is being transferred to this agent. Provides context for the handoff (e.g., 'Player wants to buy items' for Economy or 'Player needs to level-up or otherwise wants to manage their character' for CharacterManager).")] string context,
+        [Description("An explanation of why control is being transferred to this agent along with any other information the agent requires. Provides very specific context for the handoff (e.g., 'Player wants to buy weapons and armor. You are a crabby and mean old shopkeeper.' for Shopkeeper or 'Player needs to level-up or otherwise wants to manage their character' for CharacterManager).")] HandoffIntent context,
         [Description("The unique ID of the campaign where this handoff is occurring.")] string campaignId)
     {
         var gameState = await stateManager.GetCampaignStateAsync(campaignId);
@@ -40,9 +40,7 @@ public partial class GameMasterTools
         return JsonSerializer.Serialize(new HandoffToAgentResult
         {
             Success = true,
-            PreviousAgent = "GameMaster",
-            NewAgent = targetAgent.ToString(),
-            Context = context,
+            Context = context.Context,
             Message = $"Control transferred to {targetAgent} Agent"
         });
     }
