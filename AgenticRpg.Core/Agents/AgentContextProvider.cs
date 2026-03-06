@@ -16,7 +16,7 @@ public class AgentContextProvider(
     private readonly IGameStateManager _gameStateManager = gameStateManager ?? throw new ArgumentNullException(nameof(gameStateManager));
     private readonly ISessionStateManager _sessionStateManager = sessionStateManager ?? throw new ArgumentNullException(nameof(sessionStateManager));
     private readonly ILogger<AgentContextProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    
+    private readonly AgentConfiguration _config = AgentStaticConfiguration.Default;
 
     /// <inheritdoc/>
     public async Task<GameState?> GetGameStateAsync(string campaignId)
@@ -108,15 +108,15 @@ public class AgentContextProvider(
         var session = await _sessionStateManager.GetSessionStateAsync(sessionOrCampaignId);
         if (session != null)
         {
-            return session.SelectedModel ?? "gpt-5.1";
+            return session.SelectedModel ?? _config.BaseModelName ?? "gpt-5.4";
         }
         // Otherwise, treat it as a campaign
         var gameState = await _gameStateManager.GetCampaignStateAsync(sessionOrCampaignId);
         if (gameState != null)
         {
-            return gameState.SelectedModel ?? "gpt-5.1";
+            return gameState.SelectedModel ?? _config.BaseModelName ?? "gpt-5.4";
         }
-        return "gpt-5.1";
+        return _config.BaseModelName ?? "gpt-5.4";
     }
     public async Task SetSessionOrCampaignModel(string sessionOrCampaignId, string modelName)
     {

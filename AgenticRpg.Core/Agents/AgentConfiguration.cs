@@ -16,8 +16,11 @@ public class AgentStaticConfiguration
             OpenRouterApiKey = configuration["OpenRouter:ApiKey"],
             BlobStorageConnectionString = configuration["AzureStorage:ConnectionString"],
             GoogleApiKey = configuration["GoogleAI:ApiKey"],
-            LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole())
+            LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole()),
+            
         };
+        if (configuration["BaseModelName"] is not null)
+            Default.BaseModelName = configuration["BaseModelName"]!;
     }
 }
 /// <summary>
@@ -38,7 +41,7 @@ public class AgentConfiguration
     /// <summary>
     /// Deployment name/model to use
     /// </summary>
-    public string BaseModelName { get; set; } = "gpt-5.1";
+    public string? BaseModelName { get; set; }
     public string OpenRouterApiKey { get; set; } = string.Empty;
     public string OpenRouterEndpoint { get; set; } = "https://openrouter.ai/api/v1";
     public string BlobStorageConnectionString { get; set; } = string.Empty;

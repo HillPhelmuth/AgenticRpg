@@ -113,7 +113,7 @@ public class Campaign
     /// </summary>
     public bool IsFull => PlayerIds.Count >= MaxPlayers;
 
-    public string SelectedModel { get; set; } = "gpt-5.1";
+    public string SelectedModel { get; set; } = "gpt-5.4";
 }
 
 /// <summary>
@@ -136,6 +136,6 @@ public class CampaignSettings
     /// </summary>
     public int Difficulty { get; set; } = 1;
     
-    public string DefaultModel { get; set; } = "gpt-5.1";
+    public string DefaultModel { get; set; } = "gpt-5.4";
     public string? PrimaryQuestDescription { get; set; }
 }

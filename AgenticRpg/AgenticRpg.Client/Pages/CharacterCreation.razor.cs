@@ -26,6 +26,7 @@ public partial class CharacterCreation : IAsyncDisposable
     private Campaign? Campaign { get; set; }
     private SessionState? CurrentSessionState { get; set; }
     private List<ChatMessage> ChatMessages { get; set; } = [];
+    private readonly Dictionary<string, ChatMessage> _streamMessageLookup = new(StringComparer.OrdinalIgnoreCase);
     private bool IsProcessing { get; set; }
     private string? SaveMessage { get; set; }
     private bool IsSaveError { get; set; }
@@ -106,6 +107,10 @@ public partial class CharacterCreation : IAsyncDisposable
             HubService.OnSessionStateUpdated(HandleSessionStateUpdated);
             HubService.OnReceiveMessage(HandleReceiveMessage);
             HubService.OnSessionCompleted(HandleSessionCompleted);
+            HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
+            HubService.OnMessageStreamToken(HandleMessageStreamToken);
+            HubService.OnMessageStreamCompleted(HandleMessageStreamCompleted);
+            HubService.OnSuggestedActionsUpdated(HandleSuggestedActionsUpdated);
             
             // Join session for real-time updates
             await HubService.JoinSessionAsync(SessionId, CurrentUserId, "Character Creator");
@@ -180,6 +185,17 @@ public partial class CharacterCreation : IAsyncDisposable
         // Receive AI responses from Character Creation Agent
         if (playerId != CurrentUserId)
         {
+            if (!string.IsNullOrEmpty(message.Id) && _streamMessageLookup.TryGetValue(message.Id, out var streamMessage))
+            {
+                streamMessage.Content = message.FormattedResponse?.MessageToPlayers ?? message.Message;
+                streamMessage.Timestamp = timestamp;
+                streamMessage.PlayerId = playerId;
+                streamMessage.PlayerName = "Character Creation AI";
+                _streamMessageLookup.Remove(message.Id);
+                InvokeAsync(StateHasChanged);
+                return;
+            }
+
             ChatMessages.Add(new ChatMessage
             {
                 Id =message.Id,
@@ -187,11 +203,110 @@ public partial class CharacterCreation : IAsyncDisposable
                 IsUser = false,
                 Timestamp = timestamp,
                 PlayerId = playerId,
-                PlayerName = "Character Creation AI",
-                SuggestedActions = message.FormattedResponse?.SuggestedActions?.FirstOrDefault()?.Suggestions ?? []
+                PlayerName = "Character Creation AI"
             });
             InvokeAsync(StateHasChanged);
         }
+    }
+
+    private void HandleSuggestedActionsUpdated(string messageId, List<SuggestedAction> suggestedActions)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || suggestedActions.Count == 0)
+        {
+            return;
+        }
+
+        var actions = suggestedActions
+            .SelectMany(x => x.Suggestions)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (actions.Count == 0)
+        {
+            return;
+        }
+
+        if (_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        {
+            streamMessage.SuggestedActions = actions;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var existingMessage = ChatMessages.FirstOrDefault(x => string.Equals(x.Id, messageId, StringComparison.OrdinalIgnoreCase));
+        if (existingMessage is null)
+        {
+            return;
+        }
+
+        existingMessage.SuggestedActions = actions;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleMessageStreamStarted(string messageId, DateTime timestamp)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
+        {
+            return;
+        }
+
+        var streamMessage = new ChatMessage
+        {
+            Id = messageId,
+            Content = string.Empty,
+            IsUser = false,
+            Timestamp = timestamp,
+            PlayerName = "Character Creation AI"
+        };
+
+        ChatMessages.Add(streamMessage);
+        _streamMessageLookup[messageId] = streamMessage;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleMessageStreamToken(string messageId, string agentType, string token)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
+        if (!_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        {
+            streamMessage = new ChatMessage
+            {
+                Id = messageId,
+                Content = string.Empty,
+                IsUser = false,
+                Timestamp = DateTime.UtcNow,
+                PlayerName = "Character Creation AI"
+            };
+
+            ChatMessages.Add(streamMessage);
+            _streamMessageLookup[messageId] = streamMessage;
+        }
+
+        streamMessage.Content += token;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || !_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
+                ? $"Error communicating with {agentType}: {note}"
+                : streamMessage.Content;
+            _streamMessageLookup.Remove(messageId);
+        }
+
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task SendMessage(string message)
@@ -250,6 +365,7 @@ public partial class CharacterCreation : IAsyncDisposable
         if (message != null)
         {
             ChatMessages.Remove(message);
+            _streamMessageLookup.Remove(message.Id);
             StateHasChanged();
         }
     }

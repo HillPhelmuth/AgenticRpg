@@ -18,6 +18,8 @@ public partial class RpgModelSelect
     public string? SelectedModel { get; set; }
     [Parameter]
     public EventCallback<string> SelectedModelChanged { get; set; }
+    [Parameter]
+    public bool HideSubmitButton { get; set; }
     private string _modelFilter = string.Empty;
     private bool _isDropdownOpen;
     private string? ModelSelectionMessage { get; set; }
@@ -39,6 +41,7 @@ public partial class RpgModelSelect
     private void SelectModelOption(string model)
     {
         SelectedModel = model;
+        SelectedModelChanged.InvokeAsync(SelectedModel);
         _modelFilter = string.Empty;
         _isDropdownOpen = false;
     }

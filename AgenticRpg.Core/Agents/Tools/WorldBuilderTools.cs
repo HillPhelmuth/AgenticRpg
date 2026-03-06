@@ -93,7 +93,7 @@ public class WorldBuilderTools(
             AIFunctionFactory.Create(AddNPCs),
             AIFunctionFactory.Create(DesignQuest),
             AIFunctionFactory.Create(AddQuests),
-            AIFunctionFactory.Create(PopulateEncounterTable),
+            //AIFunctionFactory.Create(PopulateEncounterTable),
             AIFunctionFactory.Create(BuildWorldLore),
             AIFunctionFactory.Create(SaveWorld),
             AIFunctionFactory.Create(SetBasicData),

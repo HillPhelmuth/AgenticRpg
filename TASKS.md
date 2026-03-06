@@ -1,5 +1,12 @@
 # Tasks
 
+## 2026-03-03
+- [x] Stream agent responses token-by-token from AI agents through SignalR to Game, Character Creation, and Campaign Creation chat views.
+
+## 2026-03-05
+- [x] Remove agent response `ResponseFormat` from primary output path, stream plain text tokens, and deliver suggested actions through a separate SignalR event.
+- [x] Remove legacy JSON-output instruction from Character Creation agent and normalize any legacy structured responses to plain text before sending to clients.
+
 ## 2026-02-28
 - [x] Update `Roll12Style.scss` selectors/structure to match `DieRoller.razor` (`dice12content`, `die12`, `face-*`, and `rolling`/`stopped`).
 

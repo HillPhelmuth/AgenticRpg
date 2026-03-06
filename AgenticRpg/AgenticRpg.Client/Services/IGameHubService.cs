@@ -36,6 +36,10 @@ public interface IGameHubService
     void OnCombatStarted(Action<CombatEncounter> handler);
     void OnTurnChanged(Action<string, string> handler);
     void OnMessageStatusChanged(Action<string, string, int?, string?> handler);
+    void OnMessageStreamStarted(Action<string, DateTime> handler);
+    void OnMessageStreamToken(Action<string, string, string> handler);
+    void OnMessageStreamCompleted(Action<string, string, string?> handler);
+    void OnSuggestedActionsUpdated(Action<string, List<SuggestedAction>> handler);
     
     // Dice rolling
     Task SubmitDiceRollResultAsync(List<RollDiceResults> results);

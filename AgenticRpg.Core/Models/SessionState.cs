@@ -121,5 +121,5 @@ public class SessionContext
     /// </summary>
     public List<string> CompletedSteps { get; set; } = [];
 
-    public string SelectedModel { get; set; } = "gpt-5.1";
+    public string SelectedModel { get; set; } = "gpt-5.4";
 }

@@ -19,6 +19,15 @@ An AI-driven, agent-based RPG platform for character creation, campaign manageme
 2. Run the ASP.NET Core host project.
 3. Open the client in a browser and sign in.
 
+## Testing
+1. Set evaluation model credentials via configuration or environment variables.
+	- OpenAI: `OpenAI:ApiKey` and `OpenAI:EvaluationModel` (example: `openai/gpt-4o`).
+	- OpenRouter: `OpenRouter:ApiKey` and `OpenAI:EvaluationModel` (example: `gpt-4o`).
+	- Optional agent model override: `OpenAI:Model`.
+2. Run integration tests:
+	- `dotnet test AgenticRpg.IntegrationTests/AgenticRpg.IntegrationTests.csproj`
+3. Tests skip automatically when evaluation credentials are missing.
+
 ## Authentication Notes
 - The Blazor client requests access tokens using AzureAd:DefaultScopes.
 - Ensure the App Registration exposes the scope api://<ClientId>/access_as_user and that the client is granted access.

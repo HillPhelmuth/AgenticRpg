@@ -45,7 +45,8 @@ public class ImageGenService
         try
         {
 
-            data = await GenerateImageData(instructions);
+            //data = await GenerateImageData(instructions);
+                data = await GoogleGenerateImageData(instructions, aspectRatio);
         }
         catch (Exception ex)
         {

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Threading;
+using AgenticRpg.DevUtility;
 
 var builder = new ConfigurationBuilder()
     .AddUserSecrets<Program>();
@@ -17,7 +18,7 @@ var configuration = builder.Build();
 
 var services = new ServiceCollection();
 services.AddSingleton<IConfiguration>(configuration);
-AgentStaticConfiguration.Configure(configuration);
+
 services.AddLogging(logging =>
 {
     logging.ClearProviders();
@@ -42,6 +43,7 @@ const string options = """
                        4. Update Spells
                        5. Show Spells
                        6. Test Sora API
+                       7. Generate Schema for AgentSuggestedActions
                        """;
 Console.WriteLine(options);
 var input = Console.ReadLine();
@@ -144,20 +146,26 @@ switch (selectedOption)
             break;
         }
     case 6:
-    {
-        var videoGen = serviceProvider.GetService<VideoGenService>();
-        var ids = videoGen.GetVideoIds();
-        var myId = "";
-        await foreach (var id in ids)
         {
-            Console.WriteLine($"Video ID: {id} available");
-            myId = id;
-        }
+            var videoGen = serviceProvider.GetService<VideoGenService>();
+            var ids = videoGen.GetVideoIds();
+            var myId = "";
+            await foreach (var id in ids)
+            {
+                Console.WriteLine($"Video ID: {id} available");
+                myId = id;
+            }
 
-        var result = await videoGen.DownloadFromIdAndSaveUrl(myId);
-        Console.WriteLine(result);
-        break;
-    }
+            var result = await videoGen.DownloadFromIdAndSaveUrl(myId);
+            Console.WriteLine(result);
+            break;
+        }
+    case 7:
+        {
+            var schema = GenerateSchema.GenerateSchemaFrom<AgentSuggestedActions>();
+            Console.WriteLine($"Schema for AgentSuggestedActions:\n\n{schema}");
+            break;
+        }
 }
 async Task<RpgMonster?> CreateMonsterAsync(string monsterId)
 {

@@ -24,7 +24,7 @@ public class CharacterManagerAgent(
     ICharacterRepository characterRepository,
     IRollDiceService diceService, ILoggerFactory loggerFactory,
     IAgentSessionStore threadStore)
-    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.CharacterManager, loggerFactory, threadStore)
+    : BaseGameAgent(contextProvider, Models.Enums.AgentType.CharacterManager, loggerFactory, threadStore)
 {
     private readonly CharacterManagerTools _tools = new(gameStateManager, characterRepository);
 

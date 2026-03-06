@@ -10,7 +10,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using OpenAI;
-using OpenAI.Responses;
+using OpenAI.Chat;
 using OpenAI.Videos;
 using System.ClientModel;
 using System.Configuration;
@@ -18,8 +18,10 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenAI.Responses;
 using static AgenticRpg.Core.Services.ImageGenService;
 using BinaryContent = System.ClientModel.BinaryContent;
+using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 using Environment = System.Environment;
 
 #pragma warning disable OPENAI001
@@ -66,6 +68,7 @@ public class VideoGenService()
         using var bodyStream = await multipart.ReadAsStreamAsync();
 
         // 4) Send the request
+        
         var createResult = await client.CreateVideoAsync(BinaryContent.Create(bodyStream), contentType);
         var createRaw = createResult.GetRawResponse().Content;
 
@@ -238,8 +241,8 @@ public class VideoGenService()
     }
     private static async Task<VideoInstructionsOutput> GenerateVideoPromptAsync(CombatEncounter combatEncounter, string? additionalInstructions = null, int chapter = 0)
     {
-        var agent = new OpenAIClient(Configuration.OpenAIApiKey)
-            .GetResponsesClient("gpt-4.1")
+        var agent = new ResponsesClient(new ApiKeyCredential(Configuration.OpenAIApiKey))
+            //.GetChatClient("gpt-4.1")
             .AsAIAgent(new ChatClientAgentOptions()
             {
                 Name = "Video Gen Instruction Agent",

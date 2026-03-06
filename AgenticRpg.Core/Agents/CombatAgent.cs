@@ -31,7 +31,7 @@ public class CombatAgent : BaseGameAgent
         INarrativeRepository narrativeRepository,
         IRollDiceService diceService,
         ILoggerFactory loggerFactory,
-        IAgentSessionStore threadStore, VideoGenService videoGenService) : base(config, contextProvider, AgentType.Combat, loggerFactory, threadStore)
+        IAgentSessionStore threadStore, VideoGenService videoGenService) : base(contextProvider, AgentType.Combat, loggerFactory, threadStore)
     {
         _diceService = diceService;
         _tools = new CombatTools(stateManager, new CombatRulesEngine(), characterRepository, narrativeRepository, diceService, videoGenService);

@@ -21,7 +21,7 @@ public class ShopKeeperAgent(
     IGameStateManager gameStateManager,
     ICharacterRepository characterRepository, ILoggerFactory loggerFactory,
     IAgentSessionStore threadStore)
-    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.ShopKeeper, loggerFactory, threadStore)
+    : BaseGameAgent(contextProvider, Models.Enums.AgentType.ShopKeeper, loggerFactory, threadStore)
 {
     private readonly ShopkeeperTools _tools = new(gameStateManager, characterRepository);
 
