@@ -61,7 +61,7 @@ public class ChatMessage
     /// Whether the message is currently being edited.
     /// </summary>
     public bool IsEditing { get; set; }
-
+    public bool IsStreaming { get; set; }
     /// <summary>
     /// List of image URLs embedded in the message.
     /// </summary>

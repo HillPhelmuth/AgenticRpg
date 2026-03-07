@@ -105,7 +105,6 @@ public partial class CharacterCreation : IAsyncDisposable
             
             // Subscribe to session state updates
             HubService.OnSessionStateUpdated(HandleSessionStateUpdated);
-            HubService.OnReceiveMessage(HandleReceiveMessage);
             HubService.OnSessionCompleted(HandleSessionCompleted);
             HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
             HubService.OnMessageStreamToken(HandleMessageStreamToken);
@@ -257,7 +256,8 @@ public partial class CharacterCreation : IAsyncDisposable
             Content = string.Empty,
             IsUser = false,
             Timestamp = timestamp,
-            PlayerName = "Character Creation AI"
+            PlayerName = "Character Creation AI",
+            IsStreaming = true
         };
 
         ChatMessages.Add(streamMessage);
@@ -280,15 +280,17 @@ public partial class CharacterCreation : IAsyncDisposable
                 Content = string.Empty,
                 IsUser = false,
                 Timestamp = DateTime.UtcNow,
-                PlayerName = "Character Creation AI"
+                PlayerName = "Character Creation AI",
+                IsStreaming = true
             };
 
             ChatMessages.Add(streamMessage);
             _streamMessageLookup[messageId] = streamMessage;
         }
-
-        streamMessage.Content += token;
+        ChatMessages.LastOrDefault()?.IsStreaming = true;
+        ChatMessages.LastOrDefault()?.Content += token;
         InvokeAsync(StateHasChanged);
+        //streamMessage.Content += token;
     }
 
     private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
@@ -297,7 +299,7 @@ public partial class CharacterCreation : IAsyncDisposable
         {
             return;
         }
-
+        ChatMessages.LastOrDefault()?.IsStreaming = false;
         if (!string.IsNullOrWhiteSpace(note))
         {
             streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)

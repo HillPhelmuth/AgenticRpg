@@ -45,7 +45,6 @@ public partial class Game : IAsyncDisposable
     private new UserInput? UserInputRef { get; set; }
     private MobileView CurrentMobileView { get; set; } = MobileView.Game;
     private bool ShowModelMenu { get; set; }
-    private CancellationTokenSource? _speechCts;
     [Inject]
     private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
 
@@ -84,11 +83,17 @@ public partial class Game : IAsyncDisposable
             var characters = await CharacterService.GetCharactersByCampaignAsync(CampaignId);
             CurrentCharacter = !string.IsNullOrEmpty(CharacterId) ? characters.FirstOrDefault(c => c.Id == CharacterId) : characters.FirstOrDefault(c => c.PlayerId == CurrentUserId);
 
-            if (CurrentCharacter == null)
+            if (CurrentCharacter is null && !string.IsNullOrEmpty(CharacterId))
             {
                 CurrentCharacter = await CharacterService.GetCharacterByIdAsync(CharacterId);
                 //ErrorMessage = "You don't have a character in this campaign.";
                 //return;
+            }
+
+            if (CurrentCharacter is null)
+            {
+                ErrorMessage = "You don't have a character in this campaign.";
+                return;
             }
 
             // Connect to SignalR hub
@@ -182,7 +187,8 @@ public partial class Game : IAsyncDisposable
             Content = string.Empty,
             IsUser = false,
             Timestamp = timestamp,
-            PlayerName = "Game Master"
+            PlayerName = "Game Master",
+            IsStreaming = true
         };
 
         ChatMessages.Add(streamMessage);
@@ -212,13 +218,15 @@ public partial class Game : IAsyncDisposable
             _streamMessageLookup[messageId] = streamMessage;
         }
 
-        streamMessage.Content += token;
+        ChatMessages.LastOrDefault()?.IsStreaming = true;
+        ChatMessages.LastOrDefault()?.Content += token;
+        InvokeAsync(StateHasChanged);
         if (!string.IsNullOrWhiteSpace(agentType))
         {
             streamMessage.PlayerName = agentType;
         }
 
-        InvokeAsync(StateHasChanged);
+        
     }
 
     private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
@@ -227,7 +235,7 @@ public partial class Game : IAsyncDisposable
         {
             return;
         }
-
+        streamMessage.IsStreaming = false;
         if (!string.IsNullOrWhiteSpace(note))
         {
             streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)

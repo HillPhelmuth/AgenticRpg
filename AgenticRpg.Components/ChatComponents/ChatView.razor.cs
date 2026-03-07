@@ -44,11 +44,7 @@ public partial class ChatView
                 DotNetObjectReference.Create(this));
         }
 
-        // Auto-scroll to bottom when new messages arrive
-        if (_isAtBottom && Messages.Any())
-        {
-            await ScrollToBottom();
-        }
+        
     }
 
     private async Task SpeakMessage(string message, string messageId)
