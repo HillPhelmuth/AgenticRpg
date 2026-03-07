@@ -40,10 +40,21 @@ public class ImageGenService
     public static async Task<string> GenerateGameImage(string instructions, string playerId, string characterName)
     {
         string? aspectRatio = playerId == "worlds" ? "16:9" : null;
-        var data = await GoogleGenerateImageData(instructions, aspectRatio);
-        var fileName = $"{playerId}/{ConvertNonAlphaNumericToUnderscore(characterName)}.png";
+        ReadOnlyMemory<byte> data;
+        string fileName= $"{playerId}/{ConvertNonAlphaNumericToUnderscore(characterName)}.png";
+        try
+        {
+
+            //data = await GenerateImageData(instructions);
+                data = await GoogleGenerateImageData(instructions, aspectRatio);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error on OpenAI image request. Fallback to google.\n\n{ex}");
+            data = await GoogleGenerateImageData(instructions, aspectRatio);
+        }
+
         return await SaveAsUrl(fileName, data.ToArray());
-        //return url.First().Uri.ToString();
     }
 
     private static async Task<ReadOnlyMemory<byte>> GenerateImageData(string instructions)
@@ -69,25 +80,25 @@ public class ImageGenService
         [
             new()
             {
-                Category = HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                Threshold = HarmBlockThreshold.BLOCK_ONLY_HIGH
+                Category = HarmCategory.HarmCategorySexuallyExplicit,
+                Threshold = HarmBlockThreshold.BlockOnlyHigh
             }
         ];
 
 
         var config = new GenerateContentConfig
         {
-            ResponseModalities = new List<string>
-            {
+            ResponseModalities =
+            [
                 "IMAGE",
                 "TEXT"
-            },
+            ],
             SafetySettings = safetySettings,
             ImageConfig = new ImageConfig(){AspectRatio = aspectRatio}
         };
         ReadOnlyMemory<byte> imageData = new();
         var fileIndex = 0;
-        var response = await Client.Models.GenerateContentAsync("gemini-3-pro-image-preview", instructions, config);
+        var response = await Client.Models.GenerateContentAsync("gemini-3.1-flash-image-preview", instructions, config);
         foreach (var part in response.Candidates[0].Content.Parts)
         {
             if (part.InlineData != null && part.InlineData.MimeType?.Contains("image/") == true)

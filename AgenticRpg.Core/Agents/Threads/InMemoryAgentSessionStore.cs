@@ -4,9 +4,9 @@ using Microsoft.Agents.AI;
 
 namespace AgenticRpg.Core.Agents.Threads;
 
-public sealed class InMemoryAgentThreadStore : IAgentThreadStore
+public sealed class InMemoryAgentSessionStore : IAgentSessionStore
 {
-    private readonly ConcurrentDictionary<ThreadKey, AgentSession> _threads = new();
+    private readonly ConcurrentDictionary<ThreadKey, AgentSession> _sessions = new();
 
     public async Task<AgentSession> GetOrCreate(string scopeId, AgentType agentType, Func<Task<AgentSession>> factory)
     {
@@ -20,7 +20,7 @@ public sealed class InMemoryAgentThreadStore : IAgentThreadStore
 
         var key = new ThreadKey(scopeId, agentType);
         var session = await factory();
-        return _threads.GetOrAdd(key, session);
+        return _sessions.GetOrAdd(key, session);
     }
 
     public bool TryRemoveScope(string scopeId)
@@ -29,7 +29,7 @@ public sealed class InMemoryAgentThreadStore : IAgentThreadStore
 
         var removedAny = false;
 
-        var keys = _threads.Keys.ToArray();
+        var keys = _sessions.Keys.ToArray();
         foreach (var key in keys)
         {
             if (!string.Equals(key.ScopeId, scopeId, StringComparison.OrdinalIgnoreCase))
@@ -37,7 +37,7 @@ public sealed class InMemoryAgentThreadStore : IAgentThreadStore
                 continue;
             }
 
-            removedAny |= _threads.TryRemove(key, out _);
+            removedAny |= _sessions.TryRemove(key, out _);
         }
 
         return removedAny;

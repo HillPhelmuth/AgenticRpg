@@ -18,7 +18,16 @@ public class GameState
     /// ID of the campaign
     /// </summary>
     public string CampaignId => Campaign.Id;
-    public string? SelectedModel { get; set; }
+
+    public string? SelectedModel
+    {
+        get =>  field ?? Campaign?.SelectedModel;
+        set
+        {
+            field = value;
+        }
+    }
+
     /// <summary>
     /// Campaign information
     /// </summary>

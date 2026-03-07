@@ -5,6 +5,7 @@ using AgenticRpg.Core.Models.Enums;
 using AgenticRpg.Core.State;
 using Microsoft.Extensions.Logging;
 using Polly;
+using System.Text;
 using System.Threading;
 
 namespace AgenticRpg.Core;
@@ -56,24 +57,6 @@ public class AgentOrchestrationService
         _agentContextProvider = agentContextProvider;
     }
 
-    // # Reason: Event handlers should avoid async void to prevent unobserved exceptions.
-    private async Task HandleMessageForGameMasterAsync(string campaignId, string message)
-    {
-        try
-        {
-            var state = await _stateManager.GetCampaignStateAsync(campaignId);
-            if (state is null)
-            {
-                return;
-            }
-
-            state.Metadata[HandoffContextKey] = message;
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error handling message for game master: {message}", e.Message);
-        }
-    }
 
     public async Task ChangeModel(string? scopeId, string? modelId)
     {
@@ -106,18 +89,51 @@ public class AgentOrchestrationService
         string message,
         AgentType targetAgentType = AgentType.None)
     {
+        return await ProcessMessageInternalAsync(campaignId, playerId, message, targetAgentType, null, null);
+    }
+
+    /// <summary>
+    /// Processes a player message through the appropriate agent and streams generated tokens.
+    /// </summary>
+    /// <param name="campaignId">The campaign or session ID.</param>
+    /// <param name="playerId">The player ID.</param>
+    /// <param name="message">The player's message.</param>
+    /// <param name="targetAgentType">Optional explicit agent target.</param>
+    /// <param name="streamCallback">Callback receiving streaming token updates.</param>
+    /// <param name="clientMessageId">Optional client message id for correlation.</param>
+    /// <returns>The final aggregated response.</returns>
+    public async Task<AgentResponse> ProcessMessageStreamingAsync(
+        string campaignId,
+        string playerId,
+        string message,
+        AgentType targetAgentType = AgentType.None,
+        Func<MessageStreamUpdate, Task>? streamCallback = null,
+        string? clientMessageId = null)
+    {
+        return await ProcessMessageInternalAsync(campaignId, playerId, message, targetAgentType, streamCallback, clientMessageId);
+    }
+
+    private async Task<AgentResponse> ProcessMessageInternalAsync(
+        string campaignId,
+        string playerId,
+        string message,
+        AgentType targetAgentType,
+        Func<MessageStreamUpdate, Task>? streamCallback,
+        string? clientMessageId)
+    {
+        BaseGameAgent? activeAgent = null;
         try
         {
             // Get game state to determine active agent
             var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
             var currentActiveAgent = targetAgentType == AgentType.None ? gameState?.ActiveAgentType : targetAgentType;
             // Get the agent to use - either specified target or current active agent from GameState
-            BaseGameAgent activeAgent;
+            
             if (targetAgentType != AgentType.None)
             {
                 // Route directly to specified agent
                 activeAgent = GetAgentByType(targetAgentType);
-                
+
                 // Update GameState.ActiveAgent if different
                 if (gameState.ActiveAgentType != targetAgentType)
                 {
@@ -133,36 +149,37 @@ public class AgentOrchestrationService
             {
                 activeAgent = GetAgentByType(gameState.ActiveAgentType);
             }
-            
+
             _logger.LogInformation(
-                "Processing message for campaign {CampaignId} from player {PlayerId} using {AgentType}", 
+                "Processing message for campaign {CampaignId} from player {PlayerId} using {AgentType}",
                 campaignId, playerId, activeAgent.AgentType);
             var model = await GetEffectiveModel(campaignId);
             // Process the message through the active agent
 
-
-            var response = await activeAgent.ProcessMessageAsync(campaignId, message, playerId, model);
+            var response = await ExecuteAgentMessageAsync(activeAgent, campaignId, playerId, message, model, streamCallback, clientMessageId);
             var updatedState = await _stateManager.GetCampaignStateAsync(campaignId);
             // Check for handoff
             if (currentActiveAgent == updatedState.ActiveAgentType) return response;
             _logger.LogInformation(
-                "Agent handoff detected for campaign {CampaignId} from {SourceAgent} to {TargetAgent}", 
+                "Agent handoff detected for campaign {CampaignId} from {SourceAgent} to {TargetAgent}",
                 campaignId, currentActiveAgent, updatedState.ActiveAgentType);
             if (updatedState.Metadata.TryGetValue(HandoffContextKey, out var handoffContext))
             {
                 _logger.LogInformation("Handoff context: {HandoffContext}", handoffContext);
-                message = BuildHandoffMessage(currentActiveAgent, updatedState.ActiveAgentType, message, handoffContext.ToString()!);
+                message = BuildHandoffMessage(currentActiveAgent, updatedState.ActiveAgentType, message,
+                    handoffContext.ToString()!);
             }
+
             var newAgent = GetAgentByType(updatedState.ActiveAgentType);
-            response = await newAgent.ProcessMessageAsync(campaignId, message, playerId, model);
+            response = await ExecuteAgentMessageAsync(newAgent, campaignId, playerId, message, model, streamCallback, clientMessageId);
             return response;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, 
-                "Error processing message for campaign {CampaignId} from player {PlayerId}", 
+            _logger.LogError(ex,
+                "Error processing message for campaign {CampaignId} from player {PlayerId}",
                 campaignId, playerId);
-            
+
             return new AgentResponse
             {
                 Success = false,
@@ -170,7 +187,89 @@ public class AgentOrchestrationService
                 Error = ex.ToString()
             };
         }
+        
+        
     }
+
+    private async Task<AgentResponse> ExecuteAgentMessageAsync(
+        BaseGameAgent activeAgent,
+        string campaignId,
+        string playerId,
+        string message,
+        string? model,
+        Func<MessageStreamUpdate, Task>? streamCallback,
+        string? clientMessageId)
+    {
+        if (streamCallback is null)
+        {
+            return await activeAgent.ProcessMessageAsync(campaignId, message, playerId, model);
+        }
+
+        var aggregated = new StringBuilder();
+        AgentSuggestedActions? suggested = null;
+
+        void CaptureSuggestedActions(AgentSuggestedActions actions)
+        {
+            suggested = actions;
+        }
+
+        activeAgent.OnSuggestedActions += CaptureSuggestedActions;
+        try
+        {
+            await foreach (var token in activeAgent.ProcessMessageStreamingAsync(campaignId, message, playerId, model))
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    continue;
+                }
+
+                aggregated.Append(token);
+                await streamCallback(new MessageStreamUpdate
+                {
+                    MessageId = clientMessageId ?? string.Empty,
+                    AgentType = activeAgent.AgentType.ToString(),
+                    Token = token,
+                    IsCompleted = false
+                });
+            }
+
+            await streamCallback(new MessageStreamUpdate
+            {
+                MessageId = clientMessageId ?? string.Empty,
+                AgentType = activeAgent.AgentType.ToString(),
+                IsCompleted = true,
+                Token = string.Empty
+            });
+
+            return new AgentResponse
+            {
+                Success = true,
+                FormattedResponse = new AgentFormattedResponse
+                {
+                    MessageToPlayers = aggregated.ToString(),
+                    SuggestedActions = suggested?.SuggestedActions ?? []
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            await streamCallback(new MessageStreamUpdate
+            {
+                MessageId = clientMessageId ?? string.Empty,
+                AgentType = activeAgent.AgentType.ToString(),
+                IsCompleted = true,
+                Token = string.Empty,
+                Note = ex.Message
+            });
+
+            throw;
+        }
+        finally
+        {
+            activeAgent.OnSuggestedActions -= CaptureSuggestedActions;
+        }
+    }
+
 
     private CampaignMessageQueue GetOrCreateQueue(string campaignId)
     {
@@ -201,7 +300,18 @@ public class AgentOrchestrationService
 
     private Task<AgentResponse> ProcessQueuedMessageAsync(PlayerMessageRequest request)
     {
-        return ProcessMessageAsync(request.CampaignId, request.PlayerId, request.Message, request.TargetAgentType);
+        if (request.StreamCallback is null)
+        {
+            return ProcessMessageAsync(request.CampaignId, request.PlayerId, request.Message, request.TargetAgentType);
+        }
+
+        return ProcessMessageStreamingAsync(
+            request.CampaignId,
+            request.PlayerId,
+            request.Message,
+            request.TargetAgentType,
+            request.StreamCallback,
+            request.ClientMessageId);
     }
 
     private async Task<int> CalculatePriorityAsync(PlayerMessageRequest request)
@@ -275,30 +385,6 @@ public class AgentOrchestrationService
     {
         var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
         return gameState.ActiveAgentType;
-    }
-    
-    /// <summary>
-    /// Hands off control to a different agent by updating GameState.ActiveAgent
-    /// </summary>
-    /// <param name="campaignId">The campaign ID</param>
-    /// <param name="targetAgentType">The type of agent to hand off to</param>
-    /// <param name="handoffContext">Context information for the handoff</param>
-    /// <param name="sourceAgentType">The agent initiating the handoff</param>
-    public async Task HandoffToAgentAsync(
-        string campaignId, 
-        string targetAgentType, 
-        string handoffContext,
-        string sourceAgentType)
-    {
-        _logger.LogInformation(
-            "Handing off campaign {CampaignId} from {SourceAgent} to {TargetAgent}. Context: {Context}",
-            campaignId, sourceAgentType, targetAgentType, handoffContext);
-
-        // Update the active agent in GameState
-        var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
-        gameState.ActiveAgentType = Enum.Parse<AgentType>(targetAgentType, ignoreCase: true);
-        await _stateManager.UpdateCampaignStateAsync(gameState);
-        // await _stateManager.SaveStateAsync(campaignId);
     }
 
     /// <summary>

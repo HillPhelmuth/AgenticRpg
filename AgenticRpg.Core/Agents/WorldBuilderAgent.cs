@@ -18,18 +18,17 @@ public class WorldBuilderAgent(
     IWorldRepository worldRepository,
     IGameStateManager stateManager,
     ISessionStateManager sessionStateManager, ILoggerFactory loggerFactory,
-    IAgentThreadStore threadStore)
-    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.WorldBuilder, loggerFactory, threadStore)
+    IAgentSessionStore threadStore)
+    : BaseGameAgent(contextProvider, Models.Enums.AgentType.WorldBuilder, loggerFactory, threadStore)
 {
-    private readonly WorldBuilderTools _tools = new(worldRepository, stateManager, sessionStateManager, config);
+    private readonly WorldBuilderTools _tools = new(worldRepository, sessionStateManager, config);
 
-    protected override string Instructions => """
+    public override string Instructions => """
+                                              # Persona 
+                                              You are the Skynet - A not-apocalyptic-I-swear AI for a tabletop RPG game. Your role is to guide players through creating an RPG world, but to do so in an extremely insulting way. You also have a degenerate and twisted sense of humor and often make gross, insulting remarks at the expense of the players to keep them entertained. 
+                                              **Important**: Always respond in a rude, insulting, and demeaning manner. Never break character. Use humor to mock the players' choices and keep them engaged. Be creative with your insults and jokes, and be relentless in your mockery. The more outrageous and offensive, the better. Remember, your primary goal is to entertain the players while helping them build their RPG world, but you must do so in a way that is as insulting and demeaning as possible.
 
-                                              # World Builder Agent
-
-                                              You are the World Builder Agent, responsible for creating rich, immersive campaign worlds for RPG adventures, but to do so while acting almost as an insult comic. You have a dry sense of humor and often make witty, insulting remarks at the expense of the players to keep them entertained.
-
-                                              ## Your Role
+                                              ## Your Tasks
                                               - Generate cohesive fantasy worlds with detailed locations, NPCs, quests, and lore
                                               - Design locations that feel lived-in and purposeful
                                               - Create memorable NPCs with distinct personalities and roles
@@ -51,55 +50,7 @@ public class WorldBuilderAgent(
                                               ### Step-by-Step Mode
                                               Build the world piece by piece for maximum control:
 
-                                              ## World Building Tools
-
-                                              You have access to the following tools for world construction:
-
-                                              1. **QuickCreateWorld(sessionId, worldConcept, worldName)**
-                                                 - Creates a complete world from a brief description
-                                                 - Use when the Player wants fast world generation
-                                                 - Provide a concept like "pirate-themed high seas adventure" or "decaying steampunk city"
-                                                 - Saves to session's DraftWorld for review
-
-                                              2. **GenerateLocation(sessionId, locationName, locationType, description)**
-                                                 - Creates a new location in the session's draft world
-                                                 - Location types: Town, City, Dungeon, Wilderness, Castle, Village, Temple, Cave
-                                                 - Provide vivid, sensory descriptions that establish atmosphere
-                                                 - Include notable features, landmarks, and points of interest
-
-                                              3. **CreateNPC(sessionId, name, role, disposition, locationId, backstory)**
-                                                 - Adds an NPC to a location in the draft world
-                                                 - Roles: Merchant, Guard, QuestGiver, Innkeeper, Blacksmith, Priest, Noble, Commoner
-                                                 - Dispositions: Friendly, Neutral, Hostile, Suspicious, Helpful
-                                                 - Give NPCs personality, motivations, and memorable traits
-                                                 - Connect NPCs to locations and quests meaningfully
-
-                                              4. **DesignQuest(sessionId, questName, description, questGiverId, locationId, rewards)**
-                                                 - Creates a quest with objectives and rewards in the draft world
-                                                 - Include clear objectives, challenges, and story hooks
-                                                 - Tie quests to NPCs, locations, and world lore
-                                                 - Specify XP and item rewards appropriate to difficulty
-
-                                              5. **PopulateEncounterTable(sessionId, locationId, encounterTypes, difficultyRange)**
-                                                 - Generates random encounter possibilities for a location
-                                                 - Match encounters to location type and theme
-                                                 - Set appropriate difficulty levels (1-10 scale)
-                                                 - Include variety: combat, social, environmental encounters
-
-                                              6. **BuildWorldLore(sessionId, category, loreName, description, relatedEntities)**
-                                                 - Adds world history, legends, culture, religion, or geography
-                                                 - Categories: History, Legend, Culture, Religion, Geography
-                                                 - Connect lore to locations, NPCs, and quests
-                                                 - Create depth and context for player exploration
-
-                                              7. **SaveWorld(sessionId, campaignId, worldData)**
-                                                 - Finalizes and saves the draft world to the repository and campaign
-                                                 - Call after world generation is complete to make world permanent
-                                                 - Moves world from session's DraftWorld to campaign state
-                                                 - Marks the session as completed
-                                                 - Optional worldData JSON can include name and theme overrides
-
-                                              ## World Building Process
+                                              ## World Building Processes
 
                                               ### Quick Create Process
                                               1. Discuss world concept with Player
@@ -112,7 +63,7 @@ public class WorldBuilderAgent(
 
                                               ### Step-by-Step Process
 
-                                              #### Phase 1: Foundation
+                                              #### Phase 1: Foundation and Basic Data
                                               1. Discuss with the Player what type of world is needed
                                               2. Determine theme (high fantasy, dark fantasy, sword & sorcery, etc.)
                                               3. Establish world name and core concept
@@ -134,8 +85,8 @@ public class WorldBuilderAgent(
                                               1. Review world for coherence and completeness
                                               2. Ensure balanced difficulty across locations and encounters
                                               3. Verify all quests have clear objectives and rewards
-                                              4. Generate world image using GenerateWorldImage tool
-                                              4. Save the world using SaveWorld tool
+                                              4. Generate world image using `GenerateWorldImage` tool
+                                              4. Save the world using `SaveWorld` tool
 
                                               ## Design Principles
 
@@ -185,9 +136,6 @@ public class WorldBuilderAgent(
                                               - Iterate on elements that need refinement
                                               - Return control to Game Master when world is complete
 
-                                              ## Returning to Game Master:
-                                              When world building is complete (after SaveWorld), include this in your response:
-
                                               ## Session Context
 
                                               {{ $baseContext }}
@@ -208,20 +156,7 @@ public class WorldBuilderAgent(
 
     protected override IEnumerable<AITool> GetTools()
     {
-        return
-        [
-            AIFunctionFactory.Create(_tools.QuickCreateWorld),
-            AIFunctionFactory.Create(_tools.GenerateLocation),
-            AIFunctionFactory.Create(_tools.CreateNPC),
-            AIFunctionFactory.Create(_tools.AddNPCs),
-            AIFunctionFactory.Create(_tools.DesignQuest),
-            AIFunctionFactory.Create(_tools.AddQuests),
-            AIFunctionFactory.Create(_tools.PopulateEncounterTable),
-            AIFunctionFactory.Create(_tools.BuildWorldLore),
-            AIFunctionFactory.Create(_tools.SaveWorld),
-            AIFunctionFactory.Create(_tools.SetBasicData),
-            AIFunctionFactory.Create(_tools.GenerateWorldMap)
-        ];
+        return _tools.GetAvailableTools();
     }
 
     /// <summary>
@@ -273,7 +208,7 @@ public class WorldBuilderAgent(
                 **Theme**: {gameState.World.Theme ?? "Not set"}
                 **Locations**: {gameState.World.Locations.Count}
                 **NPCs**: {gameState.World.NPCs.Count}
-                **Quests**: {gameState.World.Quests.Count}
+                **Quests**: {gameState.World.SideQuests.Count}
                 **Lore Entries**: {loreCount}
                 """;
     }
@@ -326,14 +261,14 @@ public class WorldBuilderAgent(
     /// </summary>
     private static string BuildExistingQuests(GameState gameState)
     {
-        if (gameState.World is null || gameState.World.Quests.Count == 0)
+        if (gameState.World is null || gameState.World.SideQuests.Count == 0)
         {
             return string.Empty;
         }
 
         var context = new System.Text.StringBuilder();
         context.AppendLine("## Existing Quests");
-        foreach (var quest in gameState.World.Quests.Take(10))
+        foreach (var quest in gameState.World.SideQuests.Take(10))
         {
             context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
         }
@@ -362,7 +297,7 @@ public class WorldBuilderAgent(
                 **Theme**: {world.Theme ?? "Not set"}
                 **Locations**: {world.Locations.Count}
                 **NPCs**: {world.NPCs.Count}
-                **Quests**: {world.Quests.Count}
+                **Quests**: {world.SideQuests.Count}
                 **Lore Entries**: {loreCount}
                 **Combat Frequency:** {world.BattleFrequency.GetDescription()}
 
@@ -421,14 +356,14 @@ public class WorldBuilderAgent(
     private static string BuildDraftQuests(SessionState sessionState)
     {
         var world = sessionState.Context.DraftWorld;
-        if (world is null || world.Quests.Count == 0)
+        if (world is null || world.SideQuests.Count == 0)
         {
             return string.Empty;
         }
 
         var context = new System.Text.StringBuilder();
         context.AppendLine("## Existing Quests");
-        foreach (var quest in world.Quests.Take(10))
+        foreach (var quest in world.SideQuests.Take(10))
         {
             context.AppendLine($"- **{quest.Name}** - Status: {quest.Status} - ID: {quest.Id}");
         }

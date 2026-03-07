@@ -143,7 +143,7 @@ public class WorldDetailSnapshot
     public List<Location>? Locations { get; set; }
     public List<NPC>? NPCs { get; set; }
     public List<Quest>? Quests { get; set; }
-    public List<WorldEvent>? Events { get; set; }
+    public List<WorldLore>? Events { get; set; }
     public string? Weather { get; set; }
     public string? TimeOfDay { get; set; }
 }

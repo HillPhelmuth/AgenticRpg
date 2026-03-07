@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
 using AgenticRpg.Core.Services;
+using Microsoft.Extensions.AI;
 using Location = AgenticRpg.DiceRoller.Models.Location;
 // ReSharper disable All
 
@@ -23,40 +24,26 @@ public class CombatTools(
     CombatRulesEngine rulesEngine,
     ICharacterRepository characterRepository,
     INarrativeRepository narrativeRepository,
-    IRollDiceService rollDiceService, VideoGenService videoGenService)
+    IRollDiceService rollDiceService, VideoGenService videoGenService) : IAITools
 {
     private readonly Random _random = new();
 
-    // Creates standard roll window options for combat dice prompts.
-    private static RollDiceWindowOptions CreateRollWindowOptions(string title, Location location)
+    public List<AITool> GetAvailableTools()
     {
-        return new RollDiceWindowOptions
-        {
-            Title = title,
-            Location = location,
-            Style = "width:max-content;min-width:40vw;height:max-content"
-        };
+        return
+        [
+            AIFunctionFactory.Create(ExecutePlayerWeaponAttack),
+            AIFunctionFactory.Create(ExecuteMonsterWeaponAttack),
+            AIFunctionFactory.Create(ExecutePlayerSpellAttack),
+            AIFunctionFactory.Create(ProcessSavingThrow),
+            AIFunctionFactory.Create(DetermineInitiative),
+            AIFunctionFactory.Create(ResolveSpecialAbility),
+            AIFunctionFactory.Create(EndCombat)
+        ];
     }
 
-    // Creates roll parameters with optional player targeting.
-    private static RollDiceParameters CreateRollParameters(DieType dieType, int numberOfRolls, bool isManual, string? playerId)
-    {
-        var parameters = new RollDiceParameters
-        {
-            DieType = dieType,
-            NumberOfRolls = numberOfRolls,
-            IsManual = isManual
-        };
+    #region Helpers
 
-        if (!string.IsNullOrWhiteSpace(playerId))
-        {
-            parameters.Set("PlayerId", playerId);
-        }
-
-        return parameters;
-    }
-
-    // Rolls a single d20 and returns the highest total from the window results.
     private async Task<int> RollTopD20Async(string campaignId, RollDiceWindowOptions windowOptions, bool isManual, string? playerId, int rollWindows)
     {
         var parameters = CreateRollParameters(DieType.D20, 1, isManual, playerId);
@@ -90,6 +77,37 @@ public class CombatTools(
         return AttributeCalculator.CalculateModifier(baseAttribute);
     }
 
+    private static RollDiceWindowOptions CreateRollWindowOptions(string title, Location location)
+    {
+        return new RollDiceWindowOptions
+        {
+            Title = title,
+            Location = location,
+            Style = "width:max-content;min-width:40vw;height:max-content"
+        };
+    }
+
+    // Creates roll parameters with optional player targeting.
+    private static RollDiceParameters CreateRollParameters(DieType dieType, int numberOfRolls, bool isManual, string? playerId)
+    {
+        var parameters = new RollDiceParameters
+        {
+            DieType = dieType,
+            NumberOfRolls = numberOfRolls,
+            IsManual = isManual
+        };
+
+        if (!string.IsNullOrWhiteSpace(playerId))
+        {
+            parameters.Set("PlayerId", playerId);
+        }
+
+        return parameters;
+    }
+
+
+    #endregion
+   
     [Description("Executes a melee or ranged weapon attack for a player character against an enemy monster. Parameters: attackerId (character id or name), targetId (monster name), weapon, campaignId. Returns JSON with attack roll, target AC, hit success, and damage roll if hit.")]
     public async Task<string> ExecutePlayerWeaponAttack(
         [Description("The unique ID of the combatant making the attack (attacker).")] string attackerId,
@@ -155,7 +173,7 @@ public class CombatTools(
         }
 
         var targetDefeated = target.CurrentHP <= 0;
-        gameState.CurrentCombat.CurrentTurnIndex++;
+        gameState.CurrentCombat.NextTurn();
         // Add to combat log
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
@@ -268,7 +286,7 @@ public class CombatTools(
         }
 
         var targetDefeated = target.CurrentHP <= 0;
-        gameState.CurrentCombat.CurrentTurnIndex++;
+        gameState.CurrentCombat.NextTurn();
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
             Round = gameState.CurrentCombat.Round,
@@ -454,7 +472,7 @@ public class CombatTools(
         }
 
         var targetDefeated = target.CurrentHP <= 0;
-        gameState.CurrentCombat.CurrentTurnIndex++;
+        gameState.CurrentCombat.NextTurn();
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
             Round = gameState.CurrentCombat.Round,
@@ -678,7 +696,7 @@ public class CombatTools(
 
         var userId = userCharacter?.Id ?? userMonster?.Name ?? characterId;
         var userName = userCharacter?.Name ?? userMonster?.Name ?? characterId;
-        gameState.CurrentCombat.CurrentTurnIndex++;
+        gameState.CurrentCombat.NextTurn();
         gameState.CurrentCombat.CombatLog.Add(new CombatLogEntry
         {
             Round = gameState.CurrentCombat.Round,
@@ -756,15 +774,15 @@ public class CombatTools(
         // Update character HP/TempHP in repository for survivors
         var gold = rewards.Gold;
         var goldPerPlayer = gold / Math.Max(1, gameState.CurrentCombat.PartyCharacters.Count);
-        foreach (var partyMember in gameState.CurrentCombat.PartyCharacters)
+        foreach (var partyMember in gameState.CurrentCombat.PartyCharacters.Where(x => x.IsAlive))
         {
-            var character = await characterRepository.GetByIdAsync(partyMember.Id);
+            var character = gameState.Characters.Find(x => x.Name == partyMember.Name);
             if (character != null)
             {
                 character.CurrentHP = partyMember.CurrentHP;
                 character.CurrentHP = partyMember.CurrentHP;
                 character.Gold += goldPerPlayer;
-                //character.Experience += rewards.ExperiencePoints;
+                character.Experience += rewards.ExperiencePoints;
                 await characterRepository.UpdateAsync(character);
             }
         }

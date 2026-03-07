@@ -1,5 +1,30 @@
 # Tasks
 
+## 2026-03-03
+- [x] Stream agent responses token-by-token from AI agents through SignalR to Game, Character Creation, and Campaign Creation chat views.
+
+## 2026-03-05
+- [x] Remove agent response `ResponseFormat` from primary output path, stream plain text tokens, and deliver suggested actions through a separate SignalR event.
+- [x] Remove legacy JSON-output instruction from Character Creation agent and normalize any legacy structured responses to plain text before sending to clients.
+
+## 2026-02-28
+- [x] Update `Roll12Style.scss` selectors/structure to match `DieRoller.razor` (`dice12content`, `die12`, `face-*`, and `rolling`/`stopped`).
+
+## 2026-02-14
+- [x] Update agent tool classes to implement `IAITools` and switch agent `GetTools()` to use `GetAvailableTools()`.
+
+## 2026-02-12
+- [x] Allow `AgenticRpg.IntegrationTests` access to `AgenticRpg.Core` internals (add `InternalsVisibleTo`).
+- [x] Add recorded thread evaluation support and scenarios.
+
+## 2026-02-11
+- [x] Generate and attach primary quest during campaign creation.
+- [x] Move primary quest generation to server-side campaign creation.
+
+## 2026-02-10
+- [x] Create AgenticRpg.IntegrationTests with agent evaluation coverage using Microsoft.Extensions.AI.Evaluation.
+- [x] Add evaluation scoring thresholds (intent/task >= 3; tool pass/fail).
+
 ## 2026-02-08
 - [x] Redesign WorldDetails layout to mirror character sheet styling with paged navigation.
 

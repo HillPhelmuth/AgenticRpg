@@ -373,3 +373,5 @@ FodyWeavers.xsd
 /AgenticRpg.Core/Data/RpgConvertedSpells.json
 /AgenticRpg/AgenticRpg/appsettings.Development.json
 /.github/skills/refactor-csharp/SKILL.md
+/AgenticRpg/AgenticRpg/agentThread_Combat.json
+/AgenticRpg.IntegrationTests

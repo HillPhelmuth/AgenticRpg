@@ -5,7 +5,7 @@ namespace AgenticRpg.Core.Models.Game;
 /// <summary>
 /// Represents a world event
 /// </summary>
-public class WorldEvent
+public class WorldLore
 {
     [Description("Unique identifier for the world event")]
     public string Id { get; set; } = Guid.NewGuid().ToString();

@@ -16,31 +16,7 @@ public static class ReflectionHelpers
         if (instance is null) throw new ArgumentNullException(nameof(instance));
         if (instance is JsonElement jsonElement)
         {
-            switch (jsonElement.ValueKind)
-            {
-                case JsonValueKind.Object:
-                {
-                    var jsProps = new List<(string Name, string Type)>();
-                    foreach (var property in jsonElement.EnumerateObject())
-                    {
-                        jsProps.Add((property.Name, property.Value.ValueKind.ToString()));
-                    }
-                    return jsProps;
-                }
-                case JsonValueKind.Array:
-                {
-                    var jsProps = new List<(string Name, string Type)>();
-                    int index = 0;
-                    foreach (var item in jsonElement.EnumerateArray())
-                    {
-                        jsProps.Add(($"[{index}]", item.ValueKind.ToString()));
-                        index++;
-                    }
-                    return jsProps;
-                }
-                case JsonValueKind.String:
-                    return new List<(string Name, string Type)> { ("Value", $"{jsonElement.GetString()}") };
-            }
+            return jsonElement.GetPublicPropertyNamesAndTypes();
         }
 
         var type = instance.GetType();
@@ -58,5 +34,46 @@ public static class ReflectionHelpers
         });
 
         return props;
+    }
+
+    public static IReadOnlyList<(string Name, string Type)> GetPublicPropertyNamesAndTypes(this JsonElement jsonElement)
+    {
+        switch (jsonElement.ValueKind)
+        {
+            case JsonValueKind.Object:
+            {
+                var jsProps = new List<(string Name, string Type)>();
+                foreach (var property in jsonElement.EnumerateObject())
+                {
+                    var element = property.Value;
+                    if (element.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                    {
+                        jsProps.AddRange(element.GetPublicPropertyNamesAndTypes());
+                    }
+                    jsProps.Add((property.Name, element.ValueKind.ToString()));
+                }
+                return jsProps;
+            }
+            case JsonValueKind.Array:
+            {
+                var jsProps = new List<(string Name, string Type)>();
+                int index = 0;
+                foreach (var item in jsonElement.EnumerateArray())
+                {
+                    var itemValueKind = item.ValueKind;
+                    if (itemValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                    {
+                        jsProps.AddRange(item.GetPublicPropertyNamesAndTypes());
+                    }
+                    jsProps.Add(($"[{index}]", itemValueKind.ToString()));
+                    index++;
+                }
+                return jsProps;
+            }
+            case JsonValueKind.String:
+                return new List<(string Name, string Type)> { ("Value", $"{jsonElement.GetString()}") };
+        }
+
+        return [];
     }
 }

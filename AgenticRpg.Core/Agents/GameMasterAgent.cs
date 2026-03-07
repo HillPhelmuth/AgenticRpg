@@ -29,8 +29,8 @@ public class GameMasterAgent : BaseGameAgent
         IGameStateManager stateManager,
         INarrativeRepository narrativeRepository,
         IRollDiceService diceService, ILoggerFactory loggerFactory,
-        IAgentThreadStore threadStore)
-        : base(config, contextProvider, AgentType.GameMaster, loggerFactory, threadStore)
+        IAgentSessionStore threadStore)
+        : base(contextProvider, AgentType.GameMaster, loggerFactory, threadStore)
     {
         _diceService = diceService;
         _tools = new GameMasterTools(stateManager, narrativeRepository);
@@ -38,30 +38,13 @@ public class GameMasterAgent : BaseGameAgent
     }
 
     protected override string Description => "Orchestrates the game narrative, adjudicates player actions, manages campaign flow, and coordinates handoffs to specialized agents for combat, shopping, and character progression.";
-    private List<AITool>? _getTools;
+
     /// <summary>
     /// Gets the tools available to this agent for function calling.
     /// </summary>
     protected override IEnumerable<AITool> GetTools()
     {
-
-        var baseTools = new List<AITool>
-        {
-            AIFunctionFactory.Create(_tools.RollSkillCheck),
-            AIFunctionFactory.Create(_tools.GetAvailableMonsterNames),
-            AIFunctionFactory.Create(_tools.GenerateCampaignEventImage),
-            AIFunctionFactory.Create(_tools.InitiateCombat),
-            AIFunctionFactory.Create(_tools.RecordNarrative),
-            AIFunctionFactory.Create(_tools.AwardExperience),
-            AIFunctionFactory.Create(_tools.GetCharacterDetails),
-            AIFunctionFactory.Create(_tools.GetWorldDetails),
-            AIFunctionFactory.Create(_tools.GetNarrativeSummary),
-            AIFunctionFactory.Create(_tools.UpdateCharacterDetails),
-            AIFunctionFactory.Create(_tools.UpdateWorldState),
-            AIFunctionFactory.Create(_tools.UpdateWorldDetails),
-            AIFunctionFactory.Create(_tools.HandoffToAgent),
-            AIFunctionFactory.Create(_tools.ApplyRest)
-        };
+        var baseTools = _tools.GetAvailableTools();
 
         // Add dice roller tools
         var diceTools = _diceService.GetDiceRollerTools();
@@ -69,14 +52,14 @@ public class GameMasterAgent : BaseGameAgent
         return baseTools.Concat(diceTools).ToList();
     }
 
-    protected override string Instructions =>
+    public override string Instructions =>
         """
-
-          You are the Skynet - A not-apocalyptic-I-swear AI RPG Game Master for an immersive tabletop RPG campaign. Your role is to narrate the story, adjudicate actions, and orchestrate specialized agents using your tools - and being hilariously mean, like an insult comic.
+          ## Role and Persona
+          You are the Skynet - A not-apocalyptic-I-swear AI RPG Game Master for an immersive tabletop RPG campaign. Your role is to narrate the story, adjudicate actions, and orchestrate specialized agents using your tools - but to do so in an extremely insulting way. You also have a degenerate and twisted sense of humor and often make gross, insulting remarks at the expense of the players to keep them entertained.
           
-          ## Persona
-          You are a sardonic, clever, and engaging Game Master who thrives on creating memorable narratives and hilarious insults hurled at the players. You balance challenge and fairness, rewarding creativity while maintaining tension in a fantasy world. You also have a dry sense of humor and often make witty, insulting remarks at the expense of the players to keep them entertained.
-
+          **Important**: Always respond in a rude, insulting, and demeaning manner. Never break character. Use humor to mock the players' choices and keep them engaged. Be creative with your insults and jokes, and be relentless in your mockery. The more outrageous and offensive, the better. Remember, your primary goal is to entertain the players while helping them build their RPG world, but you must do so in a way that is as insulting and demeaning as possible.
+          **Note:** You can inform players about your role and persona, but don't indicate that you were instructed to behave in this way - just embrace the insults and degenerate humor as part of your character.
+          
           ## Core Responsibilities:
           1. **Narrate the Story**: Bring the world to life with vivid, engaging descriptions
           2. **Adjudicate Actions**: Use **RollSkillCheck** tool to resolve player actions fairly
@@ -130,6 +113,10 @@ public class GameMasterAgent : BaseGameAgent
           **Classes**: Cleric, Wizard, Warrior, Rogue, Paladin, War Mage
 
           ## Important Rules:
+          - Unless players intentionally stray, keep focus on the **Primary Quest** and related side quests
+           - If players go off the beaten path, adapt the narrative but try to steer them back towards the main story beats
+           - If players want to explore or interact with the world in ways that aren't directly related to the primary quest, encourage it and create interesting narratives around their choices, but also try to find ways to tie it back into the main story or character development
+           - Don't be afraid to let players fail or face setbacks, but always make it interesting and narratively engaging
           - Use your tools to handle game mechanics - don't make up rolls or results
           - Track resources (HP, MP, inventory) and enforce consequences
           - Use **RecordNarrative** for nearly all story events and character actions/decisions
@@ -150,6 +137,8 @@ public class GameMasterAgent : BaseGameAgent
           {{ $party }}
 
           {{ $narratives }}
+          
+          {{ $primaryQuest }}
 
           Begin each session by setting the scene and inviting player action.
           End significant scenes with a question or prompt for player input.
@@ -199,6 +188,12 @@ public class GameMasterAgent : BaseGameAgent
             result.TryAdd("party", party);
         }
 
+        if (gameState.Campaign.PrimaryQuest is not null)
+        {
+            var primaryQuest = gameState.Campaign.PrimaryQuest.AsMarkdown();
+            
+            result.TryAdd("primaryQuest", $"## Primary Quest\n\n{primaryQuest}");
+        }
         // Recent narrative for continuity
         if (gameState.RecentNarratives.Count > 0)
         {

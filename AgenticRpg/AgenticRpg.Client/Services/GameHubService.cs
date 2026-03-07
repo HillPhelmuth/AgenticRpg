@@ -320,13 +320,33 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         _connection?.On("MessageStatusChanged", handler);
     }
 
+    public void OnMessageStreamStarted(Action<string, DateTime> handler)
+    {
+        _connection?.On("MessageStreamStarted", handler);
+    }
+
+    public void OnMessageStreamToken(Action<string, string, string> handler)
+    {
+        _connection?.On("MessageStreamToken", handler);
+    }
+
+    public void OnMessageStreamCompleted(Action<string, string, string?> handler)
+    {
+        _connection?.On("MessageStreamCompleted", handler);
+    }
+
+    public void OnSuggestedActionsUpdated(Action<string, List<SuggestedAction>> handler)
+    {
+        _connection?.On("SuggestedActionsUpdated", handler);
+    }
+
     public async Task SubmitDiceRollResultAsync(List<RollDiceResults> results)
     {
         try
         {
             _logger.LogInformation("Submitted dice roll result for request {RequestId} rolls: {Rolls}", results.Count, JsonSerializer.Serialize(results.Select(x => x.Results)));
             await EnsureSubmitConnectionStartedAsync().ConfigureAwait(false);
-            await _submitConnection.InvokeAsync("SubmitDiceRollResult", new RollDiceResultsList { Results = results }).ConfigureAwait(false);
+            await _submitConnection!.InvokeAsync("SubmitDiceRollResult", new RollDiceResultsList { Results = results }).ConfigureAwait(false);
             //OnDiceRollResult?.Invoke(this, results);
 
         }

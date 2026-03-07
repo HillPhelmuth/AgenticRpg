@@ -275,6 +275,9 @@ public class GameHub(
     public async Task SendMessage(string sessionOrCampaignId, string playerId, string message,
         AgentType targetAgentType = AgentType.None, string? clientMessageId = null)
     {
+        var streamMessageId = string.IsNullOrWhiteSpace(clientMessageId)
+                ? $"ai-{Guid.NewGuid()}"
+                : $"ai-{clientMessageId}";
         try
         {
             logger.LogInformation("Processing message from player {PlayerId} in session {SessionId}: {Message}",
@@ -284,16 +287,23 @@ public class GameHub(
                     playerId,
                     new AgentResponse() { FormattedResponse = new AgentFormattedResponse() { MessageToPlayers = message } },
                     DateTime.UtcNow);
+
+            await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
+                .SendAsync("MessageStreamStarted", streamMessageId, DateTime.UtcNow);
+
             var isSession = await contextProvider.IsSessionAsync(sessionOrCampaignId);
             AgentResponse response;
+            var streamCallback = CreateStreamCallback(sessionOrCampaignId, streamMessageId);
 
             if (isSession)
             {
-                response = await orchestrationService.ProcessMessageAsync(
+                response = await orchestrationService.ProcessMessageStreamingAsync(
                     sessionOrCampaignId,
                     playerId,
                     message,
-                    targetAgentType);
+                    targetAgentType,
+                    streamCallback,
+                    streamMessageId);
             }
             else
             {
@@ -307,7 +317,8 @@ public class GameHub(
                     Message = message,
                     TargetAgentType = targetAgentType,
                     ClientMessageId = clientMessageId,
-                    StatusCallback = CreateStatusCallback(Context.ConnectionId, clientMessageId)
+                    StatusCallback = CreateStatusCallback(Context.ConnectionId, clientMessageId),
+                    StreamCallback = streamCallback
                 };
 
                 response = await orchestrationService.EnqueueCampaignMessageAsync(queueRequest);
@@ -327,6 +338,19 @@ public class GameHub(
             }
 
             var activeAgentType = await orchestrationService.GetActiveAgentTypeAsync(sessionOrCampaignId);
+            var suggestedActions = response.FormattedResponse?.SuggestedActions ?? [];
+            if (suggestedActions.Count > 0)
+            {
+                await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
+                    .SendAsync("SuggestedActionsUpdated", streamMessageId, suggestedActions);
+            }
+
+            if (response.FormattedResponse is not null)
+            {
+                response.FormattedResponse.SuggestedActions = [];
+            }
+
+            response.Id = streamMessageId;
             await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
                 .SendAsync("ReceiveMessage",
                     activeAgentType,
@@ -349,7 +373,6 @@ public class GameHub(
                 await BroadcastStateUpdate(sessionOrCampaignId, gameState);
 
                 // Check for new narratives in the updated game state
-                //var gameState = response.UpdatedGameState;
                 if (gameState.RecentNarratives.Count != 0)
                 {
                     foreach (var narrative in gameState.RecentNarratives)
@@ -359,7 +382,7 @@ public class GameHub(
                 }
 
                 // Check if combat started
-                if (gameState.IsInCombat && gameState.CurrentCombat != null)
+                if (gameState is { IsInCombat: true, CurrentCombat: not null })
                 {
                     await BroadcastCombatStart(sessionOrCampaignId, gameState.CurrentCombat);
                 }
@@ -377,6 +400,9 @@ public class GameHub(
                 "System",
                 new AgentResponse() { FormattedResponse = new AgentFormattedResponse() { MessageToPlayers = "An error occurred processing your message. Please try again." } },
                 DateTime.UtcNow);
+
+            await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
+                .SendAsync("MessageStreamCompleted", streamMessageId!, targetAgentType.ToString(), ex.Message);
         }
     }
 
@@ -582,6 +608,36 @@ public class GameHub(
                     update.Status.ToString(),
                     update.Position,
                     update.Note);
+        };
+    }
+
+    private Func<MessageStreamUpdate, Task>? CreateStreamCallback(string campaignId, string? clientMessageId)
+    {
+        if (string.IsNullOrEmpty(campaignId) || string.IsNullOrEmpty(clientMessageId))
+        {
+            return null;
+        }
+
+        return async update =>
+        {
+            // # Reason: Stream tokens and final ReceiveMessage must share one server-generated stream id.
+            // Using update.MessageId can diverge to the user message id in queued campaign flows,
+            // which creates a second chat bubble and appears as duplicated agent output.
+            var outboundId = clientMessageId;
+            if (update.IsCompleted)
+            {
+                await Clients.Group(GetCampaignGroupName(campaignId))
+                    .SendAsync("MessageStreamCompleted", outboundId, update.AgentType, update.Note);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(update.Token))
+            {
+                return;
+            }
+
+            await Clients.Group(GetCampaignGroupName(campaignId))
+                .SendAsync("MessageStreamToken", outboundId, update.AgentType, update.Token);
         };
     }
 

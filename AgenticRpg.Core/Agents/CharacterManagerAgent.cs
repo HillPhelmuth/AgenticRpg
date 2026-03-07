@@ -23,8 +23,8 @@ public class CharacterManagerAgent(
     IGameStateManager gameStateManager,
     ICharacterRepository characterRepository,
     IRollDiceService diceService, ILoggerFactory loggerFactory,
-    IAgentThreadStore threadStore)
-    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.CharacterManager, loggerFactory, threadStore)
+    IAgentSessionStore threadStore)
+    : BaseGameAgent(contextProvider, Models.Enums.AgentType.CharacterManager, loggerFactory, threadStore)
 {
     private readonly CharacterManagerTools _tools = new(gameStateManager, characterRepository);
 
@@ -32,17 +32,8 @@ public class CharacterManagerAgent(
 
     protected override IEnumerable<AITool> GetTools()
     {
-        var baseTools = new List<AITool>
-        {
-            AIFunctionFactory.Create(_tools.AllocateSkillPoints),
-            AIFunctionFactory.Create(_tools.GetAvailableSpells),
-            AIFunctionFactory.Create(_tools.SelectNewSpell),
-            AIFunctionFactory.Create(_tools.FinalizeLevel),
-            AIFunctionFactory.Create(_tools.UpdateCharacterStats),
-            AIFunctionFactory.Create(_tools.UpdateSkillRank),
-            AIFunctionFactory.Create(_tools.GetAllSkills),
-            AIFunctionFactory.Create(HandbackToGameMaster)
-        };
+        var baseTools = _tools.GetAvailableTools();
+        baseTools.Add(AIFunctionFactory.Create(HandbackToGameMaster));
         
         // Add dice roller tools
         var diceTools = diceService.GetDiceRollerTools();
@@ -50,7 +41,7 @@ public class CharacterManagerAgent(
         return baseTools.Concat(diceTools);
     }
 
-    protected override string Instructions => """
+    public override string Instructions => """
 
                                               # Character Manager Agent - Instructions
 

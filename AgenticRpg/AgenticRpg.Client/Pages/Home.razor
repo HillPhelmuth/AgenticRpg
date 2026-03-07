@@ -1,10 +1,23 @@
 ﻿@page "/"
+@using AgenticRpg.DiceRoller.Components
 @using AgenticRpg.DiceRoller.Models
 @inject NavigationManager Navigation
 @inherits RpgPageBase
 
 <PageTitle>AI Agentic RPG</PageTitle>
-
+@* <label>
+    Die
+    <select @bind="@_selectedDie">
+        <option value="@DieType.D4">D4</option>
+        <option value="@DieType.D6">D6</option>
+        <option value="@DieType.D8">D8</option>
+        <option value="@DieType.D10">D10</option>
+        <option value="@DieType.D12">D12</option>
+        <option value="@DieType.D20">D20</option>
+    </select>
+   
+</label>
+<button @onclick="TriggerRoll">Roll</button> *@
 <div class="welcome-text">
     <h1>Welcome to Skynet RPG</h1>
     <p class="intro-snark">
@@ -26,3 +39,7 @@
     </button>
 </div>
 
+@code
+{
+    private DieType _selectedDie = DieType.D12;
+}

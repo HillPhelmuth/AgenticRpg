@@ -20,8 +20,8 @@ public class ShopKeeperAgent(
     IAgentContextProvider contextProvider,
     IGameStateManager gameStateManager,
     ICharacterRepository characterRepository, ILoggerFactory loggerFactory,
-    IAgentThreadStore threadStore)
-    : BaseGameAgent(config, contextProvider, Models.Enums.AgentType.ShopKeeper, loggerFactory, threadStore)
+    IAgentSessionStore threadStore)
+    : BaseGameAgent(contextProvider, Models.Enums.AgentType.ShopKeeper, loggerFactory, threadStore)
 {
     private readonly ShopkeeperTools _tools = new(gameStateManager, characterRepository);
 
@@ -31,24 +31,12 @@ public class ShopKeeperAgent(
     {
         return 
         [
-            AIFunctionFactory.Create(_tools.GetShopInventory),
-
-            AIFunctionFactory.Create(_tools.GetItemDetails),
-
-            AIFunctionFactory.Create(_tools.ProcessPurchase),
-
-            AIFunctionFactory.Create(_tools.ProcessSale),
-
-            AIFunctionFactory.Create(_tools.ApplyPriceModifier),
-
-            AIFunctionFactory.Create(_tools.CheckAffordability),
-
-            AIFunctionFactory.Create(_tools.EquipItem),
+            .. _tools.GetAvailableTools(),
             AIFunctionFactory.Create(HandbackToGameMaster)
         ];
     }
 
-    protected override string Instructions => """
+    public override string Instructions => """
 
                                               # Economy Manager Agent - Instructions
 

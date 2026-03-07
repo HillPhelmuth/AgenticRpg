@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using AgenticRpg.Core.Models.Enums;
 using AgenticRpg.Core.Models.Game;
 
 namespace AgenticRpg.Core.State;
@@ -120,14 +121,11 @@ public class GameStateManager(
             logger.LogError("Cannot update state with empty campaign ID");
             return false;
         }
-        // ------------------------------------Temptorary Logging------------------------------------
-        //logger.LogInformation("Updating campaign state: {CampaignId}, Version:\n\n {Version}", state.CampaignId, JsonSerializer.Serialize(state));
-        //-------------------------------------------------------------------------------------------
-        // Update timestamp and version
+      
         state.LastUpdated = DateTime.UtcNow;
         state.Version++;
         await hubContext.Clients.Group(GameHub.GetCampaignGroupName(state.CampaignId)).SendAsync("StateUpdated", state, cancellationToken);
-        // Update cache
+        
         _stateCache.AddOrUpdate(state.CampaignId, state, (key, oldValue) => state);
         
         logger.LogDebug("Updated campaign state in cache: {CampaignId}, Version: {Version}", 
@@ -229,7 +227,7 @@ public class GameStateManager(
         }
     }
     
-    /// <inheritdoc/>
+    
     public async Task<GameState?> LoadStateAsync(string campaignId, CancellationToken cancellationToken = default)
     {
         try
@@ -258,7 +256,9 @@ public class GameStateManager(
             var world = await worldRepository.GetByIdAsync(campaign.WorldId, cancellationToken);
             
             // Load narratives
-            var narratives = await narrativeRepository.GetByCampaignIdAsync(campaignId, cancellationToken: cancellationToken);
+            var narratives =
+                (await narrativeRepository.GetByCampaignIdAsync(campaignId, cancellationToken: cancellationToken)).ToList();
+
             // Build game state
             var state = new GameState
             {
@@ -267,7 +267,7 @@ public class GameStateManager(
                 World = world ?? new World(),
                 Characters = characters.ToList(),
                 LastUpdated = DateTime.UtcNow,
-                RecentNarratives = narratives.OrderByDescending(n => n.Timestamp).Take(10).ToList(),
+                RecentNarratives = narratives.Where(x => x.Visibility == NarrativeVisibility.Global).OrderByDescending(n => n.Timestamp).Take(10).Concat(narratives.Where(x => x.Visibility == NarrativeVisibility.GMOnly)).ToList(),
             };
             
             // Add to cache

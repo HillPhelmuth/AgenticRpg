@@ -38,7 +38,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<StatsCalculator>();
 
             // Shared agent thread store (scopeId + AgentType -> AgentThread)
-            services.AddSingleton<IAgentThreadStore, InMemoryAgentThreadStore>();
+            services.AddSingleton<IAgentSessionStore, InMemoryAgentSessionStore>();
 
             services.AddSingleton<ISessionCompletionService, SessionCompletionService>();
         

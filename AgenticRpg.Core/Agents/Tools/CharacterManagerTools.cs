@@ -9,13 +9,14 @@ using AgenticRpg.Core.Models.Enums;
 using AgenticRpg.Core.Models.Game;
 using AgenticRpg.Core.Repositories;
 using AgenticRpg.Core.State;
+using Microsoft.Extensions.AI;
 
 namespace AgenticRpg.Core.Agents.Tools;
 
 /// <summary>
 /// Tools for managing character progression and adjustments, including level-up.
 /// </summary>
-public partial class CharacterManagerTools
+public partial class CharacterManagerTools : IAITools
 {
     private readonly IGameStateManager _gameStateManager;
     private readonly ICharacterRepository _characterRepository;
@@ -27,6 +28,20 @@ public partial class CharacterManagerTools
     {
         _gameStateManager = gameStateManager;
         _characterRepository = characterRepository;
+    }
+
+    public List<AITool> GetAvailableTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(AllocateSkillPoints),
+            AIFunctionFactory.Create(GetAvailableSpells),
+            AIFunctionFactory.Create(SelectNewSpell),
+            AIFunctionFactory.Create(FinalizeLevel),
+            AIFunctionFactory.Create(UpdateCharacterStats),
+            AIFunctionFactory.Create(UpdateSkillRank),
+            AIFunctionFactory.Create(GetAllSkills)
+        ];
     }
 
     /// <summary>

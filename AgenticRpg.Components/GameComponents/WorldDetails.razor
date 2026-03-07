@@ -143,11 +143,11 @@
             {
                 <div class="page page-3">
                     <div class="world-section">
-                        <h3>Quests (@World.Quests.Count)</h3>
-                        @if (World.Quests.Any())
+                        <h3>Quests</h3>
+                        @if (World.SideQuests.Any())
                         {
                             <div class="world-card-grid">
-                                @foreach (var quest in World.Quests)
+                                @foreach (var quest in World.SideQuests)
                                 {
                                     <div class="quest-card">
                                         <div class="quest-header">
@@ -173,13 +173,13 @@
                     </div>
 
                     <div class="world-section">
-                        <h3>Lore (@World.Events.Count)</h3>
+                        <h3>Lore </h3>
                         @if (World.Events.Any())
                         {
                             <div class="world-card-grid">
                                 @foreach (var evt in World.Events)
                                 {
-                                    <div class="event-card @(evt.Status == "Lore" ? "lore-entry" : "")">
+                                    <div class="world-card @(evt.Status == "Lore" ? "lore-entry" : "")">
                                         <div class="event-header">
                                             <h4>@evt.Name</h4>
                                             <span class="event-status @evt.Status.ToLower()">@evt.Status</span>

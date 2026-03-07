@@ -1,57 +1,30 @@
-// Reverse-engineered SCSS for the provided CSS
+$die-size: 200px;
+$roll-duration: 3s;
+$ease-pop: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+$ease-roll: cubic-bezier(0.2, 0.8, 0.4, 1);
 
-@keyframes roll {
-    10% {
-        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
-    }
+$gold: #ffd700;
+$gold-muted: #d4af37;
+$face-inner-bg-1: rgba(148, 0, 211, 0.7);
+$face-inner-bg-2: rgba(10, 50, 200, 0.7);
+$face-inner-bg-3a: #0b0222;
+$face-inner-bg-3b: #290a59;
+$face-inner-bg-3c: #13033d;
+$text-shadow-strong: rgba(0, 0, 0, 0.9);
+$glow-gold: rgba(255, 215, 0, 0.6);
 
-    30% {
-        transform: rotateX(120deg) rotateY(240deg) rotateZ(0deg) translateX(40px) translateY(40px);
-    }
-
-    50% {
-        transform: rotateX(240deg) rotateY(480deg) rotateZ(0deg) translateX(-40px) translateY(-40px);
-    }
-
-    70% {
-        transform: rotateX(360deg) rotateY(720deg) rotateZ(0deg);
-    }
-
-    90% {
-        transform: rotateX(480deg) rotateY(960deg) rotateZ(0deg);
-    }
-}
-
-// Dimensions & colors
-$size: 200px;
-$perspective: 1500px;
-$scale: 0.7;
-
-$tri-w: 35px; // half-width of the top triangle
-$tri-h: 70px; // height of the top triangle
-$cap-h: 10px; // height of the small cap triangle
-$z: 24.5px;
-
-$face-color: rgba(30, 180, 20, 0.75);
-$num-color: #fff;
-$num-shadow: #000;
-$num-size: 42px;
-
-$odd-top-offset: 70px;
-$even-ty: 2px;
-$odd-ty: -2px;
-
-// Angle sequences for face transforms
-$angles-odd: 60deg, 120deg, 180deg, 240deg, 300deg, 360deg; // faces 1,3,5,7,9,11
-$angles-even: -60deg, -120deg, -180deg, -240deg, -300deg, -360deg; // faces 2,4,6,8,10,12
+$d12-tilt: 63.43495deg;
+$d12-step: 72deg;
+$d12-offset: 36deg;
+$d12-translate-z: 130.9017px;
 
 .dice12content {
-    margin: auto auto;
     position: relative;
-    width: $size;
-    height: $size;
-    perspective: $perspective;
-    transform: scale($scale);
+    width: $die-size;
+    height: $die-size;
+    margin: auto;
+    perspective: 1200px;
+    transform: scale(0.5);
 }
 
 .die12 {
@@ -59,98 +32,112 @@ $angles-even: -60deg, -120deg, -180deg, -240deg, -300deg, -360deg; // faces 2,4,
     width: 100%;
     height: 100%;
     transform-style: preserve-3d;
-    transition: transform 0.5s ease-out;
+    transition: transform 0.45s $ease-pop;
     cursor: pointer;
-    transform: rotateX(-55deg);
-
-    &.reset {
-        transition: transform 0.1s ease-out;
-        transform: rotateX(0);
-    }
+    transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
 
     &.rolling {
-        animation: roll 3s linear;
+        animation: die12-roll $roll-duration $ease-roll;
     }
 
-    &.stopped {
-        transform: translate(50%, 50%);
+    &[data-face="1"] {
+        transform: rotateZ(0deg) rotateX(0deg) rotateZ(0deg) rotateY(0deg);
+    }
+
+    @for $i from 2 through 6 {
+        $z: -($d12-step * ($i - 2));
+
+        &[data-face="#{$i}"] {
+            transform: rotateZ(-180deg) rotateX($d12-tilt) rotateZ($z) rotateY(0deg);
+        }
+    }
+
+    @for $i from 7 through 11 {
+        $z: -($d12-offset + ($d12-step * ($i - 7)));
+
+        &[data-face="#{$i}"] {
+            transform: rotateZ(-180deg) rotateX($d12-tilt) rotateZ($z) rotateY(-180deg);
+        }
+    }
+
+    &[data-face="12"] {
+        transform: rotateZ(0deg) rotateX(0deg) rotateZ(-36deg) rotateY(-180deg);
     }
 
     .face {
         position: absolute;
-        left: 50%;
-        top: 0;
-        margin: 0 -$tri-w;
-        border-left: $tri-w solid transparent;
-        border-right: $tri-w solid transparent;
-        border-bottom: $tri-h solid $face-color;
-        width: 0;
-        height: 0;
-        transform-style: preserve-3d;
+        width: $die-size;
+        height: $die-size;
+        clip-path: polygon(50% 0%, 97.55% 34.55%, 79.39% 90.45%, 20.61% 90.45%, 2.45% 34.55%);
+        background: radial-gradient(circle at 20% 80%, $face-inner-bg-1, transparent 60%), radial-gradient(circle at 80% 20%, $face-inner-bg-2, transparent 60%), linear-gradient(45deg, $face-inner-bg-3a, $face-inner-bg-3b, $face-inner-bg-3c);
         backface-visibility: hidden;
-        counter-increment: steps 1;
+        border: 2px solid $gold-muted;
+        box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.8);
 
         &::before {
-            content: counter(steps);
+            content: attr(data-face);
             position: absolute;
-            top: 14px;
-            left: -$tri-w;
-            color: $num-color;
-            text-shadow: 1px 1px 3px $num-shadow;
-            font-size: $num-size;
-            text-align: center;
-            line-height: $tri-h;
-            width: #{2 * $tri-w}; // 70px
-            height: $tri-h; // 70px
-        }
-
-        &::after {
-            content: "";
-            position: absolute;
-            bottom: -80px;
-            left: -$tri-w;
-            border-left: $tri-w solid transparent;
-            border-right: $tri-w solid transparent;
-            border-top: $cap-h solid $face-color;
-            width: 0;
-            height: 0;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $gold;
+            font-family: "Cinzel", serif;
+            font-size: 64px;
+            font-weight: 800;
+            text-shadow: 2px 2px 5px $text-shadow-strong, 0 0 15px $glow-gold;
+            transform: translateY(-6px);
+            user-select: none;
         }
     }
-    // Facing orientations for data-face="1".."12"
-    // Odd faces: 1,3,5,7,9,11 => rotateX(-235deg) & rotateY(-60deg * n)
-    @for $n from 1 through 6 {
-        $i: (2 * $n) - 1;
 
-        &[data-face="#{$i}"] {
-            transform: rotateX(-235deg) rotateY(-#{60 * $n}deg);
+    .face-1 {
+        transform: rotateY(0deg) rotateZ(0deg) rotateX(0deg) rotateZ(0deg) translateZ($d12-translate-z);
+    }
+
+    .face-2 {
+        transform: rotateY(0deg) rotateZ(0deg) rotateX(-$d12-tilt) rotateZ(180deg) translateZ($d12-translate-z);
+    }
+
+    @for $i from 3 through 6 {
+        $z: $d12-step * ($i - 2);
+
+        .face-#{$i} {
+            transform: rotateY(0deg) rotateZ($z) rotateX(-$d12-tilt) rotateZ(180deg) translateZ($d12-translate-z);
         }
     }
-    // Even faces: 2,4,6,8,10,12 => rotateX(-55deg) & rotateY(60deg * n)
-    @for $n from 1 through 6 {
-        $i: 2 * $n;
 
-        &[data-face="#{$i}"] {
-            transform: rotateX(-55deg) rotateY(#{60 * $n}deg);
+    @for $i from 7 through 11 {
+        $z: $d12-offset + ($d12-step * ($i - 7));
+
+        .face-#{$i} {
+            transform: rotateY(180deg) rotateZ($z) rotateX(-$d12-tilt) rotateZ(180deg) translateZ($d12-translate-z);
         }
     }
-    // Geometry placements for each labeled face
-    // Odd-labeled faces (1,3,5,7,9,11)
-    @for $n from 1 through 6 {
-        $idx: (2 * $n) - 1;
-        $ang: nth($angles-odd, $n);
 
-        .face.face-#{$idx} {
-            top: $odd-top-offset;
-            transform: rotateY($ang) translateZ(-$z) translateY($odd-ty) rotateZ(180deg) rotateY(180deg) rotateX(55deg);
-        }
+    .face-12 {
+        transform: rotateY(180deg) rotateZ(36deg) rotateX(0deg) rotateZ(0deg) translateZ($d12-translate-z);
     }
-    // Even-labeled faces (2,4,6,8,10,12)
-    @for $n from 1 through 6 {
-        $idx: 2 * $n;
-        $ang: nth($angles-even, $n);
+}
 
-        .face.face-#{$idx} {
-            transform: rotateY($ang) translateZ($z) translateY($even-ty) rotateX(55deg);
-        }
+@keyframes die12-roll {
+    0% {
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    }
+
+    25% {
+        transform: rotateX(540deg) rotateY(390deg) rotateZ(480deg);
+    }
+
+    55% {
+        transform: rotateX(1080deg) rotateY(900deg) rotateZ(1140deg);
+    }
+
+    80% {
+        transform: rotateX(1560deg) rotateY(1260deg) rotateZ(1680deg);
+    }
+
+    100% {
+        transform: rotateX(1800deg) rotateY(1440deg) rotateZ(2160deg);
     }
 }

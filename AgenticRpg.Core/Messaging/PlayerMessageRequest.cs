@@ -43,6 +43,11 @@ public sealed class PlayerMessageRequest
     /// Optional callback invoked whenever queue status changes.
     /// </summary>
     public Func<MessageQueueUpdate, Task>? StatusCallback { get; init; }
+
+    /// <summary>
+    /// Optional callback invoked for token streaming updates.
+    /// </summary>
+    public Func<MessageStreamUpdate, Task>? StreamCallback { get; init; }
 }
 
 /// <summary>
@@ -80,4 +85,35 @@ public enum MessageProcessingStatus
     Processing,
     Completed,
     Failed
+}
+
+/// <summary>
+/// Represents a token streaming update for an AI response.
+/// </summary>
+public sealed class MessageStreamUpdate
+{
+    /// <summary>
+    /// Client supplied message identifier.
+    /// </summary>
+    public string MessageId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Agent type that is currently producing tokens.
+    /// </summary>
+    public string AgentType { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Token text chunk emitted by the model.
+    /// </summary>
+    public string Token { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Indicates whether this update signals end of stream.
+    /// </summary>
+    public bool IsCompleted { get; init; }
+
+    /// <summary>
+    /// Optional note for stream completion/failure.
+    /// </summary>
+    public string? Note { get; init; }
 }

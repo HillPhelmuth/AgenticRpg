@@ -8,7 +8,7 @@
                 @onclick="ToggleDropdown"
                 aria-expanded="@_isDropdownOpen"
                 aria-controls="modelList">
-            <span class="model-toggle-text">@(_selectedModel ?? "-- Select Model --")</span>
+            <span class="model-toggle-text">@(SelectedModel ?? "-- Select Model --")</span>
             <span class="model-caret" aria-hidden="true">▾</span>
         </button>
         @if (_isDropdownOpen)
@@ -26,9 +26,9 @@
                         @foreach (var model in FilteredModels)
                         {
                             <button type="button"
-                                    class="model-option @(model == _selectedModel ? "selected" : "")"
+                                    class="model-option @(model == SelectedModel ? "selected" : "")"
                                     role="option"
-                                    aria-selected="@(model == _selectedModel)"
+                                    aria-selected="@(model == SelectedModel)"
                                     @onclick="() => SelectModelOption(model)">
                                 @model
                             </button>
@@ -42,12 +42,15 @@
             </div>
         }
     </div>
-    <button @onclick="SelectModel"
-            disabled="@(!CanApplyModelOverride)"
-            class="btn-select-model"
-            title="@(SelectedCampaign == null ? "Apply as default for sessions" : $"Apply to {SelectedCampaign.Name}")">
-        Set Model
-    </button>
+    @if (!HideSubmitButton)
+    {
+        <button @onclick="SelectModel"
+                disabled="@(!CanApplyModelOverride)"
+                class="btn-select-model"
+                title="@(SelectedCampaign == null ? "Apply as default for sessions" : $"Apply to {SelectedCampaign.Name}")">
+            Set Model
+        </button>
+    }
     @if (!string.IsNullOrEmpty(ModelSelectionMessage))
     {
         <div class="model-toast success">@ModelSelectionMessage</div>

@@ -1,9 +1,4 @@
 @page "/campaign-creation"
-@using AgenticRpg.Core.Models
-@using AgenticRpg.Components.ChatComponents
-@using AgenticRpg.Core.Models.Enums
-@inject NavigationManager Navigation
-@inject HttpClient Http
 @inherits RpgPageBase
 
 <PageTitle>Create Campaign - AI Agentic RPG</PageTitle>
@@ -46,11 +41,27 @@
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <textarea @bind="CampaignDescription" placeholder="Describe your campaign..." rows="3" class="form-input"></textarea>
+                        <input type="text" @bind="CampaignDescription" placeholder="Describe your campaign..." class="form-input"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Primary Quest Description</label>
+                        <textarea @bind="@_createCampaignSettings.PrimaryQuestDescription" placeholder="Describe your campaign's primary quest..." rows="3" class="form-input"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Max Players</label>
                         <input type="number" @bind="MaxPlayers" min="2" max="8" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label>Default LLM Model</label>
+                        <RpgModelSelect @bind-SelectedModel="@_createCampaignSettings.DefaultModel" HideSubmitButton="true"></RpgModelSelect>
+                    </div>
+                    <div class="form-group">
+                        <label>Allow Late Joining</label>
+                        <input type="checkbox" @bind="_createCampaignSettings.AllowLateJoining" class="form-checkbox" />
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulty</label>
+                        <input type="number" @bind="_createCampaignSettings.Difficulty" class="form-input" />
                     </div>
 
                 </div>

@@ -151,4 +151,20 @@ public class RpgMonster : InteractiveEntity
         }
         return markdown.ToString();
     }
+
+    public string BasicInfoMarkdown()
+    {
+        var markdown = new StringBuilder();
+        // Monster title and descriptions
+        markdown.AppendLine($"# Monster Id: {Id}");
+        markdown.AppendLine($"## {Name}");
+        if (!string.IsNullOrEmpty(Description))
+        {
+            markdown.AppendLine();
+            markdown.AppendLine(Description);
+        }
+        markdown.AppendLine();
+        markdown.AppendLine($"Difficulty: {ChallengeRating}");
+        return markdown.ToString();
+    }
 }

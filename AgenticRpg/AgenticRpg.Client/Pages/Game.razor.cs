@@ -36,6 +36,7 @@ public partial class Game : IAsyncDisposable
     private CombatEncounter? CurrentCombatEncounter { get; set; }
     private List<ChatMessage> ChatMessages { get; set; } = [];
     private readonly Dictionary<string, ChatMessage> _messageLookup = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ChatMessage> _streamMessageLookup = new(StringComparer.OrdinalIgnoreCase);
     private bool IsProcessing { get; set; }
     private string? ErrorMessage { get; set; }
     private bool IsConnected { get; set; }
@@ -100,6 +101,10 @@ public partial class Game : IAsyncDisposable
             HubService.OnCombatStarted(HandleCombatStarted);
             HubService.OnTurnChanged(HandleTurnChanged);
             HubService.OnMessageStatusChanged(HandleMessageStatusChanged);
+            HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
+            HubService.OnMessageStreamToken(HandleMessageStreamToken);
+            HubService.OnMessageStreamCompleted(HandleMessageStreamCompleted);
+            HubService.OnSuggestedActionsUpdated(HandleSuggestedActionsUpdated);
 
             // Join campaign
             await HubService.JoinCampaignAsync(
@@ -138,6 +143,17 @@ public partial class Game : IAsyncDisposable
             return;
         }
 
+        if (!string.IsNullOrEmpty(message.Id) && _streamMessageLookup.TryGetValue(message.Id, out var streamedMessage))
+        {
+            streamedMessage.Content = message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message;
+            streamedMessage.Timestamp = timestamp;
+            streamedMessage.PlayerId = playerId;
+            streamedMessage.PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId);
+            _streamMessageLookup.Remove(message.Id);
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
         // Receive messages from Game Master or other players
         ChatMessages.Add(new ChatMessage
         {
@@ -146,11 +162,117 @@ public partial class Game : IAsyncDisposable
             IsUser = playerId == CurrentUserId,
             Timestamp = timestamp,
             PlayerId = playerId,
-            PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId),
-            SuggestedActions = message.FormattedResponse?.SuggestedActions?.FirstOrDefault(x => x.Player.Equals(CurrentCharacter?.Name, StringComparison.OrdinalIgnoreCase))?.Suggestions ?? []
+            PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId)
         });
 
         //_ = PlaySpeechAsync(message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleMessageStreamStarted(string messageId, DateTime timestamp)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
+        {
+            return;
+        }
+
+        var streamMessage = new ChatMessage
+        {
+            Id = messageId,
+            Content = string.Empty,
+            IsUser = false,
+            Timestamp = timestamp,
+            PlayerName = "Game Master"
+        };
+
+        ChatMessages.Add(streamMessage);
+        _streamMessageLookup[messageId] = streamMessage;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleMessageStreamToken(string messageId, string agentType, string token)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
+        if (!_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        {
+            streamMessage = new ChatMessage
+            {
+                Id = messageId,
+                Content = string.Empty,
+                IsUser = false,
+                Timestamp = DateTime.UtcNow,
+                PlayerName = string.IsNullOrWhiteSpace(agentType) ? "Game Master" : agentType
+            };
+
+            ChatMessages.Add(streamMessage);
+            _streamMessageLookup[messageId] = streamMessage;
+        }
+
+        streamMessage.Content += token;
+        if (!string.IsNullOrWhiteSpace(agentType))
+        {
+            streamMessage.PlayerName = agentType;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || !_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
+                ? $"Error communicating with {agentType}: {note}"
+                : streamMessage.Content;
+            
+        }
+        _streamMessageLookup.Remove(messageId);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleSuggestedActionsUpdated(string messageId, List<SuggestedAction> suggestedActions)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || suggestedActions.Count == 0)
+        {
+            return;
+        }
+
+        var playerName = CurrentCharacter?.Name;
+        var actionsForPlayer = suggestedActions
+            .Where(x => string.IsNullOrWhiteSpace(playerName) || x.Player.Equals(playerName, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(x => x.Suggestions)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (actionsForPlayer.Count == 0)
+        {
+            return;
+        }
+
+        if (_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        {
+            streamMessage.SuggestedActions = actionsForPlayer;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var existingMessage = ChatMessages.FirstOrDefault(x => string.Equals(x.Id, messageId, StringComparison.OrdinalIgnoreCase));
+        if (existingMessage is null)
+        {
+            return;
+        }
+
+        existingMessage.SuggestedActions = actionsForPlayer;
         InvokeAsync(StateHasChanged);
     }
 
@@ -362,6 +484,8 @@ public partial class Game : IAsyncDisposable
             {
                 _messageLookup.Remove(message.ClientMessageId);
             }
+
+            _streamMessageLookup.Remove(message.Id);
             StateHasChanged();
         }
     }

@@ -96,11 +96,6 @@ public class CombatEncounter
             string.Equals(m.Id, idOrName, StringComparison.OrdinalIgnoreCase));
     }
 
-    public bool IsEnemyParticipant(string idOrName)
-    {
-        return FindEnemyMonster(idOrName) != null;
-    }
-
     public string? GetParticipantName(string idOrName)
     {
         var pc = FindPartyCharacter(idOrName);
