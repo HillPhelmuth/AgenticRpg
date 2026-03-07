@@ -274,13 +274,15 @@ public partial class CharacterCreation : IAsyncDisposable
 
         if (!_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
         {
+            // Use agentType for the player name when creating the fallback message,
+            // in case a token arrives before HandleMessageStreamStarted fires.
             streamMessage = new ChatMessage
             {
                 Id = messageId,
                 Content = string.Empty,
                 IsUser = false,
                 Timestamp = DateTime.UtcNow,
-                PlayerName = "Character Creation AI"
+                PlayerName = string.IsNullOrWhiteSpace(agentType) ? "Character Creation AI" : agentType
             };
 
             ChatMessages.Add(streamMessage);
@@ -288,6 +290,13 @@ public partial class CharacterCreation : IAsyncDisposable
         }
 
         streamMessage.Content += token;
+
+        // Keep PlayerName current if agentType changes between tokens.
+        if (!string.IsNullOrWhiteSpace(agentType))
+        {
+            streamMessage.PlayerName = agentType;
+        }
+
         InvokeAsync(StateHasChanged);
     }
 
