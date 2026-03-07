@@ -24,8 +24,6 @@ public class GameState
         get =>  field ?? Campaign?.SelectedModel;
         set
         {
-            if (value is not null)
-                Campaign.SelectedModel = value;
             field = value;
         }
     }

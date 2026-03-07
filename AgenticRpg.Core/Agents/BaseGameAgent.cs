@@ -372,7 +372,7 @@ public abstract class BaseGameAgent(
 
             }
             model ??= sessionState.SelectedModel ?? _config.BaseModelName;
-            Console.WriteLine($"base model name: {_config.BaseModelName}");
+            _logger.LogDebug("Base model name: {BaseModelName}", _config.BaseModelName);
         }
         else
         {

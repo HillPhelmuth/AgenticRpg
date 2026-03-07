@@ -1,5 +1,6 @@
 using AgenticRpg.Core.Agents.Llms;
 using AgenticRpg.Core.Models;
+using Google.GenAI.Types;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 
@@ -51,6 +52,8 @@ public partial class RpgModelSelect
         if (SelectedCampaign is null && string.IsNullOrEmpty(CurrentUserId) && string.IsNullOrEmpty(SessionOrCampaignId) && !string.IsNullOrEmpty(SelectedModel))
         {
             await SelectedModelChanged.InvokeAsync(SelectedModel);
+            ModelSelectionError = $"Selected {SelectedModel} set, but missing other values.";
+            await ShowTransientMessageAsync();
             return;
         }
         ModelSelectionMessage = null;

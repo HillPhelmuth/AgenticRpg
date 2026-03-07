@@ -47,7 +47,8 @@ public partial class GameMasterTools(
             AIFunctionFactory.Create(UpdateWorldState),
             AIFunctionFactory.Create(UpdateWorldDetails),
             AIFunctionFactory.Create(HandoffToAgent),
-            AIFunctionFactory.Create(ApplyRest)
+            AIFunctionFactory.Create(ApplyRest),
+            AIFunctionFactory.Create(AddNpcOrQuest)
         ];
     }
 

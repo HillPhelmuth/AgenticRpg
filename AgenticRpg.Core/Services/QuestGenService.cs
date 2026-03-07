@@ -77,7 +77,7 @@ public class QuestGenService
                 ResponseFormat = ChatResponseFormat.ForJsonSchema<Quest>()
             }
         });
-        var session = await agent.CreateSessionAsync();
+        
         var response = await agent.RunAsync<Quest>($"Generate a primary quest based on this description: '{description}'");
         return response.Result;
     }

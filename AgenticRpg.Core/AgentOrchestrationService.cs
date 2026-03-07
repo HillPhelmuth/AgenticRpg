@@ -270,15 +270,6 @@ public class AgentOrchestrationService
         }
     }
 
-    private void HandleSuggestedActions(AgentSuggestedActions actions)
-    {
-        
-    }
-
-    private void HandleTokenGenerated(string token)
-    {
-        //OnTokenGenerated?.Invoke(token);
-    }
 
     private CampaignMessageQueue GetOrCreateQueue(string campaignId)
     {

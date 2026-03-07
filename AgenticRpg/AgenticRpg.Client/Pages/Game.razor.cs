@@ -233,9 +233,9 @@ public partial class Game : IAsyncDisposable
             streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
                 ? $"Error communicating with {agentType}: {note}"
                 : streamMessage.Content;
-            _streamMessageLookup.Remove(messageId);
+            
         }
-
+        _streamMessageLookup.Remove(messageId);
         InvokeAsync(StateHasChanged);
     }
 

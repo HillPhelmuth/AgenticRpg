@@ -275,12 +275,11 @@ public class GameHub(
     public async Task SendMessage(string sessionOrCampaignId, string playerId, string message,
         AgentType targetAgentType = AgentType.None, string? clientMessageId = null)
     {
-        try
-        {
-            var streamMessageId = string.IsNullOrWhiteSpace(clientMessageId)
+        var streamMessageId = string.IsNullOrWhiteSpace(clientMessageId)
                 ? $"ai-{Guid.NewGuid()}"
                 : $"ai-{clientMessageId}";
-
+        try
+        {
             logger.LogInformation("Processing message from player {PlayerId} in session {SessionId}: {Message}",
                 playerId, sessionOrCampaignId, message);
             await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
@@ -403,7 +402,7 @@ public class GameHub(
                 DateTime.UtcNow);
 
             await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
-                .SendAsync("MessageStreamCompleted", $"ai-{clientMessageId ?? Guid.NewGuid().ToString()}", targetAgentType.ToString(), ex.Message);
+                .SendAsync("MessageStreamCompleted", streamMessageId!, targetAgentType.ToString(), ex.Message);
         }
     }
 
