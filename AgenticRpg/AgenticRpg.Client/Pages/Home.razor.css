@@ -5,6 +5,7 @@
     flex-direction: column;
     height: 30vh;
     width: fit-content;
+    max-width: 100%;
     background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0a0e1a 100%);
     padding: 2rem 0;
     border-radius: 8px;
@@ -25,10 +26,10 @@
         box-shadow: 0 0 30px rgba(77, 208, 225, 0.3);
     }
 
-        .image-container:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 50px rgba(77, 208, 225, 0.5);
-        }
+    .image-container:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 50px rgba(77, 208, 225, 0.5);
+    }
 
 .welcome-text {
     max-width: 85vw;
@@ -119,3 +120,107 @@
         font-style: italic;
         font-weight: 600;
     }
+
+@media (max-width: 1024px) {
+    .welcome-text {
+        max-width: 92vw;
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .welcome-text h1 {
+        font-size: 2.5rem;
+    }
+
+    .intro-snark,
+    .process-list li,
+    .intro-footer {
+        font-size: 1.05rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .welcome-text {
+        max-width: 95vw;
+        padding: 0.75rem 1rem 1.25rem;
+        border-width: 1px;
+    }
+
+    .welcome-text h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+        margin-bottom: 1rem;
+    }
+
+    .intro-snark {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .process-list {
+        margin: 1.25rem 0;
+    }
+
+    .process-list li {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+    }
+
+    .intro-footer {
+        font-size: 1rem;
+        margin-top: 1.25rem;
+        padding: 1rem;
+    }
+
+    .image-container {
+        width: 100%;
+        height: auto;
+        min-height: 180px;
+        padding: 1rem 0.5rem;
+    }
+
+    .image-container img {
+        max-height: 24vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-text {
+        max-width: calc(100vw - 1rem);
+        padding: 0.75rem;
+    }
+
+    .welcome-text h1 {
+        font-size: 1.55rem;
+        text-shadow: 0 0 14px rgba(77, 208, 225, 0.4), 1px 1px 6px rgba(0, 0, 0, 0.8);
+    }
+
+    .intro-snark,
+    .process-list li,
+    .intro-footer {
+        font-size: 0.95rem;
+    }
+
+    .process-list li {
+        border-left-width: 3px;
+    }
+
+    .image-container {
+        min-height: 150px;
+        border-radius: 6px;
+    }
+
+    .image-container img {
+        max-height: 20vh;
+        border-radius: 6px;
+    }
+}
+
+@media (hover: none) {
+    .image-container:hover,
+    .process-list li:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}

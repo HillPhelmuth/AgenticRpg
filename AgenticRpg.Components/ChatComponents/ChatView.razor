@@ -12,7 +12,8 @@
                 <MessageView
                     Message="@message"
                     OnEdit="@HandleEdit"
-                    OnDelete="@HandleDelete">
+                    OnDelete="@HandleDelete" IsLastMessage="@(!string.IsNullOrEmpty(lastMessageId)
+                                                            && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)">
                     @if (!string.IsNullOrEmpty(lastMessageId)
                          && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)
                     {

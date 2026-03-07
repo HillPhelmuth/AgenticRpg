@@ -17,6 +17,8 @@ public partial class MessageView
     public EventCallback<ChatMessage> OnDelete { get; set; }
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+    [Parameter]
+    public bool IsLastMessage { get; set; }
 
     private string _editContent = string.Empty;
     private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder()
@@ -25,7 +27,14 @@ public partial class MessageView
 
     protected override void OnParametersSet()
     {
+        //Console.WriteLine($"Is Streaming: {Message.IsStreaming}");
         _editContent = Message.Content;
+    }
+
+    protected override bool ShouldRender()
+    {
+        Console.WriteLine($"Checking ShouldRender - Is Streaming: {Message.IsStreaming} Is Last Message: {IsLastMessage}");
+        return Message.IsStreaming || IsLastMessage;
     }
 
     private string ConvertMarkdownToHtml(string markdown)

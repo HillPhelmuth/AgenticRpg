@@ -121,7 +121,6 @@ public partial class CampaignCreation : IAsyncDisposable
 
             // Subscribe to session state updates
             HubService.OnSessionStateUpdated(HandleSessionStateUpdated);
-            HubService.OnReceiveMessage(HandleReceiveMessage);
             HubService.OnSessionCompleted(HandleSessionCompleted);
             HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
             HubService.OnMessageStreamToken(HandleMessageStreamToken);
@@ -261,7 +260,8 @@ public partial class CampaignCreation : IAsyncDisposable
             Content = string.Empty,
             IsUser = false,
             Timestamp = timestamp,
-            PlayerName = "World Builder AI"
+            PlayerName = "World Builder AI",
+            IsStreaming = true
         };
 
         ChatMessages.Add(streamMessage);
@@ -284,15 +284,16 @@ public partial class CampaignCreation : IAsyncDisposable
                 Content = string.Empty,
                 IsUser = false,
                 Timestamp = DateTime.UtcNow,
-                PlayerName = "World Builder AI"
+                PlayerName = "World Builder AI",
+                IsStreaming = true
             };
 
             ChatMessages.Add(streamMessage);
             _streamMessageLookup[messageId] = streamMessage;
         }
-
+        streamMessage.IsStreaming = true;
         streamMessage.Content += token;
-        InvokeAsync(StateHasChanged);
+
     }
 
     private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
@@ -302,13 +303,16 @@ public partial class CampaignCreation : IAsyncDisposable
             return;
         }
 
+        streamMessage.IsStreaming = false;
+
         if (!string.IsNullOrWhiteSpace(note))
         {
             streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
                 ? $"Error communicating with {agentType}: {note}"
                 : streamMessage.Content;
-            
+
         }
+
         _streamMessageLookup.Remove(messageId);
         InvokeAsync(StateHasChanged);
     }
@@ -448,7 +452,7 @@ public partial class CampaignCreation : IAsyncDisposable
                 Status = CampaignStatus.Setup,
                 Settings = _createCampaignSettings,
                 SelectedModel = _createCampaignSettings.DefaultModel
-                
+
             };
 
             await CampaignService.CreateCampaignAsync(campaign);

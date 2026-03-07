@@ -36,7 +36,7 @@ public abstract class BaseGameAgent(
     IAgentSessionStore agentSessionStore)
 {
     private const string SuggestAgentInstructions = """
-                                                     Generate suggested next actions for each player based on the provided current game state and agent response. For each player, provide 3 high-quality, relevant suggestions in the format of valid follow-up chat inputs, tailored to the current context and player roles. 
+                                                     Generate suggested next actions for each player based on the provided current game state and agent response. For each player, provide 3-5 high-quality, relevant suggestions in the format of valid follow-up chat inputs, tailored to the current context and player roles. 
 
                                                      For each player, first give detailed reasoning behind why each suggestion is appropriate, considering game state, player objectives, and previous interactions. Ensure that Reasoning sections precede the listed suggestions for every player. 
 
@@ -732,7 +732,7 @@ public class AgentSuggestedActions
 {
     [Description("Reasons for suggested actions. Should contain a section for each player explain why the actions for that player were provided")]
     public string? Reasoning { get; set; }
-    [Description("Suggested actions for each player based on the current game state. Aim for 3 per player")]
+    [Description("Suggested actions for each player based on the current game state. Aim for 3-5 per player")]
     [JsonPropertyName("suggestedActions")]
     public List<SuggestedAction> SuggestedActions { get; set; } = [];
 }
@@ -742,7 +742,7 @@ public class SuggestedAction
     [Description("The name of the player this suggestion is for")]
     [JsonPropertyName("player")]
     public required string Player { get; set; }
-    [Description("List of 3 suggested actions for the player. These should be in the form of a valid follow-up chat input")]
+    [Description("List of 3-5 suggested actions for the player. These should be in the form of a valid follow-up chat input")]
     [JsonPropertyName("suggestions")]
     public List<string> Suggestions { get; set; } = [];
 }
