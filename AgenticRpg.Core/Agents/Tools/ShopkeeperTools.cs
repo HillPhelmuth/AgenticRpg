@@ -5,7 +5,6 @@ using AgenticRpg.Core.Models.Game;
 using AgenticRpg.Core.Repositories;
 using AgenticRpg.Core.Rules;
 using AgenticRpg.Core.State;
-using Google.GenAI.Types;
 using Microsoft.Extensions.AI;
 using System;
 using System.Collections.Generic;
