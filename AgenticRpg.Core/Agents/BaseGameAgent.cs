@@ -142,7 +142,6 @@ public abstract class BaseGameAgent(
     /// <param name="model"></param>
     protected virtual async Task InitializeAgentAsync(string? model = null)
     {
-        Console.WriteLine($"model name: {model}");
         var requestedModel = string.IsNullOrWhiteSpace(model) ? _config.BaseModelName : model;
 
         var useOpenRouter = !requestedModel.StartsWith("gpt-");
