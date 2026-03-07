@@ -291,8 +291,9 @@ public partial class CampaignCreation : IAsyncDisposable
             ChatMessages.Add(streamMessage);
             _streamMessageLookup[messageId] = streamMessage;
         }
-        streamMessage.IsStreaming = true;
-        streamMessage.Content += token;
+        ChatMessages.LastOrDefault()?.IsStreaming = true;
+        ChatMessages.LastOrDefault()?.Content += token;
+        InvokeAsync(StateHasChanged);
 
     }
 

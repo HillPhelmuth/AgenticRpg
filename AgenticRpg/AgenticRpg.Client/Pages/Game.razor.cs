@@ -218,7 +218,9 @@ public partial class Game : IAsyncDisposable
             _streamMessageLookup[messageId] = streamMessage;
         }
 
-        streamMessage.Content += token;
+        ChatMessages.LastOrDefault()?.IsStreaming = true;
+        ChatMessages.LastOrDefault()?.Content += token;
+        InvokeAsync(StateHasChanged);
         if (!string.IsNullOrWhiteSpace(agentType))
         {
             streamMessage.PlayerName = agentType;
