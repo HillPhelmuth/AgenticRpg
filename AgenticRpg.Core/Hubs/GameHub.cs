@@ -280,6 +280,7 @@ public class GameHub(
                 : $"ai-{clientMessageId}";
         try
         {
+            _connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerInfo);
             logger.LogInformation("Processing message from player {PlayerId} in session {SessionId}: {Message}",
                 playerId, sessionOrCampaignId, message);
             await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
@@ -307,8 +308,6 @@ public class GameHub(
             }
             else
             {
-                _connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerInfo);
-
                 var queueRequest = new PlayerMessageRequest
                 {
                     CampaignId = sessionOrCampaignId,
@@ -351,11 +350,11 @@ public class GameHub(
             }
 
             response.Id = streamMessageId;
-            await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
-                .SendAsync("ReceiveMessage",
-                    activeAgentType,
-                    response,
-                    DateTime.UtcNow);
+            //await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
+            //    .SendAsync("ReceiveMessage",
+            //        activeAgentType,
+            //        response,
+            //        DateTime.UtcNow);
 
             if (isSession)
             {

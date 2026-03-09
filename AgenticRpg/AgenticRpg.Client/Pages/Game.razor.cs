@@ -135,7 +135,7 @@ public partial class Game : IAsyncDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to initialize game");
-            ErrorMessage = $"Failed to load game: {ex.Message}";
+            ErrorMessage = $"Failed to load game: {ex}";
         }
     }
 
@@ -174,7 +174,7 @@ public partial class Game : IAsyncDisposable
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleMessageStreamStarted(string messageId, DateTime timestamp)
+    private void HandleMessageStreamStarted(string messageId, string playerId, DateTime timestamp)
     {
         if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
         {
@@ -187,7 +187,7 @@ public partial class Game : IAsyncDisposable
             Content = string.Empty,
             IsUser = false,
             Timestamp = timestamp,
-            PlayerName = "Game Master",
+            PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId),
             IsStreaming = true
         };
 
@@ -553,7 +553,7 @@ public partial class Game : IAsyncDisposable
     private string GetPlayerName(string playerId)
     {
         // Get player name from character list
-        var character = GameState?.Characters.FirstOrDefault(c => c.PlayerId == playerId);
+        var character = GameState?.Characters.FirstOrDefault(c => c.PlayerId == playerId || c.Name == playerId);
         return character?.Name ?? "Game Master";
     }
 

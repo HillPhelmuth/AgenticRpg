@@ -241,10 +241,11 @@ public partial class StartupMenu
 
     private void JoinGame()
     {
-        if (SelectedCampaign != null && SelectedCharacter != null)
-        {
-            Navigation.NavigateTo($"/game?campaignId={SelectedCampaign.Id}&characterId={SelectedCharacter.Id}");
-        }
+        JoinLobby();
+        //if (SelectedCampaign != null && SelectedCharacter != null)
+        //{
+        //    Navigation.NavigateTo($"/game?campaignId={SelectedCampaign.Id}&characterId={SelectedCharacter.Id}");
+        //}
     }
 
     private void ShowCharacterSheet(Character character)
