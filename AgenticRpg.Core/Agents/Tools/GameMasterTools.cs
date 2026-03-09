@@ -113,10 +113,8 @@ public partial class GameMasterTools(
     [Description("Gets a list of available monster names for a given difficulty level (0-15). Returns a comma-separated string of monster names. Must be called before `InitiateCombat`.")]
     public string GetAvailableMonsterNames(int difficultyLevel = 0)
     {
-        //if (difficultyLevel > 1)
-        //    difficultyLevel--;
-        var rpgMonsters = RpgMonster.GetAllRpgMonsters(difficultyLevel - 1, difficultyLevel, difficultyLevel + 1);
-        var names = string.Join(", ", rpgMonsters.Select(m => m.Name).ToList().Shuffle());
+        var rpgMonsters = RpgMonster.GetAllRpgMonsters(difficultyLevel - 3,difficultyLevel - 2, difficultyLevel - 1, difficultyLevel, difficultyLevel + 1, difficultyLevel +2, difficultyLevel +3);
+        var names = string.Join(", ", rpgMonsters.Select(m => $"Name: {m.Name} - Difficulty: {m.ChallengeRating}").ToList().Shuffle());
         return names;
     }
     [Description("Initiates combat by creating combatants and transitioning to the Combat Agent. Returns confirmation that combat has started and Combat Agent is taking over.")]
@@ -256,6 +254,37 @@ public partial class GameMasterTools(
                                                       (Optional)
                                                       The difficulty level of the monster(s) (0-15). Can be a single value like "10" or a comma seprated list string like: "4,10,0" to get multiple difficulty levels.
                                                       """;
+    [Description("Generate a video of a major campaign event. Outputs to the narrative display. Use when the players reach a significant milestone or on player request")]
+    public async Task<string> GenerateCampaignEventVideo(
+        [Description("The unique ID of the campaign where this narrative belongs.")] string campaignId,
+        [Description("The style of the image to generate.")] string style,
+        [Description("Detailed description of scene to display. Will be used as prompt for image generator.")]
+        string eventDescription)
+    {
+        var campaignState = await stateManager.GetCampaignStateAsync(campaignId);
+        var instructions = $"Generate a {style} video for the following RPG event: {eventDescription}";
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var combatEncounter = campaignState.CurrentCombat;
+                if (combatEncounter != null)
+                {
+                    await GenerateVideoAndAddToCampaignNarrative(campaignState, instructions, stateManager);
+                }
+                else
+                {
+                    await Console.Error.WriteLineAsync("No active combat encounter found for video generation.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Reason: Background video generation should never block combat completion.
+                await Console.Error.WriteLineAsync($"Video generation failed: {ex}");
+            }
+        });
+        return "Video is generating. It will display in the player narrative display when completed.";
+    }
 
     [Description("Generate an image of a major campaign event. Outputs to the narrative display.")]
     public async Task<string> GenerateCampaignEventImage([Description("The unique ID of the campaign where this narrative belongs.")] string campaignId, [Description("The style of the image to generate.")] string style, [Description("Detailed description of scene to display. Will be used as prompt for image generator.")] string eventDescription)
@@ -297,6 +326,36 @@ public partial class GameMasterTools(
             gameState.RecentNarratives.Add(narrative);
             await stateManager.UpdateCampaignStateAsync(gameState);
         }
+    }
+    private async Task GenerateVideoAndAddToCampaignNarrative(GameState gameState, string instructions, IGameStateManager stateManager)
+    {
+        var src = await VideoGenService.GenerateSoraCampaignVideo(gameState, gameState.CampaignId, instructions);
+        if (!string.IsNullOrEmpty(src))
+        {
+            var videoHtml = AddVideoHtml(src);
+            var narrative = new Narrative
+            {
+                CampaignId = gameState.CampaignId,
+                Content = videoHtml,
+                Type = "CombatVideo",
+                Visibility = NarrativeVisibility.Global,
+                AgentType = "Combat",
+                Timestamp = DateTime.UtcNow
+            };
+            await narrativeRepository.CreateAsync(narrative);
+            gameState.RecentNarratives.Add(narrative);
+            await stateManager.UpdateCampaignStateAsync(gameState);
+        }
+    }
+
+    private static string AddVideoHtml(string src)
+    {
+        return $"""
+                <video controls>
+                    <source src="{src}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                """;
     }
     [Description("Applies a full rest to all characters in the campaign, restoring health and magic points. Parameters: campaignId. Returns summary of restored health and abilities for each character.")]
     public async Task<string> ApplyRest(string campaignId)

@@ -3,6 +3,9 @@
 ## 2026-03-07
 - [x] Add responsive styling for the home page in `AgenticRpg.Client/Pages/Home.razor.css`.
 
+## 2026-03-09
+- [x] Add a general campaign video prompt template in `AgenticRpg.Core/Services/VideoGenService.cs`.
+
 ## 2026-03-03
 - [x] Stream agent responses token-by-token from AI agents through SignalR to Game, Character Creation, and Campaign Creation chat views.
 

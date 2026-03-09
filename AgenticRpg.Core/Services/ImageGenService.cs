@@ -82,6 +82,11 @@ public class ImageGenService
             {
                 Category = HarmCategory.HarmCategorySexuallyExplicit,
                 Threshold = HarmBlockThreshold.BlockOnlyHigh
+            },
+            new()
+            {
+                Category = HarmCategory.HarmCategoryDangerousContent,
+                Threshold = HarmBlockThreshold.BlockOnlyHigh
             }
         ];
 
@@ -139,7 +144,7 @@ public class ImageGenService
     }
     public static async Task<string> GenerateCampaignImage(string imageDescription, string campaignId)
     {
-        var data = await GenerateImageData(imageDescription);
+        var data = await GoogleGenerateImageData(imageDescription);
         var fileName = $"{campaignId}/tempImage_{Guid.NewGuid().ToString()}.png";
         return await SaveAsUrl(fileName, data.ToArray());
     }

@@ -49,7 +49,14 @@ public class VideoGenService()
         var prompt = "Combat video. Side view profile perspective throughout. " + promptData.VideoInstructions;
         return await GenerateSoraFromPrompt(prompt, campaignId);
     }
-    
+    public static async Task<string> GenerateSoraCampaignVideo(GameState gameState, string campaignId, string? additionalInstruction = null)
+    {
+        var promptData = await GeneratePromptFromGameState(gameState!, additionalInstruction);
+        
+        _logger.LogInformation("VideoGen instructions:\n--------------\n{instructions}\n------------------\n", promptData.VideoInstructions);
+        var prompt = "Combat video. Side view profile perspective throughout. " + promptData.VideoInstructions;
+        return await GenerateSoraFromPrompt(prompt, campaignId);
+    }
     public static async Task<string> GenerateSoraFromPrompt(string prompt, string campaignId = "")
     {
         var client = new OpenAIClient(Configuration.OpenAIApiKey).GetVideoClient();
@@ -239,10 +246,41 @@ public class VideoGenService()
         await blobClient.UploadAsync(new BinaryData(bytes), overwrite: true);
         return $"{VideoContainerUrl}/{fileName}";
     }
+
+    private static async Task<VideoInstructionsOutput> GeneratePromptFromGameState(GameState gameState,
+        string? additionalInstructions = null)
+    {
+        var agent = new OpenAIClient(new ApiKeyCredential(Configuration.OpenAIApiKey))
+            .GetChatClient("gpt-4.1")
+            .AsAIAgent(new ChatClientAgentOptions()
+            {
+                Name = "Video Gen Instruction Agent",
+                ChatOptions = new ChatOptions()
+                {
+                    Instructions = VideoGenEventInstructions,
+                    ResponseFormat = ChatResponseFormat.ForJsonSchema<VideoInstructionsOutput>()
+                }
+            }, loggerFactory: Configuration.LoggerFactory);
+        var prompt =
+           $"""
+            ## Player Party Characters
+            {string.Join("\n\n", gameState.Characters.Select(x => x.AsBasicDataMarkdown()))}
+
+            ## Latest Events
+            {string.Join("\n\n", gameState.RecentNarratives.OrderByDescending(x => x.Timestamp).Select(x => $"Timestamp: {x.Timestamp:g}\n\n {x.Content}")).Take(10)}
+            ## Additional Instructions 
+            _If any additional instructions for the video generation, they are the most important and should play a very large role in the video prompt._
+            
+            **additional instructions:**
+            {additionalInstructions}
+            """;
+        var response = await agent.RunAsync<VideoInstructionsOutput>(prompt);
+        return response.Result;
+    }
     private static async Task<VideoInstructionsOutput> GenerateVideoPromptAsync(CombatEncounter combatEncounter, string? additionalInstructions = null, int chapter = 0)
     {
-        var agent = new ResponsesClient(new ApiKeyCredential(Configuration.OpenAIApiKey))
-            //.GetChatClient("gpt-4.1")
+        var agent = new OpenAIClient(new ApiKeyCredential(Configuration.OpenAIApiKey))
+            .GetChatClient("gpt-4.1")
             .AsAIAgent(new ChatClientAgentOptions()
             {
                 Name = "Video Gen Instruction Agent",
@@ -268,6 +306,71 @@ public class VideoGenService()
 
 
     }
+
+    private const string VideoGenEventInstructions =
+        """
+        # Instructions
+        
+        ## Task
+        
+        Analyze the provided campaign context and select the most visually compelling, narratively meaningful, or tone-defining moment to represent the campaign. Generate step-by-step instructions for creating a 4-8 second fantasy video that communicates the campaign's setting, mood, major characters, and central tension.
+        
+        - Review the campaign details, current world state, important characters, recent events, quests, locations, factions, and atmosphere to identify the best moment or tableau.
+        - Choose a scene that best represents the campaign as a whole, not just a fight. This can be an exploration moment, a dramatic reveal, a tense negotiation, a magical event, a travel sequence, a celebration, a looming threat, or a heroic standoff.
+        - Justify the selected moment with a brief explanation of why it best captures the campaign's identity, stakes, or tone. The justification must come before video instructions.
+        - After justification, describe all required visual details: major characters or creatures, wardrobe, props, environment, architecture, magical elements, mood, actions, and camera direction for a clear 6-8 second scene.
+        - Include short quotes for dialogue, narration, chants, warnings, or character banter only when they help sell the scene.
+        - Always give reasoning first, before video instructions.
+        
+        ## Video Prompting Guide
+        
+        **General Guidelines:**
+        Write descriptive, clear prompts. Start with the campaign-defining concept, then refine it with relevant visual details, emotional tone, and cinematic framing suited to fantasy adventure video generation.
+        
+        Include these elements:
+        - Subject: List the key characters, NPCs, monsters, factions, landmarks, relics, or magical effects central to the scene.
+        - Setting: Clearly describe the location and time of day, plus any notable environmental features.
+        - Action: State the primary action or dramatic beat happening in the scene.
+        - Style: Indicate the fantasy film style or tone (epic, whimsical, ominous, heroic, melancholic, mysterious, mythic).
+        - Composition: [Optional] State framing such as wide establishing shot, medium two-shot, close-up, or tracking shot.
+        - Focus & Effects: [Optional] Note depth of field, motion blur, weather, particles, or magical lighting.
+        - Ambiance: [Optional] Describe mood, lighting, palette, and environmental sound.
+        
+        **Prompting Tips:**
+        - Begin with **Character Descriptions**, **Creature Descriptions**, or **Location Details** sections when needed so the important visual elements are clearly established.
+        - Use vivid language and dynamic verbs.
+        - Specify recognizable visual traits: clothing, armor, artifacts, posture, expressions, injuries, age, class, race, or supernatural qualities.
+        - Emphasize the emotional purpose of the scene as much as the physical action.
+        - Ensure the scene reads clearly in a single 6-8 second sequence with one dominant visual idea.
+        
+        **Example video_instructions**
+        ```
+        **Character Descriptions**
+         - Elira Dawnveil - A young elf ranger in weathered green leathers, a moon-silver bow across her back, and a lantern glowing at her hip.
+         - Brother Carrow - A broad human cleric in dented bronze armor, carrying a sun-marked staff and a satchel of relics.
+        **Location Details**
+         - The ruined skybridge of an ancient floating city hangs above a storm-filled abyss, with broken marble arches, torn banners, and drifting blue runes.
+         
+         Wide establishing shot of the shattered skybridge at dusk. Elira and Brother Carrow stand on the left, cloaks whipping in the wind as they stare toward the right at a sealed gate of glowing stone runes. Below them, lightning flickers inside the clouds beneath the floating ruins. Keep the camera cinematic and slightly low, slowly pushing forward. Elira raises her lantern and whispers, "If this door opens, the whole world changes." The runes brighten in sequence across the gate, casting blue light over both heroes as loose debris trembles and rises from the stone. Audio: rushing wind, distant thunder, a low magical hum, cloth snapping, and a faint crackle of awakening energy. End with the gate beginning to part as the light intensifies.
+        ```
+        
+        **Audio Prompting:**
+        - Dialogue/Narration: Use quotes for any spoken lines and keep them short.
+        - SFX: Describe environmental or magical sounds that reinforce the scene.
+        - Ambiance: Note background sounds such as wind, crowds, tavern noise, chanting, rain, or distant monsters.
+        
+        ## Output Format
+        Return a JSON object containing:
+        - `"reasoning"`: Concise paragraph justifying the selected campaign moment and why it best represents the campaign's tone, stakes, or direction.
+        - `"video_instructions"`: Concrete directions for a 6-8 second scene, including visuals, composition, setting, characters, action, dialogue, and audio cues.
+        
+        **Edge Cases/Considerations:**
+        - If no single dramatic event is present, create a strong establishing scene that communicates the campaign's world, mood, and objectives.
+        - If several moments qualify, pick the one that is most visually distinctive or most representative of the campaign's current arc.
+        - If combat exists but is not the defining feature, focus on the broader campaign context instead of treating it like a battle clip.
+        - Incorporate relevant locations, quest objectives, looming threats, allies, treasures, or mysteries when they strengthen the scene.
+
+        """;
 
     private const string VideoGenInstructionGen =
         $"""
