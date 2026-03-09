@@ -243,7 +243,7 @@ public partial class CharacterCreation : IAsyncDisposable
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleMessageStreamStarted(string messageId, DateTime timestamp)
+    private void HandleMessageStreamStarted(string messageId, string playerId, DateTime timestamp)
     {
         if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
         {

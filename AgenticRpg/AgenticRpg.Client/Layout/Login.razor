@@ -1,7 +1,7 @@
 ﻿
 <AuthorizeView>
 	<Authorized>
-		<a href="Account/Logout">Log out</a>
+		<a href="Account/Logout">Log out @context.User.Identity?.Name</a>
 	</Authorized>
 	<NotAuthorized>
 		<a href="Account/Login?redirectUri=/">Log in</a>

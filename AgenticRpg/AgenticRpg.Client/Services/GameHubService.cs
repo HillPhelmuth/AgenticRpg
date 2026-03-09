@@ -320,7 +320,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         _connection?.On("MessageStatusChanged", handler);
     }
 
-    public void OnMessageStreamStarted(Action<string, DateTime> handler)
+    public void OnMessageStreamStarted(Action<string, string, DateTime> handler)
     {
         _connection?.On("MessageStreamStarted", handler);
     }

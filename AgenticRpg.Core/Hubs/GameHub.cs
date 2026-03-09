@@ -290,7 +290,7 @@ public class GameHub(
                     DateTime.UtcNow);
 
             await Clients.Group(GetCampaignGroupName(sessionOrCampaignId))
-                .SendAsync("MessageStreamStarted", streamMessageId, DateTime.UtcNow);
+                .SendAsync("MessageStreamStarted", streamMessageId, targetAgentType == AgentType.None ? "Game Master" : targetAgentType.ToString(), DateTime.UtcNow);
 
             var isSession = await contextProvider.IsSessionAsync(sessionOrCampaignId);
             AgentResponse response;
