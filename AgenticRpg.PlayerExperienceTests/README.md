@@ -1,12 +1,13 @@
 # Player experience regression validation
 
-Restore and run the deterministic suite:
+From the repository root, restore and build with the .NET 10 SDK. Run the suite from the test project directory to select Microsoft.Testing.Platform.
 
 ```powershell
-dotnet restore AgenticRpg.slnx
-dotnet test AgenticRpg.PlayerExperienceTests/AgenticRpg.PlayerExperienceTests.csproj --no-restore
 dotnet restore AgenticRpg.slnx -p:Configuration=Release
-dotnet build AgenticRpg.slnx --no-restore -c Release -m:1
+dotnet build AgenticRpg.slnx --configuration Release --no-restore
+Push-Location AgenticRpg.PlayerExperienceTests
+dotnet test --project AgenticRpg.PlayerExperienceTests.csproj --configuration Release --no-build
+Pop-Location
 ```
 
 The suite uses fake repositories and processors, real HTTP/SignalR application endpoints, bUnit components, and the existing campaign lifecycle tests. It covers response IDs/revisions, interleaved streams, handoffs, partial failures, retries, retention, scope leases, concurrent tabs, withdrawal persistence, ownership, private narratives, save races, existing-world edits, completion recovery, pending dice windows, durable restart interruption, conditional draft writes, transcript pagination/privacy, completion checkpoint failures, composer recovery, and shared weapon formulas.
@@ -15,11 +16,13 @@ The Improve next coverage adds queued/active cancellation, streaming and dice ca
 
 ## Two-browser integration playtest
 
-The opt-in host serves the real Blazor client with test-only identities and repositories. It makes no production storage or AI calls. Start it in one terminal:
+The opt-in host serves the real Blazor client with test-only identities and repositories. It makes no production storage or AI calls. After the Release build, start it from the repository root in one terminal.
 
 ```powershell
 $env:RPG_BROWSER_PLAYTEST_SIGNAL = Join-Path (Get-Location) 'AgenticRpg.PlayerExperienceTests/obj/browser-host.txt'
-dotnet test AgenticRpg.PlayerExperienceTests/AgenticRpg.PlayerExperienceTests.csproj --filter FullyQualifiedName~HostForTwoBrowserPlaytest
+Push-Location AgenticRpg.PlayerExperienceTests
+dotnet test --project AgenticRpg.PlayerExperienceTests.csproj --configuration Release --no-build --filter-method AgenticRpg.PlayerExperienceTests.BrowserPlaytestHostTests.HostForTwoBrowserPlaytest
+Pop-Location
 ```
 
 Wait for `obj/browser-host.txt`, then run in another terminal with Playwright, Chrome, and Edge installed:

@@ -30,7 +30,8 @@ jobs:
         run: dotnet build AgenticRpg.slnx --configuration Release --no-restore
 
       - name: Validate player experience
-        run: dotnet test AgenticRpg.PlayerExperienceTests/AgenticRpg.PlayerExperienceTests.csproj --configuration Release --no-build
+        working-directory: AgenticRpg.PlayerExperienceTests
+        run: dotnet test --project AgenticRpg.PlayerExperienceTests.csproj --configuration Release --no-build
 
       - name: dotnet publish
         run: dotnet publish AgenticRpg/AgenticRpg/AgenticRpg.csproj -c Release --no-build -o "${{env.DOTNET_ROOT}}/myapp"
