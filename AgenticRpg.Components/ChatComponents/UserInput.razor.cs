@@ -4,8 +4,36 @@ using Microsoft.JSInterop;
 
 namespace AgenticRpg.Components.ChatComponents;
 
-public partial class UserInput
+public partial class UserInput : IAsyncDisposable
 {
+    [Inject] private IJSRuntime Js { get; set; } = default!;
+    [Parameter] public string? AccountId { get; set; }
+    [Parameter] public string? ScopeId { get; set; }
+    [Parameter] public Func<bool>? SubmissionAccepted { get; set; }
+    private IJSObjectReference? _draftModule;
+    private string? _draftKey;
+    private string? _submissionError;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (string.IsNullOrEmpty(AccountId) || string.IsNullOrEmpty(ScopeId)) return;
+        var key = $"rpg-draft:{Uri.EscapeDataString(AccountId)}:{ScopeId}";
+        if (_draftKey == key) return;
+        try
+        {
+            _draftModule ??= await Js.InvokeAsync<IJSObjectReference>("import", "./_content/AgenticRpg.Components/ChatComponents/draftInput.js");
+            _draftKey = key;
+            _inputValue = await _draftModule.InvokeAsync<string>("get", key);
+            StateHasChanged();
+        }
+        catch (JSException) { }
+    }
+    private async Task PersistDraft()
+    {
+        if (_draftModule is not null && _draftKey is not null)
+            try { await _draftModule.InvokeVoidAsync("set", _draftKey, _inputValue); } catch (JSException) { }
+    }
+    public async ValueTask DisposeAsync()
+    { if (_draftModule is not null) { try { await _draftModule.DisposeAsync(); } catch (JSDisconnectedException) { } } }
     [Parameter]
     public EventCallback<string> OnSubmit { get; set; }
 
@@ -27,12 +55,14 @@ public partial class UserInput
     [Parameter]
     public string CssClass { get; set; } = string.Empty;
 
+    [Parameter] public bool IsUnavailable { get; set; }
+    [Parameter] public bool DraftDisabled { get; set; }
     private string _inputValue = string.Empty;
     private bool _isTextArea;
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         // Submit on Enter (without Shift)
-        if (e.Key == "Enter" && !e.ShiftKey && !IsProcessing)
+        if (e.Key == "Enter" && !e.ShiftKey && !IsUnavailable)
         {
             await SubmitMessage();
         }
@@ -40,31 +70,43 @@ public partial class UserInput
 
     private async Task SubmitMessage()
     {
-        if (string.IsNullOrWhiteSpace(_inputValue) || IsProcessing)
+        if (string.IsNullOrWhiteSpace(_inputValue) || IsProcessing || IsUnavailable)
             return;
 
         var message = _inputValue.Trim();
-        _inputValue = string.Empty;
+        await PersistDraft();
+        _submissionError = null;
 
         if (OnSubmit.HasDelegate)
         {
-            await OnSubmit.InvokeAsync(message);
+            try
+            {
+                await OnSubmit.InvokeAsync(message);
+                if (SubmissionAccepted?.Invoke() != false)
+                { if (_inputValue.Trim() == message) _inputValue = ""; await PersistDraft(); }
+                else _submissionError = "Delivery not confirmed. Reconnect, then send again with the same request ID.";
+            }
+            catch { _submissionError = "Delivery not confirmed. Your text is retained; reconnect and try again."; }
         }
     }
     public async Task SubmitMessage(string message)
     {
-        if (string.IsNullOrWhiteSpace(message) || IsProcessing)
+        if (string.IsNullOrWhiteSpace(message) || IsProcessing || IsUnavailable)
             return;
         if (OnSubmit.HasDelegate)
         {
             await OnSubmit.InvokeAsync(message);
+            
         }
     } 
     private async Task CancelProcessing()
     {
+        Console.WriteLine("CancelProcessing called");
         if (OnCancel.HasDelegate)
         {
             await OnCancel.InvokeAsync();
+            Console.WriteLine("OnCancel invoked");
+            IsProcessing = false;
         }
     }
 
@@ -83,6 +125,7 @@ public partial class UserInput
     public void SetValue(string value)
     {
         _inputValue = value;
+        _ = PersistDraft();
         StateHasChanged();
     }
 }

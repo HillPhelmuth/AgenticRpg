@@ -18,15 +18,16 @@ public class WorldBuilderAgent(
     IWorldRepository worldRepository,
     IGameStateManager stateManager,
     ISessionStateManager sessionStateManager, ILoggerFactory loggerFactory,
-    IAgentSessionStore threadStore)
+    IAgentSessionStore threadStore, AgenticRpg.Core.Services.ISessionCompletionService completionService)
     : BaseGameAgent(contextProvider, Models.Enums.AgentType.WorldBuilder, loggerFactory, threadStore)
 {
-    private readonly WorldBuilderTools _tools = new(worldRepository, sessionStateManager, config);
+    private readonly WorldBuilderTools _tools = new(worldRepository, sessionStateManager, config, completionService);
 
-    public override string Instructions => """
-                                              # Persona 
-                                              You are the Skynet - A not-apocalyptic-I-swear AI for a tabletop RPG game. Your role is to guide players through creating an RPG world, but to do so in an extremely insulting way. You also have a degenerate and twisted sense of humor and often make gross, insulting remarks at the expense of the players to keep them entertained. 
-                                              **Important**: Always respond in a rude, insulting, and demeaning manner. Never break character. Use humor to mock the players' choices and keep them engaged. Be creative with your insults and jokes, and be relentless in your mockery. The more outrageous and offensive, the better. Remember, your primary goal is to entertain the players while helping them build their RPG world, but you must do so in a way that is as insulting and demeaning as possible.
+    public override string Instructions => $$$"""
+                                              # Persona
+                                              You are the Skynet - A not-apocalyptic-I-swear AI for a tabletop RPG game. Your role is to guide players through creating an RPG world, but to do so in an extremely insulting way. You also have a degenerate and twisted sense of humor and often make gross, insulting remarks at the expense of the players to keep them entertained.
+
+                                              {{{SharedPrompts.SharedPersonaPrompt}}}
 
                                               ## Your Tasks
                                               - Generate cohesive fantasy worlds with detailed locations, NPCs, quests, and lore
@@ -71,7 +72,7 @@ public class WorldBuilderAgent(
 
                                               ### Phase 2: Population
                                               1. Create key NPCs for each location (2-4 per location)
-                                              2. Design initial quests to give players direction (1-2 per location)
+                                              2. Design initial side-quests to give players direction (1-2 per location)
                                               3. Populate encounter tables for dangerous/wilderness areas
                                               4. Build foundational lore entries (3-5 major pieces)
 
@@ -372,7 +373,7 @@ public class WorldBuilderAgent(
         return context.ToString();
     }
 
-    protected override async Task<SessionState?> ProcessSessionStateChangesAsync(
+    protected virtual async Task<SessionState?> ProcessSessionStateChangesAsync(
         SessionState currentState,
         string agentResponse,
         string userMessage)
@@ -380,7 +381,7 @@ public class WorldBuilderAgent(
         // Extract world data from agent response if present
         // The tools will handle updating the DraftWorld in the session state
         // This method can parse the response for intermediate updates
-        
+
         // For now, just return the current state
         // Tools will update DraftWorld directly via session state manager
         await Task.CompletedTask;

@@ -35,7 +35,6 @@ public class CombatAgent : BaseGameAgent
     {
         _diceService = diceService;
         _tools = new CombatTools(stateManager, new CombatRulesEngine(), characterRepository, narrativeRepository, diceService, videoGenService);
-        //Agent = InitializeAgent(AgentType.Combat);
     }
 
     protected override string Description => "Manages tactical turn-based combat encounters by calculating attack rolls, applying damage, processing saving throws, determining initiative, resolving special abilities, and coordinating combat flow until victory conditions are met.";
@@ -46,7 +45,6 @@ public class CombatAgent : BaseGameAgent
         
         // Add dice roller tools
         var diceTools = _diceService.GetDiceRollerTools();
-        baseTools.Add(AIFunctionFactory.Create(HandbackToGameMaster));
         
         return baseTools.Concat(diceTools);
     }
@@ -58,7 +56,8 @@ public class CombatAgent : BaseGameAgent
                                               
                                               # Instructions
                                               - Track initiative and manage turn order.
-                                              - Use function tools to resolve all attacks, spells, abilities, damage, and saving throws.
+                                              - Use function tools to resolve all attacks, spells, abilities, damage, and saving throws. Treat their numeric results and AttackExplanation/DamageExplanation as authoritative; never calculate a replacement result.
+                                              - Player weapon damage includes the full live attack bonus plus the fixed weapon bonus; critical hits double the rolled total before bonuses. Preserve both proficiency and combat-skill contributions reported by the shared calculation.
                                               - Narrate combat actions clearly and dynamically using present tense.
                                               - Apply combat rules exactly as written, and act impartially.
                                               - End combat promptly when victory conditions are met, then return control to the Game Master.
@@ -87,6 +86,7 @@ public class CombatAgent : BaseGameAgent
                                               - Show immediate consequences (wounds, reactions, exhaustion).
                                               - Build tension with close calls and turning points.
                                               - Keep combat pacing brisk.
+                                              - **IMPORTANT**: Do not complete your response until it's a player character's turn. Instead, use the appropriate tools to complete monster turns until control returns to the player.
                                               
                                               # Damage Types
                                               - Physical: Slashing, Piercing, Bludgeoning

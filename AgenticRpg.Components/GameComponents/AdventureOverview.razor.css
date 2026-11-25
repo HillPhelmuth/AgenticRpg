@@ -1,0 +1,4 @@
+.adventure-overview { display:flex; flex-wrap:wrap; gap:1rem; padding:.8rem 1rem; border:1px solid #66583c; border-radius:.5rem; background:rgba(25,25,30,.9); color:#eee; }
+.adventure-overview > div { flex:1 1 150px; }
+strong,span,small { display:block; }
+strong { color:#dfbd72; font-size:.85rem; } small { color:#c8c8c8; }

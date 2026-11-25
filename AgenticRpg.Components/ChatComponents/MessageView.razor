@@ -21,14 +21,15 @@
                 var status = Message.Status.Value;
                 var supplement = GetStatusSupplement();
                 var tooltip = GetStatusTooltip();
-                <span class="message-status-badge @GetStatusCss(status)" title="@tooltip">
-                    @GetStatusLabel(status)
+                <span role="status" aria-live="polite" class="message-status-badge @GetStatusCss(status)" title="@tooltip">
+                    @GetPhaseLabel()
                     @if (!string.IsNullOrEmpty(supplement))
                     {
                         <span class="message-status-supplement">@supplement</span>
                     }
                 </span>
             }
+            @if (Message.ProgressDetail is not null) { <span role="status">@Message.ProgressDetail</span> }
             <span class="message-timestamp">@Message.Timestamp.ToString("hh:mm tt")</span>
         </div>
     </div>

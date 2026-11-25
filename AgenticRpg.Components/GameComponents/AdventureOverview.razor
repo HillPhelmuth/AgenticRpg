@@ -1,0 +1,13 @@
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Game
+<section class="adventure-overview" aria-label="What should I do next?">
+    <div><strong>Location</strong><span>@(State.World.Locations.FirstOrDefault(l => l.Id == State.CurrentLocationId)?.Name ?? "Unknown. Excellent navigation.")</span></div>
+    <div><strong>Primary objective</strong><span>@(State.Campaign.PrimaryQuest?.Name ?? "Ask the GM for your next disaster.")</span>
+        <small>@(State.Campaign.PrimaryQuest?.Objectives.FirstOrDefault(o => !State.Campaign.PrimaryQuest.CompletedObjectives.GetValueOrDefault(o)) ?? "No outstanding step.")</small></div>
+    <div><strong>Turn</strong><span>@(State.IsInCombat ? State.CurrentCombat?.GetCurrentTurnName() ?? "Rolling initiative" : State.Characters.FirstOrDefault(c => c.Id == State.Campaign.CurrentTurnCharacterId)?.Name ?? "Free exploration")</span></div>
+    <div><strong>@Character.Name</strong><span>HP @Character.CurrentHP/@Character.MaxHP · MP @Character.CurrentMP/@Character.MaxMP</span></div>
+</section>
+@code {
+    [Parameter, EditorRequired] public GameState State { get; set; } = default!;
+    [Parameter, EditorRequired] public Character Character { get; set; } = default!;
+}

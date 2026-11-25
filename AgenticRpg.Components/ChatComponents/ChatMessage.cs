@@ -7,6 +7,9 @@ namespace AgenticRpg.Components.ChatComponents;
 /// </summary>
 public class ChatMessage
 {
+    public string? SuggestionContext { get; set; }
+    public bool WasRejected { get; set; }
+    public AgenticRpg.Core.Models.PlayerActionIntent? ActionIntent { get; set; }
     /// <summary>
     /// Unique identifier for the message.
     /// </summary>
@@ -45,6 +48,10 @@ public class ChatMessage
     /// <summary>
     /// Latest queue status reported by the server.
     /// </summary>
+    public AgenticRpg.Core.Models.ProcessingPhase? Phase { get; set; }
+    public AgenticRpg.Core.Models.PlayerFacingError? Failure { get; set; }
+    public bool IsAuthoritative { get; set; }
+    public string? ProgressDetail { get; set; }
     public MessageProcessingStatus? Status { get; set; }
 
     /// <summary>

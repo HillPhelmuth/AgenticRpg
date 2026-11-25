@@ -6,6 +6,7 @@ An AI-driven, agent-based RPG platform for character creation, campaign manageme
 - Multi-campaign support with turn-based gameplay.
 - Agent-orchestrated narrative, combat, and character workflows.
 - Startup menu now limits visible campaigns to those you own or add via invitation code.
+- Startup menu supports confirmed deletion of your characters and owned campaigns.
 - Campaign API endpoints enforce ownership using authenticated user claims.
 
 ## Solution Layout

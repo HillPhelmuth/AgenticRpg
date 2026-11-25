@@ -39,8 +39,37 @@ public class Campaign
     /// <summary>
     /// Current status of the campaign
     /// </summary>
-    public CampaignStatus Status { get; set; } = CampaignStatus.Setup;
-    
+    public CampaignStatus Status
+    {
+        get
+        {
+            return GetCampaignStatus();
+        }
+    }
+
+    /// <summary>
+    /// Timestamp when the campaign was first started.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTime? StartedAt { get; set; }
+
+    public CampaignStatus GetCampaignStatus()
+    {
+        var hasJoinedPlayers = PlayerIds.Count != 0 || CharacterIds.Count != 0 || PlayerReadyStatuses.Count != 0;
+        var hasStarted = HasStarted();
+        var activePlayerCount = GetActiveConnectedPlayerIds().Count;
+
+        if (!hasStarted)
+        {
+            return hasJoinedPlayers
+                ? CampaignStatus.Lobby
+                : CampaignStatus.Setup;
+        }
+
+        return activePlayerCount > 0
+            ? CampaignStatus.Active
+            : CampaignStatus.Paused;
+    }
     /// <summary>
     /// List of player IDs participating in the campaign
     /// </summary>
@@ -50,7 +79,12 @@ public class Campaign
     /// List of character IDs in the campaign
     /// </summary>
     public List<string> CharacterIds { get; set; } = [];
-    
+
+    /// <summary>
+    /// Player IDs with at least one active SignalR connection in this campaign.
+    /// </summary>
+    public List<string> ActiveAndConnectedPlayerIds { get; set; } = [];
+
     /// <summary>
     /// ID of the character whose turn it currently is
     /// </summary>
@@ -96,6 +130,108 @@ public class Campaign
     /// </summary>
     public int SessionCount { get; set; } = 0;
     public Quest? PrimaryQuest { get; set; }
+
+    /// <summary>
+    /// Marks the campaign as started.
+    /// </summary>
+    public void MarkStarted()
+    {
+        StartedAt ??= DateTime.UtcNow;
+        SessionCount = Math.Max(SessionCount, 1);
+        UpdatedAt = DateTime.UtcNow;
+        LastAccessedAt = UpdatedAt;
+    }
+
+    /// <summary>
+    /// Registers a player as a participant in the campaign.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="characterId">The controlled character identifier.</param>
+    public void MarkPlayerJoined(string playerId, string characterId)
+    {
+        if (!string.IsNullOrWhiteSpace(playerId) && !PlayerIds.Contains(playerId, StringComparer.OrdinalIgnoreCase))
+        {
+            PlayerIds.Add(playerId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(characterId) && !CharacterIds.Contains(characterId, StringComparer.OrdinalIgnoreCase))
+        {
+            CharacterIds.Add(characterId);
+        }
+
+        UpdatedAt = DateTime.UtcNow;
+        LastAccessedAt = UpdatedAt;
+    }
+
+    /// <summary>
+    /// Removes a player from the active connection roster.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    public void MarkPlayerDisconnected(string playerId)
+    {
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            return;
+        }
+
+        ActiveAndConnectedPlayerIds = ActiveAndConnectedPlayerIds
+            .Where(id => !string.Equals(id, playerId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        UpdatedAt = DateTime.UtcNow;
+        LastAccessedAt = UpdatedAt;
+    }
+
+    /// <summary>
+    /// Adds a player to the active connection roster.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    public void MarkPlayerConnected(string playerId)
+    {
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            return;
+        }
+
+        if (!ActiveAndConnectedPlayerIds.Contains(playerId, StringComparer.OrdinalIgnoreCase))
+        {
+            ActiveAndConnectedPlayerIds.Add(playerId);
+        }
+
+        UpdatedAt = DateTime.UtcNow;
+        LastAccessedAt = UpdatedAt;
+    }
+
+    /// <summary>
+    /// Removes a player from the campaign roster.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="characterId">Optional character identifier to remove.</param>
+    public void MarkPlayerLeft(string playerId, string? characterId = null)
+    {
+        if (!string.IsNullOrWhiteSpace(playerId))
+        {
+            PlayerIds = PlayerIds
+                .Where(id => !string.Equals(id, playerId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            ActiveAndConnectedPlayerIds = ActiveAndConnectedPlayerIds
+                .Where(id => !string.Equals(id, playerId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            PlayerReadyStatuses.Remove(playerId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(characterId))
+        {
+            CharacterIds = CharacterIds
+                .Where(id => !string.Equals(id, characterId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        UpdatedAt = DateTime.UtcNow;
+        LastAccessedAt = UpdatedAt;
+    }
     
     /// <summary>
     /// Generates a random invitation code for campaign joining
@@ -107,13 +243,41 @@ public class Campaign
         return new string(Enumerable.Repeat(chars, 6)
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
+
     public Dictionary<string, PlayerReadyStatus> PlayerReadyStatuses { get; set; } = [];
     /// <summary>
     /// Checks if campaign is full
     /// </summary>
     public bool IsFull => PlayerIds.Count >= MaxPlayers;
 
-    public string SelectedModel { get; set; } = "gpt-5.4";
+    public string SelectedModel { get; set; } = "openai/gpt-5.4";
+
+    private bool HasStarted()
+    {
+        return StartedAt is not null
+               || SessionCount > 0
+               || !string.IsNullOrWhiteSpace(CurrentTurnCharacterId)
+               || !string.IsNullOrWhiteSpace(CurrentCombatId);
+    }
+
+    private List<string> GetActiveConnectedPlayerIds()
+    {
+        var activePlayerIds = ActiveAndConnectedPlayerIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToList();
+
+        foreach (var readyStatus in PlayerReadyStatuses.Values)
+        {
+            if (!string.IsNullOrWhiteSpace(readyStatus.PlayerId)
+                && !string.IsNullOrWhiteSpace(readyStatus.ConnectionId)
+                && !activePlayerIds.Contains(readyStatus.PlayerId, StringComparer.OrdinalIgnoreCase))
+            {
+                activePlayerIds.Add(readyStatus.PlayerId);
+            }
+        }
+
+        return activePlayerIds;
+    }
 }
 
 /// <summary>
@@ -132,10 +296,12 @@ public class CampaignSettings
     public int StartingLevel { get; set; } = 1;
     
     /// <summary>
-    /// Difficulty setting (1-5)
+    /// Difficulty setting (1-15)
     /// </summary>
     public int Difficulty { get; set; } = 1;
     
-    public string DefaultModel { get; set; } = "gpt-5.4";
+    public string DefaultModel { get; set; } = "openai/gpt-5.4";
+    public int MaxPlayers { get; set; } = 5;
     public string? PrimaryQuestDescription { get; set; }
+    public bool GeneratePrimaryQuest { get; set; }
 }

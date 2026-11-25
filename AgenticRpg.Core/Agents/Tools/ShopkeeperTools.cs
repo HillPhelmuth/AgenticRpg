@@ -148,7 +148,7 @@ public class ShopkeeperTools(IGameStateManager gameStateManager, ICharacterRepos
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character == null)
             {
                 return JsonSerializer.Serialize(new ProcessPurchaseResult
@@ -237,7 +237,7 @@ public class ShopkeeperTools(IGameStateManager gameStateManager, ICharacterRepos
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character == null)
             {
                 return JsonSerializer.Serialize(new ProcessSaleResult
@@ -402,7 +402,7 @@ public class ShopkeeperTools(IGameStateManager gameStateManager, ICharacterRepos
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character == null)
             {
                 return JsonSerializer.Serialize(new CheckAffordabilityResult
@@ -477,7 +477,7 @@ public class ShopkeeperTools(IGameStateManager gameStateManager, ICharacterRepos
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character == null)
             {
                 return JsonSerializer.Serialize(new EquipItemResult
@@ -500,6 +500,8 @@ public class ShopkeeperTools(IGameStateManager gameStateManager, ICharacterRepos
             }
 
             var previousAC = character.ArmorClass;
+            if (item.Quantity <= 0 || !PlayerActionRules.CanEquip(item, equipSlot))
+                return JsonSerializer.Serialize(new EquipItemResult { Success = false, Error = "Item unavailable or incompatible with that slot." });
             string? unequippedItem = null;
             var statChanges = new Dictionary<string, int>();
 

@@ -7,7 +7,14 @@ namespace AgenticRpg.Core.Agents.Tools;
 
 public partial class GameMasterTools
 {
-    [Description("Transfers control to a specialized agent. Parameters: targetAgent (CharacterCreation, Combat, Economy, WorldBuilder, CharacterManager), context (brief description of why handoff is needed), campaignId. Returns confirmation that the specified agent is now active.")]
+    [Description($"""
+                  Transfers control to a specialized agent. Use the chart below for when and how to invoke this tool.
+                  **Handoff Guidance Chart:**
+                  
+                  {HandoffToAgentChart}
+                  
+                   Returns confirmation that the specified agent is now active.
+                  """)]
     public async Task<string> HandoffToAgent(
         [Description("The specialized agent to transfer control to. Will usually be one of: Economy or CharacterManager.")] AgentType targetAgent,
         [Description("An explanation of why control is being transferred to this agent along with any other information the agent requires. Provides very specific context for the handoff (e.g., 'Player wants to buy weapons and armor. You are a crabby and mean old shopkeeper.' for Shopkeeper or 'Player needs to level-up or otherwise wants to manage their character' for CharacterManager).")] HandoffIntent context,
@@ -44,4 +51,12 @@ public partial class GameMasterTools
             Message = $"Control transferred to {targetAgent} Agent"
         });
     }
+
+    private const string HandoffToAgentChart =
+        """
+        | Agent | When to transfer control | What context to provide |
+        | --- | --- | --- |
+        | `CharacterManager` | The player wants to level up, allocate skill points, pick spells, update stats, or otherwise manage character progression. | State which character needs help, what phase they are in, any pending choices, and any rules or build constraints that matter. |
+        | `ShopKeeper` | The player wants to browse a shop, ask about items, negotiate prices, buy or sell equipment, or equip newly purchased gear. | State the merchant type or tone, use existing World NPCs when appropriate, what the player wants to buy or sell, and any location or merchant personality details needed for the scene. |
+        """;
 }

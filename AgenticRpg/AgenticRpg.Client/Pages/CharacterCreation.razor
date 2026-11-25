@@ -13,12 +13,19 @@
                         <button class="btn-secondary" @onclick="GoBack" disabled="@IsProcessing">
                             <span class="icon">←</span> Back
                         </button>
-                       @*  <button class="btn-primary" @onclick="SaveCharacter" disabled="@(!CanSaveCharacter || IsProcessing)">
-                            <span class="icon">💾</span> Save
-                        </button> *@
+                        <button class="btn-primary" @onclick="SaveCharacter" disabled="@(!CanSaveCharacter || ReviewRequired || IsProcessing || _isSaving || !HubConnected)">
+                            @(_isSaving ? "Saving..." : "Finish Character")
+                        </button>
                     </div>
-                    <button class="menu-button" @onclick="ToggleModelMenu" title="Model settings" aria-label="Open model settings">
-                        <span class="menu-icon" aria-hidden="true">☰</span>
+                    <CreationProgress Step="@(StartNewAdventure ? 3 : (int?)null)">
+                        @if (QuickStarter is not null) { <p>Quick Create: @QuickStarter. Review the results before saving, reckless mortal.</p> }
+                        @if (CurrentSessionState is { IsCompleted: false } draftProgress) { <p>Creation step: @draftProgress.Context.CurrentStep · @draftProgress.Context.CompletedSteps.Count steps completed</p> }
+                        @if (CurrentSessionState is { } savedSession) { <span role="status" aria-live="polite">@(savedSession.IsCompleted ? $"Saved result: {savedSession.ResultEntityId}" : savedSession.LastSavedAt is { } time ? $"Draft saved {time.ToLocalTime():g}" : "Changes not saved")</span> }
+                        @if (CurrentSessionState?.IsCompleted == true) { <button class="runtime-control" @onclick="OpenCompletedResult">Continue to saved result</button> }
+                        @if (!CanSaveCharacter) { <p>Still required, you unfinished catastrophe: @string.Join(", ", MissingCharacterRequirements)</p> }
+                    </CreationProgress>
+                    <button class="menu-button" @onclick="ToggleModelMenu" title="Advanced Settings" aria-label="Open Advanced Settings">
+                        <span class="menu-icon" aria-hidden="true">⚙</span> Advanced Settings
                     </button>
                 </div>
             </div>
@@ -67,20 +74,28 @@
                 <div class="right-panel @(CurrentMobileView == MobileView.Chat ? "mobile-visible" : "mobile-hidden")">
                     <div class="panel-header">
                         @*  <h3>Character Creation Assistant</h3> *@
-                        <div class="connection-status">
-                            <span class="@(IsConnected ? "status-connected" : "status-disconnected")"></span>
-                            @(IsConnected ? "Connected" : "Disconnected")
+                        <div class="connection-status runtime-connection">
+                            <span class="@(HubConnected ? "status-connected" : "status-disconnected")"></span>
+                            @ConnectionStatusLabel
+                            @if (!HubConnected)
+                            {
+                                <button type="button" class="runtime-control" @onclick="RetryConnection">Reconnect</button>
+                            }
+                            @ConnectionError
                         </div>
                     </div>
 
                     <div class="chat-container">
-                        <ChatView Messages="@ChatMessages"
+                        @if (TranscriptCursor is not null) { <button class="runtime-control" @onclick="() => LoadEarlier(ChatMessages, _runtimeChat, CurrentUserId)">Load earlier messages</button> }
+                    @if (ReviewRequired) { <div class="recovery-notice" role="alert">An action was interrupted. Review the current state before continuing. <button class="runtime-control" @onclick="ConfirmReview">I reviewed the current state</button></div> }
+                    @if (!string.IsNullOrEmpty(RecoveryError)) { <div role="status" aria-live="polite">@RecoveryError</div> }
+                    <ChatView CurrentPlayerId="@CurrentUserId" OnRetry="RetryMessage" OnReloadState="RetryConnection" OnRestoreText="@(text => UserInputRef.SetValue(text))" IsProcessing="@(IsProcessing || _isSaving || !HubConnected || ReviewRequired)" Messages="@ChatMessages"
                                   OnMessageDeleted="HandleMessageDeleted"
                                   OnMessageEdited="HandleMessageEdited"
                                   OnSuggestedActionInvoked="SendMessage" OnSpeakText="PlaySpeechAsync" IsPlaybackActive="_speechGenerating" CancelPlayback="CancelPlayback"/>
 
-                        <UserInput @ref="UserInputRef"
-                                   OnSubmit="SendMessage"
+                        <UserInput DraftDisabled="@(CurrentSessionState?.IsCompleted == true)" SubmissionAccepted="@(() => SubmissionConfirmed)" AccountId="@CurrentUserId" ScopeId="@SessionId" IsUnavailable="@(!HubConnected || ReviewRequired || CurrentSessionState?.IsCompleted == true)" @ref="UserInputRef"
+                                   OnSubmit="SendMessage" OnCancel="CancelResponse"
                                    IsProcessing="@IsProcessing"
                                    Placeholder="Press Enter to send, Shift+Enter for new line." />
                     </div>

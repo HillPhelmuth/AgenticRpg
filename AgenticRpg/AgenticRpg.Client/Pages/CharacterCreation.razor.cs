@@ -14,8 +14,12 @@ namespace AgenticRpg.Client.Pages;
 
 public partial class CharacterCreation : IAsyncDisposable
 {
+    [SupplyParameterFromQuery(Name = "journey")] public bool StartNewAdventure { get; set; }
+    [SupplyParameterFromQuery(Name = "starter")] public string? QuickStarter { get; set; }
+    [SupplyParameterFromQuery(Name = "sessionId")] public string? ResumeSessionId { get; set; }
+
     [Parameter] public string? CampaignId { get; set; }
-    
+
     [Inject] private ICharacterService CharacterService { get; set; } = default!;
     [Inject] private HttpClient HttpClient { get; set; } = default!;
     [Inject] private ILogger<CharacterCreation> Logger { get; set; } = default!;
@@ -27,14 +31,17 @@ public partial class CharacterCreation : IAsyncDisposable
     private SessionState? CurrentSessionState { get; set; }
     private List<ChatMessage> ChatMessages { get; set; } = [];
     private readonly Dictionary<string, ChatMessage> _streamMessageLookup = new(StringComparer.OrdinalIgnoreCase);
+    private bool SubmissionConfirmed;
     private bool IsProcessing { get; set; }
+    private readonly RuntimeChatState _runtimeChat = new();
     private string? SaveMessage { get; set; }
     private bool IsSaveError { get; set; }
-    private bool IsConnected { get; set; }
+    private bool _isSaving;
+    private bool _completionNavigated;
 
     // TODO: Get from authentication/user context
     private string CurrentUserId { get; set; } = "player-1";
-    
+
     // Session ID for character creation (created via API)
     private string? SessionId { get; set; }
 
@@ -47,11 +54,16 @@ public partial class CharacterCreation : IAsyncDisposable
         Chat
     }
 
-    private bool CanSaveCharacter => 
-        CurrentCharacter != null && 
-        !string.IsNullOrWhiteSpace(CurrentCharacter.Name) &&
-        CurrentCharacter.Race != CharacterRace.None &&
-        CurrentCharacter.Class != CharacterClass.None;
+    private List<string> MissingCharacterRequirements => AgenticRpg.Core.Services.SessionCompletionService.CharacterMissingRequirements(CurrentCharacter);
+    private bool CanSaveCharacter => CurrentSessionState?.IsCompleted != true && MissingCharacterRequirements.Count == 0 && !string.IsNullOrEmpty(SessionId);
+
+    protected override void OnParametersSet()
+    {
+        if (CurrentSessionState is null) return;
+        if (ResumeSessionId is not null && ResumeSessionId != CurrentSessionState.SessionId)
+        { NavManager.NavigateTo(NavManager.Uri, forceLoad: true); return; }
+        CampaignId = CurrentSessionState.Context.CampaignId;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,49 +87,63 @@ public partial class CharacterCreation : IAsyncDisposable
                 }
             }
 
-            // Create session state via API
-            var sessionResponse = await HttpClient.PostAsJsonAsync("/api/sessions", new
+            if (string.IsNullOrEmpty(ResumeSessionId))
             {
-                SessionType = 0, // CharacterCreation = 0
-                PlayerId = CurrentUserId
-            });
-            
-            if (!sessionResponse.IsSuccessStatusCode)
-            {
-                SaveMessage = "Failed to create session. Please refresh and try again.";
-                IsSaveError = true;
-                return;
-            }
-            
-            CurrentSessionState = await sessionResponse.Content.ReadFromJsonAsync<SessionState>();
-            if (CurrentSessionState == null)
-            {
-                SaveMessage = "Failed to initialize session.";
-                IsSaveError = true;
-                return;
-            }
-            
-            SessionId = CurrentSessionState.SessionId;
-            Logger.LogInformation("Created character creation session: {SessionId}", SessionId);
+                // Create session state via API
+                var sessionResponse = await HttpClient.PostAsJsonAsync("/api/sessions", new CreateSessionRequest
+                {
+                    SessionType = SessionType.CharacterCreation, PlayerId = CurrentUserId, CampaignId = CampaignId,
+                    StartNewAdventure = StartNewAdventure, QuickStarter = QuickStarter
+                });
 
+                if (!sessionResponse.IsSuccessStatusCode)
+                {
+                    SaveMessage = "Failed to create session. Please refresh and try again.";
+                    IsSaveError = true;
+                    return;
+                }
+
+                CurrentSessionState = await sessionResponse.Content.ReadFromJsonAsync<SessionState>();
+                if (CurrentSessionState == null)
+                {
+                    SaveMessage = "Failed to initialize session.";
+                    IsSaveError = true;
+                    return;
+                }
+
+                SessionId = CurrentSessionState.SessionId;
+                Logger.LogInformation("Created character creation session: {SessionId}", SessionId);
+            }
+            else
+            {
+                CurrentSessionState = await HttpClient.GetFromJsonAsync<SessionState>($"/api/sessions/{Uri.EscapeDataString(ResumeSessionId)}") ?? throw new InvalidOperationException("Draft not found.");
+                SessionId = CurrentSessionState.SessionId;
+            }
+            if (CurrentSessionState!.SessionType != SessionType.CharacterCreation) throw new InvalidOperationException("Incorrect draft type.");
+            CampaignId = CurrentSessionState.Context.CampaignId;
+            CurrentCharacter = CurrentSessionState.Context.DraftCharacter;
+            if (string.IsNullOrEmpty(ResumeSessionId)) NavManager.NavigateTo(NavManager.GetUriWithQueryParameter("sessionId", SessionId), replace: true);
+            StartNewAdventure = CurrentSessionState.Context.StartNewAdventure;
+            QuickStarter = CurrentSessionState.Context.QuickStarter;
             // Connect to SignalR hub
             await HubService.StartAsync();
-            
+            Track(HubService.OnMessageUpdated(HandleRuntimeMessage));
+            Track(HubService.OnRecovered(HandleRecovered));
+
             // Subscribe to session state updates
-            HubService.OnSessionStateUpdated(HandleSessionStateUpdated);
-            HubService.OnSessionCompleted(HandleSessionCompleted);
-            HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
-            HubService.OnMessageStreamToken(HandleMessageStreamToken);
-            HubService.OnMessageStreamCompleted(HandleMessageStreamCompleted);
-            HubService.OnSuggestedActionsUpdated(HandleSuggestedActionsUpdated);
-            
+            Track(HubService.OnSessionStateUpdated(HandleSessionStateUpdated));
+            Track(HubService.OnSessionCompleted(HandleSessionCompleted));
+
             // Join session for real-time updates
-            await HubService.JoinSessionAsync(SessionId, CurrentUserId, "Character Creator");
-            IsConnected = true;
+            var recovery = await HubService.JoinSessionAsync(SessionId, CurrentUserId, "Character Creator", ScopeLeaseId);
+            HandleRecovered(recovery);
+
 
             // Initialize with welcome message from Character Creation AI
-            
-            await HubService.SendMessageAsync(SessionId, CurrentUserId, "Introduce yourself, your purpose and begin the character creation process", AgentType.CharacterCreation);
+
+            if (!recovery.HasAcceptedRequests && recovery.Messages.Count == 0 && recovery.SessionState?.IsCompleted != true)
+                await HubService.SendMessageAsync(SessionId, CurrentUserId, QuickStarter is not null ? StarterCreation.Prompt(true, QuickStarter) : "Introduce yourself, your purpose and begin the character creation process", AgentType.CharacterCreation, $"{(QuickStarter is null ? "intro" : "quick")}-{SessionId}");
+            SubmissionConfirmed = true;
             //ChatMessages.Add(new ChatMessage
             //{
             //    Id = Guid.NewGuid().ToString(),
@@ -141,12 +167,14 @@ public partial class CharacterCreation : IAsyncDisposable
         }
     }
 
-    
+
     private void HandleSessionStateUpdated(SessionState sessionState)
     {
+        if (IsDisposed || sessionState.SessionId != SessionId) return;
         // Update session state and extract draft character
+        if (CurrentSessionState is not null && CurrentSessionState.LastUpdatedAt > sessionState.LastUpdatedAt) return;
         CurrentSessionState = sessionState;
-        
+
         if (sessionState?.Context?.DraftCharacter != null)
         {
             CurrentCharacter = sessionState.Context.DraftCharacter;
@@ -155,179 +183,108 @@ public partial class CharacterCreation : IAsyncDisposable
                 CurrentCharacter.Race,
                 CurrentCharacter.Class);
         }
-        
+
         InvokeAsync(StateHasChanged);
     }
-    
-    private void HandleSessionCompleted(string sessionId, string resultEntityId)
-    {
-        Logger.LogInformation("Session {SessionId} completed with character {CharacterId}", 
-            sessionId, resultEntityId);
-        
-        // Session completed - navigate to appropriate page
-        InvokeAsync(async () =>
-        {
-            await Task.Delay(500);
-            if (!string.IsNullOrEmpty(CampaignId))
-            {
-                NavManager.NavigateTo($"/lobby/{CampaignId}");
-            }
-            else
-            {
-                NavManager.NavigateTo("/startup");
-            }
-        });
-    }
 
-    private void HandleReceiveMessage(string playerId, AgentResponse message, DateTime timestamp)
+    private async void HandleSessionCompleted(string sessionId, string resultEntityId)
     {
-        // Receive AI responses from Character Creation Agent
-        if (playerId != CurrentUserId)
+        if (IsDisposed || sessionId != SessionId || _completionNavigated) return;
+        _completionNavigated = true;
+        try
         {
-            if (!string.IsNullOrEmpty(message.Id) && _streamMessageLookup.TryGetValue(message.Id, out var streamMessage))
+            await InvokeAsync(async () =>
             {
-                streamMessage.Content = message.FormattedResponse?.MessageToPlayers ?? message.Message;
-                streamMessage.Timestamp = timestamp;
-                streamMessage.PlayerId = playerId;
-                streamMessage.PlayerName = "Character Creation AI";
-                _streamMessageLookup.Remove(message.Id);
-                InvokeAsync(StateHasChanged);
-                return;
-            }
-
-            ChatMessages.Add(new ChatMessage
-            {
-                Id =message.Id,
-                Content = message.FormattedResponse?.MessageToPlayers ?? message.Message,
-                IsUser = false,
-                Timestamp = timestamp,
-                PlayerId = playerId,
-                PlayerName = "Character Creation AI"
+                SaveMessage = "Saved successfully!";
+                IsSaveError = false;
+                StateHasChanged();
+                await Task.Delay(500);
+                if (IsDisposed) return;
+                if (!string.IsNullOrEmpty(CampaignId))
+                NavManager.NavigateTo($"/lobby?campaignId={CampaignId}&characterId={resultEntityId}{(StartNewAdventure ? "&journey=true" : "")}");
+            else NavManager.NavigateTo("/startup");
             });
-            InvokeAsync(StateHasChanged);
         }
+        catch (Exception ex) { Logger.LogWarning(ex, "Completion navigation failed"); }
     }
 
-    private void HandleSuggestedActionsUpdated(string messageId, List<SuggestedAction> suggestedActions)
+
+
+
+
+
+
+
+
+
+
+    private async void HandleRuntimeMessage(RuntimeMessage message)
     {
-        if (string.IsNullOrWhiteSpace(messageId) || suggestedActions.Count == 0)
+        if (IsDisposed || message.ScopeId != SessionId) return;
+        try
         {
-            return;
-        }
-
-        var actions = suggestedActions
-            .SelectMany(x => x.Suggestions)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        if (actions.Count == 0)
-        {
-            return;
-        }
-
-        if (_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            streamMessage.SuggestedActions = actions;
-            InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        var existingMessage = ChatMessages.FirstOrDefault(x => string.Equals(x.Id, messageId, StringComparison.OrdinalIgnoreCase));
-        if (existingMessage is null)
-        {
-            return;
-        }
-
-        existingMessage.SuggestedActions = actions;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleMessageStreamStarted(string messageId, string playerId, DateTime timestamp)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
-        {
-            return;
-        }
-
-        var streamMessage = new ChatMessage
-        {
-            Id = messageId,
-            Content = string.Empty,
-            IsUser = false,
-            Timestamp = timestamp,
-            PlayerName = "Character Creation AI",
-            IsStreaming = true
-        };
-
-        ChatMessages.Add(streamMessage);
-        _streamMessageLookup[messageId] = streamMessage;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleMessageStreamToken(string messageId, string agentType, string token)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrEmpty(token))
-        {
-            return;
-        }
-
-        if (!_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            streamMessage = new ChatMessage
+            await InvokeAsync(() =>
             {
-                Id = messageId,
-                Content = string.Empty,
-                IsUser = false,
-                Timestamp = DateTime.UtcNow,
-                PlayerName = "Character Creation AI",
-                IsStreaming = true
-            };
-
-            ChatMessages.Add(streamMessage);
-            _streamMessageLookup[messageId] = streamMessage;
+                if (IsDisposed) return;
+                ObserveRuntime(message, CurrentUserId);
+                _runtimeChat.Apply(ChatMessages, message, CurrentUserId, null);
+                IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(SessionId ?? string.Empty, CurrentUserId);
+                StateHasChanged();
+            });
         }
-        ChatMessages.LastOrDefault()?.IsStreaming = true;
-        ChatMessages.LastOrDefault()?.Content += token;
-        InvokeAsync(StateHasChanged);
-        //streamMessage.Content += token;
+        catch (Exception ex) { Logger.LogWarning(ex, "Response refresh failed"); }
     }
 
-    private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
+    private async void HandleRecovered(ScopeRecoverySnapshot snapshot)
     {
-        if (string.IsNullOrWhiteSpace(messageId) || !_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
+        if (IsDisposed || snapshot.ScopeId != SessionId) return;
+        try
         {
-            return;
+            await InvokeAsync(() =>
+            {
+                if (IsDisposed) return;
+                if (snapshot.SessionState is not null) HandleSessionStateUpdated(snapshot.SessionState);
+                RememberRecovery(snapshot);
+                foreach (var message in snapshot.Messages)
+                {
+                    ObserveRuntime(message, CurrentUserId);
+                    _runtimeChat.Apply(ChatMessages, message, CurrentUserId, null);
+                }
+                IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(SessionId ?? string.Empty, CurrentUserId);
+                if (snapshot.SessionState is { IsCompleted: true, ResultEntityId: not null } session)
+                    SaveMessage = $"Already saved: {session.ResultEntityId}";
+                StateHasChanged();
+            });
         }
-        ChatMessages.LastOrDefault()?.IsStreaming = false;
-        if (!string.IsNullOrWhiteSpace(note))
-        {
-            streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
-                ? $"Error communicating with {agentType}: {note}"
-                : streamMessage.Content;
-            
-        }
-        _streamMessageLookup.Remove(messageId);
-        InvokeAsync(StateHasChanged);
+        catch (Exception ex) { Logger.LogWarning(ex, "Session recovery failed"); }
     }
 
-    private async Task SendMessage(string message)
+    private Task SendMessage(string message) => SendMessageCore(message);
+    private Task RetryMessage(ChatMessage message) => SendMessageCore(message.Content, message.IsAuthoritative || message.WasRejected ? null : message.ClientMessageId);
+    private Task CancelResponse() => CancelPending(_runtimeChat, SessionId!, CurrentUserId);
+
+    private async Task SendMessageCore(string message, string? retryId = null)
     {
-        if (string.IsNullOrWhiteSpace(message))
+        SubmissionConfirmed = false;
+        if (CurrentSessionState?.IsCompleted == true || ReviewRequired || string.IsNullOrWhiteSpace(message) || IsProcessing || _isSaving || !HubConnected)
             return;
 
         IsProcessing = true;
+        var clientMessageId = retryId ?? Guid.NewGuid().ToString();
 
         // Add user message
-        ChatMessages.Add(new ChatMessage
+        var chatMessage = new ChatMessage
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = clientMessageId,
+            ClientMessageId = clientMessageId,
             Content = message,
             IsUser = true,
             Timestamp = DateTime.UtcNow,
             PlayerId = CurrentUserId,
-            PlayerName = "You"
-        });
+            PlayerName = "You", Status = AgenticRpg.Core.Messaging.MessageProcessingStatus.Queued
+        };
+        ChatMessages.RemoveAll(m => m.Id == clientMessageId);
+        ChatMessages.Add(chatMessage);
 
         StateHasChanged();
 
@@ -339,17 +296,21 @@ public partial class CharacterCreation : IAsyncDisposable
                 throw new InvalidOperationException("Session not initialized");
             }
 
-            await HubService.SendMessageAsync(SessionId, CurrentUserId, message, AgentType.CharacterCreation);
+            await HubService.SendMessageAsync(SessionId, CurrentUserId, message, AgentType.CharacterCreation, clientMessageId);
+            SubmissionConfirmed = true;
 
             // The response will come through the HandleReceiveMessage callback
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error sending message to AI");
+            chatMessage.Status = AgenticRpg.Core.Messaging.MessageProcessingStatus.Failed;
+            chatMessage.WasRejected = ex is Microsoft.AspNetCore.SignalR.HubException;
+            chatMessage.StatusNote = chatMessage.WasRejected ? ex.Message : "Delivery not confirmed. Reconnect to check the action.";
             ChatMessages.Add(new ChatMessage
             {
                 Id = Guid.NewGuid().ToString(),
-                Content = $"Error communicating with AI: {ex.Message}",
+                Content = chatMessage.WasRejected ? ex.Message : "Message delivery was not confirmed. Your text is retained; reconnect and retry safely.",
                 IsUser = false,
                 Timestamp = DateTime.UtcNow,
                 PlayerName = "System"
@@ -357,7 +318,7 @@ public partial class CharacterCreation : IAsyncDisposable
         }
         finally
         {
-            IsProcessing = false;
+            IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(SessionId ?? string.Empty, CurrentUserId);
             StateHasChanged();
         }
     }
@@ -384,54 +345,54 @@ public partial class CharacterCreation : IAsyncDisposable
 
     private async Task SaveCharacter()
     {
-        if (!CanSaveCharacter || CurrentCharacter == null || string.IsNullOrEmpty(SessionId))
+        if (ReviewRequired || !CanSaveCharacter || CurrentCharacter == null || string.IsNullOrEmpty(SessionId) || IsProcessing || _isSaving || !HubConnected)
             return;
 
         try
         {
+            _isSaving = true;
             SaveMessage = "Saving character...";
             IsSaveError = false;
             StateHasChanged();
 
             // Finalize the session - this will save the character and complete the session
             var response = await HttpClient.PostAsync($"/api/sessions/{SessionId}/finalize-character", null);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 throw new Exception($"Failed to finalize character: {errorContent}");
             }
-            
+
             var result = await response.Content.ReadFromJsonAsync<FinalizeCharacterResult>();
             var characterId = result?.CharacterId ?? CurrentCharacter.Id;
-            
+
             SaveMessage = "Character saved successfully!";
-            Logger.LogInformation("Character {CharacterId} finalized from session {SessionId}", 
+            Logger.LogInformation("Character {CharacterId} finalized from session {SessionId}",
                 characterId, SessionId);
-            
-            // Navigate based on whether we're creating for a campaign or standalone
-            await Task.Delay(1500);
-            if (!string.IsNullOrEmpty(CampaignId))
-            {
-                NavManager.NavigateTo($"/lobby/{CampaignId}");
-            }
-            else
-            {
-                NavManager.NavigateTo("/startup");
-            }
+
+            HandleSessionCompleted(SessionId, characterId);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to save character");
-            SaveMessage = $"Failed to save: {ex.Message}";
+            SaveMessage = "Changes not saved. Your draft is available; retry saving.";
             IsSaveError = true;
         }
+        finally { _isSaving = false; }
     }
-    
+
     // Result type for API response
     private class FinalizeCharacterResult
     {
         public string CharacterId { get; set; } = string.Empty;
+    }
+
+    private void OpenCompletedResult()
+    {
+        if (CurrentSessionState?.ResultEntityId is { } id && !string.IsNullOrEmpty(CurrentSessionState.Context.CampaignId))
+            NavManager.NavigateTo($"/lobby?campaignId={Uri.EscapeDataString(CurrentSessionState.Context.CampaignId)}&characterId={Uri.EscapeDataString(id)}{(StartNewAdventure ? "&journey=true" : "")}");
+        else NavManager.NavigateTo("/startup");
     }
 
     private void GoBack()
@@ -455,18 +416,11 @@ public partial class CharacterCreation : IAsyncDisposable
         ShowModelMenu = false;
     }
 
-    public async ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        try
-        {
-            if (IsConnected && !string.IsNullOrEmpty(SessionId))
-            {
-                await HubService.LeaveSessionAsync(SessionId);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error during disposal");
-        }
+        DisposeSubscriptions();
+        try { if (!string.IsNullOrEmpty(SessionId)) await HubService.DetachScopeAsync(SessionId, ScopeLeaseId); }
+        catch (Exception ex) { Logger.LogWarning(ex, "Scope detach failed"); }
+        finally { await base.DisposeAsync(); }
     }
 }

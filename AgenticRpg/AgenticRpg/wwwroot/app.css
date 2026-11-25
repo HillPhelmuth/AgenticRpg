@@ -110,8 +110,12 @@ img {
 }
 
 .menu-button {
-    width: 44px;
-    height: 44px;
+    width: auto;
+    min-width: 44px;
+    min-height: 44px;
+    padding: .5rem .75rem;
+    gap: .5rem;
+    white-space: nowrap;
     border-radius: 8px;
     border: 2px solid var(--menu-button-border, #4dd0e1);
     background: var(--menu-button-bg, rgba(77, 208, 225, 0.12));
@@ -134,19 +138,19 @@ img {
     line-height: 1;
 }
 
-.menu-section {
+.model-menu-content .menu-section {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid var(--menu-section-border, rgba(139, 115, 85, 0.3));
 }
 
-.menu-section:last-child {
+.model-menu-content .menu-section:last-child {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
 
-.menu-section h4 {
+.model-menu-content .menu-section h4 {
     margin: 0 0 0.75rem 0;
     font-family: 'Cinzel', serif;
     color: var(--menu-section-title, #d4af37);
@@ -155,6 +159,66 @@ img {
     letter-spacing: 0.05em;
 }
 
-.menu-item {
+.model-menu-content .menu-item {
     padding: 0.5rem 0;
+}
+/* Shared onboarding controls; keep these scoped so gameplay and modals retain their own themes. */
+.rpg-onboarding {
+    --onboarding-bg: #0a0e1a;
+    --onboarding-surface: #111827;
+    --onboarding-text: #e0f2f1;
+    --onboarding-muted: #b0bec5;
+    --onboarding-accent: #80deea;
+    --onboarding-gold: #d4af37;
+    min-height: 100vh;
+    color: var(--onboarding-text);
+    background: linear-gradient(135deg, var(--onboarding-bg), #1a1f2e 50%, var(--onboarding-bg));
+}
+.rpg-onboarding .onboarding-control {
+    min-height: 44px; padding: .65rem 1rem;
+    border: 1px solid var(--onboarding-accent); border-radius: 6px;
+    font: inherit; font-weight: 600; line-height: 1.4; cursor: pointer;
+    color: var(--onboarding-bg); background: #70c4d3;
+}
+.rpg-onboarding .onboarding-control:hover:not(:disabled) { background: #a0e4ec; }
+.rpg-onboarding .onboarding-control:disabled { background: #283442; color: #a8b5bf; border-color: #52606d; cursor: not-allowed; }
+.rpg-onboarding .onboarding-control.secondary-button { background: transparent; color: var(--onboarding-accent); border-color: #67838d; }
+.rpg-onboarding .onboarding-control.secondary-button:hover:not(:disabled) { background: #243340; }
+.rpg-onboarding .onboarding-field {
+    display: block; width: 100%; min-width: 0; min-height: 44px;
+    margin: .5rem 0 1rem; padding: .65rem .75rem;
+    color: var(--onboarding-text); background: var(--onboarding-surface);
+    border: 1px solid #67838d; border-radius: 6px;
+}
+.rpg-onboarding .onboarding-field::placeholder { color: #a8b5bf; }
+.rpg-onboarding :is(button, select, input, a):focus-visible { outline: 3px solid var(--onboarding-gold); outline-offset: 3px; }
+
+
+
+/* Runtime feedback belongs inside the page's theme, including resumed creation drafts. */
+.creation-progress { flex: 0 0 auto; padding: 0; background: #111827; color: #e0f2f1; border: 1px solid #344451; border-radius: 6px; }
+.creation-progress > summary { cursor: pointer; min-height: 44px; padding: .6rem .75rem; color: #f0cf76; font-size: .875rem; }
+.creation-progress-details { position: absolute; z-index: 30; top: calc(100% + .25rem); right: 0; width: min(560px, calc(100vw - 2rem)); max-height: min(65dvh, 480px); overflow-y: auto; padding: 1rem; background: #111827; border: 1px solid #4dd0e1; border-radius: 8px; box-shadow: 0 8px 24px #0008; }
+.creation-status { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; font-size: .875rem; line-height: 1.5; }
+.creation-status:empty { display: none; }
+.creation-status p { margin: 0; }
+.creation-progress .setup-progress { margin-bottom: .5rem; }
+.runtime-connection { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .9rem; }
+.runtime-control {
+    min-height: 44px; padding: .45rem .75rem; background: #1a2332; color: #80deea;
+    border: 1px solid #67838d; border-radius: 5px; font: inherit; cursor: pointer;
+}
+.runtime-control:hover:not(:disabled) { background: #243340; }
+.runtime-control:disabled { opacity: .6; cursor: not-allowed; }
+.runtime-control:focus-visible { outline: 2px solid #d4af37; outline-offset: 2px; }
+.recovery-notice { padding: .75rem; color: #f0cf76; background: #2d2a20; border: 1px solid #a38942; border-radius: 6px; }
+.recovery-notice button { margin: .5rem 0 0; }
+
+@media (max-width: 767px) {
+    .creation-progress { padding: 0; }
+    .creation-progress > summary { font-size: .75rem; padding: .6rem .5rem; }
+    .creation-header .menu-button, .character-creation-container .menu-button { font-size: .75rem; padding: .5rem; }
+    .creation-status { font-size: .75rem; gap: .25rem .75rem; }
+    .creation-progress .setup-progress { padding: .5rem; gap: .25rem; margin-bottom: .35rem; }
+    .creation-progress .setup-progress span { font-size: .8rem; padding: .35rem .5rem; }
 }

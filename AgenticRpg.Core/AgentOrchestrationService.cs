@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using System.Text;
 using System.Threading;
+using AgenticRpg.Core.Services;
 
 namespace AgenticRpg.Core;
 
@@ -113,6 +114,9 @@ public class AgentOrchestrationService
         return await ProcessMessageInternalAsync(campaignId, playerId, message, targetAgentType, streamCallback, clientMessageId);
     }
 
+    public Task<AgentResponse> EnqueueSessionMessageAsync(PlayerMessageRequest request) =>
+        GetOrCreateQueue(request.CampaignId).EnqueueAsync(request, 0);
+
     private async Task<AgentResponse> ProcessMessageInternalAsync(
         string campaignId,
         string playerId,
@@ -124,6 +128,7 @@ public class AgentOrchestrationService
         BaseGameAgent? activeAgent = null;
         try
         {
+            RequestExecution.Token.ThrowIfCancellationRequested();
             // Get game state to determine active agent
             var gameState = await _stateManager.GetCampaignStateAsync(campaignId);
             var currentActiveAgent = targetAgentType == AgentType.None ? gameState?.ActiveAgentType : targetAgentType;
@@ -163,17 +168,20 @@ public class AgentOrchestrationService
             _logger.LogInformation(
                 "Agent handoff detected for campaign {CampaignId} from {SourceAgent} to {TargetAgent}",
                 campaignId, currentActiveAgent, updatedState.ActiveAgentType);
-            if (updatedState.Metadata.TryGetValue(HandoffContextKey, out var handoffContext))
+            if (updatedState.Metadata.TryGetValue(HandoffContextKey, out var handoffContext) && handoffContext is HandoffIntent intent)
             {
-                _logger.LogInformation("Handoff context: {HandoffContext}", handoffContext);
+                _logger.LogInformation("Handoff context: {HandoffContext}", intent);
                 message = BuildHandoffMessage(currentActiveAgent, updatedState.ActiveAgentType, message,
-                    handoffContext.ToString()!);
+                    intent.ToString()!);
+                updatedState.Metadata.Remove(HandoffContextKey);
             }
 
             var newAgent = GetAgentByType(updatedState.ActiveAgentType);
+            RequestExecution.Token.ThrowIfCancellationRequested();
             response = await ExecuteAgentMessageAsync(newAgent, campaignId, playerId, message, model, streamCallback, clientMessageId);
             return response;
         }
+        catch (OperationCanceledException) when (RequestExecution.Token.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             _logger.LogError(ex,
@@ -298,17 +306,28 @@ public class AgentOrchestrationService
         return $"[Handoff from {sourceLabel} to {targetAgent}]\nOriginal User Message: {originalMessage}\n\n**Instructions from Game Master:** {handoffContext}";
     }
 
-    private Task<AgentResponse> ProcessQueuedMessageAsync(PlayerMessageRequest request)
+    private async Task<AgentResponse> ProcessQueuedMessageAsync(PlayerMessageRequest request)
     {
+        using var execution = RequestExecution.Enter(request);
+        request.CancellationToken.ThrowIfCancellationRequested();
+        var message = request.Message;
+        if (request.ActionIntent is { } intent)
+        {
+            var state = await _stateManager.GetCampaignStateAsync(request.CampaignId)
+                ?? throw new InvalidOperationException("Campaign not found.");
+            var actor = state.Characters.FirstOrDefault(c => c.Id == request.CharacterId && c.PlayerId == request.PlayerId)
+                ?? throw new InvalidOperationException("Character access denied.");
+            message = $"Structured player intent for character {actor.Name} (ID {actor.Id}): {PlayerActionRules.Describe(state, actor, intent)} Resolve using server tools; do not merely claim effects happened.";
+        }
         if (request.StreamCallback is null)
         {
-            return ProcessMessageAsync(request.CampaignId, request.PlayerId, request.Message, request.TargetAgentType);
+            return await ProcessMessageAsync(request.CampaignId, request.PlayerId, message, request.TargetAgentType);
         }
 
-        return ProcessMessageStreamingAsync(
+        return await ProcessMessageStreamingAsync(
             request.CampaignId,
             request.PlayerId,
-            request.Message,
+            message,
             request.TargetAgentType,
             request.StreamCallback,
             request.ClientMessageId);
@@ -419,6 +438,10 @@ internal sealed class CampaignMessageQueue(Func<PlayerMessageRequest, Task<Agent
     {
         var tcs = new TaskCompletionSource<AgentResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
         var message = new QueuedMessage(request, priority, Interlocked.Increment(ref _sequence), tcs);
+        message.Registration = request.CancellationToken.Register(() =>
+        {
+            lock (_sync) { if (!message.Started) tcs.TrySetCanceled(request.CancellationToken); }
+        });
 
         int queuePosition;
         lock (_sync)
@@ -452,14 +475,20 @@ internal sealed class CampaignMessageQueue(Func<PlayerMessageRequest, Task<Agent
                 }
 
                 next = _queue.Dequeue();
+                next.Started = true;
             }
 
             try
             {
+                next.Request.CancellationToken.ThrowIfCancellationRequested();
                 await NotifyStatusAsync(next, MessageProcessingStatus.Processing, 0).ConfigureAwait(false);
                 var response = await processor(next.Request).ConfigureAwait(false);
                 next.TaskSource.TrySetResult(response);
                 await NotifyStatusAsync(next, MessageProcessingStatus.Completed, 0).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (next.Request.CancellationToken.IsCancellationRequested)
+            {
+                next.TaskSource.TrySetCanceled(next.Request.CancellationToken);
             }
             catch (Exception ex)
             {
@@ -467,6 +496,7 @@ internal sealed class CampaignMessageQueue(Func<PlayerMessageRequest, Task<Agent
                 next.TaskSource.TrySetException(ex);
                 await NotifyStatusAsync(next, MessageProcessingStatus.Failed, 0, ex.Message).ConfigureAwait(false);
             }
+            finally { next.Registration.Dispose(); }
         }
     }
 
@@ -506,6 +536,8 @@ internal sealed class CampaignMessageQueue(Func<PlayerMessageRequest, Task<Agent
         long sequence,
         TaskCompletionSource<AgentResponse> taskSource)
     {
+        public bool Started { get; set; }
+        public CancellationTokenRegistration Registration { get; set; }
         public PlayerMessageRequest Request { get; } = request;
         public int Priority { get; } = priority;
         public long Sequence { get; } = sequence;

@@ -240,7 +240,7 @@ public class VideoGenService()
         return videoBytes;
     }
 
-    private static async Task<string> SaveAsUrl(string fileName, byte[] bytes)
+    internal static async Task<string> SaveAsUrl(string fileName, byte[] bytes)
     {
         var blobClient = _blobContainerClient.GetBlobClient(fileName);
         await blobClient.UploadAsync(new BinaryData(bytes), overwrite: true);
@@ -307,7 +307,7 @@ public class VideoGenService()
 
     }
 
-    private const string VideoGenEventInstructions =
+    public const string VideoGenEventInstructions =
         """
         # Instructions
         

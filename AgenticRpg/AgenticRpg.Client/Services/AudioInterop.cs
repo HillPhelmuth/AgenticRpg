@@ -57,6 +57,7 @@ public sealed class AudioInterop : IAsyncDisposable
     /// <returns>A task that completes when the audio context is stopped.</returns>
     public async ValueTask StopAsync()
     {
+        if (!_moduleTask.IsValueCreated) return;
         var module = await _moduleTask.Value;
         await module.InvokeVoidAsync("stop");
     }

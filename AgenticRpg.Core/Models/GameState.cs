@@ -12,7 +12,7 @@ public class GameState
 {
 
     [JsonPropertyName("id")]
-    public string Id { get => CampaignId; set; } = Guid.NewGuid().ToString();
+    public string Id { get => string.IsNullOrWhiteSpace(CampaignId) ? field : CampaignId; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// ID of the campaign
@@ -55,25 +55,76 @@ public class GameState
     public List<Narrative> RecentNarratives { get; set; } = [];
 
     /// <summary>
+    /// Registers a player join or reconnect for the campaign.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="characterId">The character identifier.</param>
+    /// <param name="playerName">The player display name.</param>
+    /// <param name="connectionId">The active SignalR connection identifier.</param>
+    public void PlayerJoinGame(string playerId, string characterId, string playerName, string? connectionId = null)
+    {
+        Campaign.MarkPlayerJoined(playerId, characterId);
+        Campaign.MarkPlayerConnected(playerId);
+
+        // Reason: Preserve an existing ready flag on reconnect, but refresh who and what the player is bound to.
+        if (!PlayerReadyStatuses.TryGetValue(playerId, out var status))
+        {
+            status = new PlayerReadyStatus
+            {
+                PlayerId = playerId,
+                CharacterId = characterId,
+                PlayerName = playerName,
+                IsReady = false
+            };
+            PlayerReadyStatuses[playerId] = status;
+        }
+
+        status.CharacterId = characterId;
+        status.PlayerName = playerName;
+        status.ConnectionId = connectionId;
+    }
+
+    /// <summary>
+    /// Marks a player as disconnected without removing them from the campaign.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    public void PlayerDisconnect(string playerId)
+    {
+        Campaign.MarkPlayerDisconnected(playerId);
+
+        if (PlayerReadyStatuses.TryGetValue(playerId, out var readyStatus))
+        {
+            readyStatus.ConnectionId = null;
+            readyStatus.IsReady = false;
+            readyStatus.ReadyAt = null;
+        }
+    }
+
+    /// <summary>
     /// Current location of the party
     /// </summary>
     public string? CurrentLocationId { get; set; }
 
-    public void PlayerLeaveGame(string playerId)
+    /// <summary>
+    /// Removes a player and their campaign character from the campaign.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="characterId">Optional character identifier when known.</param>
+    public void PlayerLeaveGame(string playerId, string? characterId = null)
     {
-        // Remove player from campaign and ready statuses
-        Campaign.PlayerIds.Remove(playerId);
-        var readyStatuses = PlayerReadyStatuses;
-        readyStatuses.Remove(playerId);
-        PlayerReadyStatuses = readyStatuses;
-        
+        Campaign.MarkPlayerLeft(playerId, characterId);
+
         var charList = Characters.ToList();
-        foreach (var character in charList.Where(character => character.PlayerId == playerId))
+        foreach (var character in charList.Where(character => character.PlayerId == playerId || character.Id == characterId))
         {
             var removedChar = Characters.FirstOrDefault(c => c.Id == character.Id);
-            var removedCharId = removedChar.Id;
-            Campaign.CharacterIds.Remove(removedCharId);
-            Characters.Remove(removedChar!);
+            if (removedChar is null)
+            {
+                continue;
+            }
+
+            Campaign.MarkPlayerLeft(playerId, removedChar.Id);
+            Characters.Remove(removedChar);
         }
     }
     /// <summary>

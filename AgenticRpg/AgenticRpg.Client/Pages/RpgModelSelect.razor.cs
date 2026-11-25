@@ -14,7 +14,9 @@ public partial class RpgModelSelect
     [Parameter]
     public string? SessionOrCampaignId { get; set; }
     [Inject] private ILogger<RpgModelSelect> Logger { get; set; } = null!;
-    private IReadOnlyList<string> AvailableModels { get; set; } = OpenRouterModels.GetAllModelsFromEmbeddedFile();
+    [Inject] private IConfiguration Configuration { get; set; } = null!;
+    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = null!;
+    private IReadOnlyList<string> AvailableModels { get; set; } = [];
     [Parameter]
     public string? SelectedModel { get; set; }
     [Parameter]
@@ -30,6 +32,12 @@ public partial class RpgModelSelect
         ? AvailableModels
         : AvailableModels.Where(model => model.Contains(_modelFilter, StringComparison.OrdinalIgnoreCase));
     private bool CanApplyModelOverride => !string.IsNullOrEmpty(SelectedModel);
+    protected override async Task OnInitializedAsync()
+    {
+        var openRouterModels = new OpenRouterModels();
+        AvailableModels = await openRouterModels.GetAllModelsFromEmbeddedFile(Configuration, HttpClientFactory);
+        await base.OnInitializedAsync();
+    }
     private void ToggleDropdown()
     {
         _isDropdownOpen = !_isDropdownOpen;

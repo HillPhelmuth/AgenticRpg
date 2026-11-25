@@ -1,19 +1,25 @@
+using AgenticRpg.Core.Repositories;
+using System.Text.Json;
 using AgenticRpg.Core.Agents; // For Message class
 using AgenticRpg.Core.Hubs;
+using AgenticRpg.Core.Services;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Threading;
+using AgenticRpg.Core.Models.Game;
 
 namespace AgenticRpg.Core.State;
 
 /// <summary>
 /// Manages pre-game session state with in-memory caching
 /// </summary>
-public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContext<GameHub> hubContext) : ISessionStateManager
+public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContext<GameHub> hubContext, ScopeOperationLocks locks, IRecoveryRepository? recovery = null) : ISessionStateManager
 {
+    private readonly IRecoveryRepository _recovery = recovery ?? new InMemoryRecoveryRepository();
+    private readonly SemaphoreSlim _saveGate = new(1, 1);
     private readonly ILogger<SessionStateManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, SessionState> _sessionCache = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
@@ -22,13 +28,14 @@ public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContex
     private const int MaxConversationHistory = 100;
 
     /// <inheritdoc/>
-    public async Task<SessionState> CreateSessionAsync(SessionType sessionType, string playerId)
+    public async Task<SessionState> CreateSessionAsync(SessionType sessionType, string playerId, World? world = null)
     {
         if (string.IsNullOrEmpty(playerId))
         {
             throw new ArgumentException("Player ID cannot be null or empty", nameof(playerId));
         }
-        
+
+        var sessionContext = world is not null ? new SessionContext(){ DraftWorld = world, OriginalWorldId = world.Id } : new SessionContext();
         var session = new SessionState
         {
             SessionId = Guid.NewGuid().ToString(),
@@ -37,13 +44,13 @@ public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContex
             CreatedAt = DateTime.UtcNow,
             LastUpdatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddHours(24),
-            Context = new SessionContext(),
+            Context = sessionContext,
             ConversationHistory = [],
             Metadata = [],
             IsCompleted = false
         };
         
-        _sessionCache.TryAdd(session.SessionId, session);
+        await UpdateSessionStateAsync(session);
         
         _logger.LogInformation(
             "Created new {SessionType} session {SessionId} for player {PlayerId}",
@@ -62,57 +69,56 @@ public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContex
             return null;
         }
         
+        if (_sessionCache.TryGetValue(sessionId, out var cached) && cached.ExpiresAt < DateTime.UtcNow && !locks.HasActiveRequests(sessionId))
+            _sessionCache.TryRemove(sessionId, out _);
         if (_sessionCache.TryGetValue(sessionId, out var session))
         {
-            // Check if session has expired
-            if (DateTime.UtcNow > session.ExpiresAt)
-            {
-                _logger.LogWarning(
-                    "Session {SessionId} has expired (expired at {ExpiresAt})",
-                    sessionId, session.ExpiresAt);
-                
-                // Remove expired session
-                _sessionCache.TryRemove(sessionId, out _);
-                return null;
-            }
-            
             _logger.LogDebug("Retrieved session state from cache: {SessionId}", sessionId);
             return session;
         }
         
-        _logger.LogWarning("Session not found: {SessionId}", sessionId);
-        await Task.CompletedTask;
-        return null;
+        var document = await _recovery.GetAsync(sessionId, "session");
+        if (document is null) return null;
+        var restored = document.Read<SessionState>();
+        restored.ExpiresAt = DateTime.UtcNow.AddHours(24);
+        _sessionCache.TryAdd(sessionId, restored);
+        return _sessionCache[sessionId];
     }
     
     /// <inheritdoc/>
-    public Task<bool> UpdateSessionStateAsync(SessionState state)
+    public async Task<bool> UpdateSessionStateAsync(SessionState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-
-        if (string.IsNullOrEmpty(state.SessionId))
+        await _saveGate.WaitAsync();
+        try
         {
-            throw new ArgumentException("SessionState must have a valid SessionId", nameof(state));
+            var expected = state.Revision;
+            var savedAt = DateTime.UtcNow;
+            var payload = JsonSerializer.SerializeToNode(state, RecoveryJson.Options)!;
+            payload["revision"] = expected + 1;
+            payload["lastUpdatedAt"] = savedAt;
+            payload["lastSavedAt"] = savedAt;
+            await _recovery.WriteAsync(new RecoveryDocument { Id = "session", ScopeId = state.SessionId,
+                OwnerId = state.PlayerId, Kind = "session", Version = expected + 1, UpdatedAt = savedAt,
+                Payload = payload.ToJsonString(RecoveryJson.Options) }, expected);
+            state.Revision = expected + 1;
+            state.LastSavedAt = state.LastUpdatedAt = savedAt;
+            state.ExpiresAt = savedAt.AddHours(24);
+            _sessionCache[state.SessionId] = state;
+            return true;
         }
-        
-        state.LastUpdatedAt = DateTime.UtcNow;
-        
-        _sessionCache.AddOrUpdate(state.SessionId, state, (key, oldValue) => state);
-        
-        _logger.LogDebug("Updated session state: {SessionId}", state.SessionId);
-        
-        
-        return Task.FromResult(true);
+        finally { _saveGate.Release(); }
     }
-    
+
     /// <inheritdoc/>
-    public Task<bool> DeleteSessionAsync(string sessionId)
+    public async Task<bool> DeleteSessionAsync(string sessionId)
     {
         if (string.IsNullOrEmpty(sessionId))
         {
-            return Task.FromResult(false);
+            return false;
         }
         
+        await _recovery.DeleteScopeAsync(sessionId);
         var removed = _sessionCache.TryRemove(sessionId, out var session);
         
         if (removed)
@@ -124,7 +130,7 @@ public class SessionStateManager(ILogger<SessionStateManager> logger, IHubContex
             _logger.LogWarning("Failed to delete session (not found): {SessionId}", sessionId);
         }
 
-        return Task.FromResult(removed);
+        return true;
     }
 
     /// <inheritdoc/>

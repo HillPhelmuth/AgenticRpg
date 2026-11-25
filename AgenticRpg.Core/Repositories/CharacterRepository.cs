@@ -18,7 +18,7 @@ public class CharacterRepository(CosmosClient cosmosClient)
     {
         // For cross-partition queries, we need to query instead of direct read
         var results = await GetByIdAsync(id, id, cancellationToken);
-        
+
         return results;
     }
 
@@ -69,12 +69,12 @@ public class CharacterRepository(CosmosClient cosmosClient)
     {
         // Need to find the character first to get its partition key (campaignId)
         var character = await GetByIdAsync(id, cancellationToken);
-        
+        Console.WriteLine($"Attempting to delete character with id: {id}");
         if (character == null)
         {
             return false;
         }
-
-        return await DeleteAsync(id, character.CampaignId, cancellationToken);
+        Console.WriteLine($"Found character with id: {id}, campaignId: {character.CampaignId}");
+        return await DeleteAsync(id, id, cancellationToken);
     }
 }

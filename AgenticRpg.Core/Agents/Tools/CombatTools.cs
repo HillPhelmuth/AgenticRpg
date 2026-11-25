@@ -70,13 +70,6 @@ public class CombatTools(
         });
     }
 
-    private static int GetAttackModifier(WeaponItem weapon, int might, int agility)
-    {
-        var modAttribute = weapon.WeaponType == WeaponType.Ranged ? AttributeType.Agility : AttributeType.Might;
-        var baseAttribute = modAttribute == AttributeType.Agility ? agility : might;
-        return AttributeCalculator.CalculateModifier(baseAttribute);
-    }
-
     private static RollDiceWindowOptions CreateRollWindowOptions(string title, Location location)
     {
         return new RollDiceWindowOptions
@@ -133,23 +126,20 @@ public class CombatTools(
         {
             return SerializeCombatAttackError("Attacker or target not found");
         }
+        var ownedWeapon = new[] { attacker.Equipment.MainHand, attacker.Equipment.OffHand as WeaponItem }
+            .FirstOrDefault(w => w is not null && (w.Id == weapon.Id || w.Name == weapon.Name));
+        if (ownedWeapon is null) return SerializeCombatAttackError("Equip that weapon before attacking.");
+        weapon = ownedWeapon;
 
         // Player attacks are always manual rolls.
         var windowOptions = CreateRollWindowOptions(
-            $"{attackerId}:Roll {1}{DieType.D20} to attack {targetId} with {weapon.Name}",
+            $"{attackerId}: Roll 1d20 {WeaponMechanics.Signed(WeaponMechanics.For(attacker, weapon).Attack)} to attack {targetId} with {weapon.Name}",
             Location.Center);
 
         var roll = await RollTopD20Async(campaignId, windowOptions, true, attacker.PlayerId, 1);
 
-        var attackModifier = StatsCalculator.CalculateAttackBonus(attacker, weapon);
-        if (attacker.Skills.TryGetValue("Melee Combat", out var meleeSkill) && weapon.WeaponType is WeaponType.Melee or WeaponType.Both)
-        {
-            attackModifier += meleeSkill;
-        }
-        else if (attacker.Skills.TryGetValue("Ranged Combat", out var rangeSkill) && weapon.WeaponType is WeaponType.Ranged or WeaponType.Both)
-        {
-            attackModifier += rangeSkill;
-        }
+        var breakdown = WeaponMechanics.For(attacker, weapon);
+        var attackModifier = breakdown.Attack;
         // Roll attack
         var attackResult = rulesEngine.ResolveAttack(attackModifier, target.ArmorClass, roll);
         var isHit = attackResult.IsHit;
@@ -166,9 +156,7 @@ public class CombatTools(
                 Location.Center);
 
             var rawRollValue = await RollDiceSumAsync(campaignId, damageWindowOptions, dieType, numberOfDice, true, attacker.PlayerId);
-            if (isCritical) rawRollValue *= 2;
-
-            damage = rawRollValue + attackModifier + weapon.GetDieRollBonus();
+            damage = breakdown.Damage(rawRollValue, isCritical);
             target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
         }
 
@@ -208,6 +196,8 @@ public class CombatTools(
             TargetHP = target.CurrentHP,
             TargetMaxHP = target.MaxHP,
             TargetDefeated = targetDefeated,
+            AttackExplanation = breakdown.AttackExplanation,
+            DamageExplanation = breakdown.DamageExplanation,
             Message = isHit
                 ? (isCritical
                     ? $"Critical hit! Attack {attackResult.Total} vs AC {target.ArmorClass}. Damage {damage}."
@@ -250,7 +240,8 @@ public class CombatTools(
 
         var roll = await RollTopD20Async(campaignId, windowOptions, false, null, 1);
 
-        var attackModifier = GetAttackModifier(weapon, attacker.Might, attacker.Agility);
+        var breakdown = WeaponMechanics.ForMonster(attacker.Might, attacker.Agility, weapon);
+        var attackModifier = breakdown.Attack;
 
         var attackResult = rulesEngine.ResolveAttack(attackModifier, target.ArmorClass, roll);
         var isHit = attackResult.IsHit;
@@ -267,9 +258,7 @@ public class CombatTools(
                 Location.Center);
 
             var rawRollValue = await RollDiceSumAsync(campaignId, damageWindowOptions, dieType, numberOfDice, false, null);
-            if (isCritical) rawRollValue *= 2;
-
-            damage = rawRollValue + attackModifier + weapon.GetDieRollBonus();
+            damage = breakdown.Damage(rawRollValue, isCritical);
 
             // Apply to TempHP first.
             if (target.CurrentHP > 0)
@@ -320,6 +309,8 @@ public class CombatTools(
             TargetHP = target.CurrentHP,
             TargetMaxHP = target.MaxHP,
             TargetDefeated = targetDefeated,
+            AttackExplanation = breakdown.AttackExplanation,
+            DamageExplanation = breakdown.DamageExplanation,
             Message = isHit
                 ? (isCritical
                     ? $"Critical hit! Attack {attackResult.Total} vs AC {target.ArmorClass}. Damage {damage}."
@@ -366,8 +357,10 @@ public class CombatTools(
                 Error = "Attacker or target not found"
             });
         }
-        var attackerSpell = attacker.KnownSpells.FirstOrDefault(s => s.Name == spell.Name)!;
-        var spellCost = attackerSpell.Level + 1;
+        var attackerSpell = attacker.KnownSpells.FirstOrDefault(s => s.Id == spell.Id || s.Name == spell.Name);
+        if (attackerSpell is null) return SerializeCombatAttackError("That character does not know this spell.");
+        spell = attackerSpell;
+        var spellCost = PlayerActionRules.SpellCost(attackerSpell);
         if (attacker.CurrentMP < spellCost)
         {
             return JsonSerializer.Serialize(new CombatAttackResult

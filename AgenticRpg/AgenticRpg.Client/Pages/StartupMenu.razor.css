@@ -318,6 +318,22 @@
     position: relative;
 }
 
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.character-card .card-actions {
+    margin-left: auto;
+}
+
+.campaign-actions {
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
 .character-portrait {
     width: 80px;
     height: 80px;
@@ -374,11 +390,40 @@
     box-shadow: 0 0 10px rgba(77, 208, 225, 0.3);
 }
 
+.card-action-button {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .btn-view-sheet:hover {
     background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
     opacity: 1;
     transform: scale(1.1);
     box-shadow: 0 0 20px rgba(77, 208, 225, 0.5);
+}
+
+.btn-world-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-world-edit i {
+    pointer-events: none;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #c44536 0%, #8f2f25 100%);
+    border-color: #ff8a80;
+    color: #fff4f2;
+}
+
+.btn-delete:hover {
+    background: linear-gradient(135deg, #e15f4f 0%, #b93d30 100%);
+    box-shadow: 0 0 20px rgba(225, 95, 79, 0.45);
 }
 
 .empty-state {
@@ -478,6 +523,79 @@
     /*padding: 1rem;*/
     overflow-y: auto;
    
+}
+
+.confirmation-modal {
+    width: min(540px, 90vw);
+    height: auto;
+    min-height: 0;
+}
+
+.confirmation-modal-body {
+    padding: 2rem;
+}
+
+.confirmation-modal-body h2 {
+    margin: 0 0 1rem;
+    color: #d4af37;
+}
+
+.confirmation-message {
+    margin: 0;
+    color: #e0f2f1;
+    line-height: 1.5;
+}
+
+.confirmation-warning {
+    margin: 1rem 0 0;
+    color: #ffd166;
+}
+
+.confirmation-error {
+    margin: 1rem 0 0;
+    color: #ff8a80;
+}
+
+.confirmation-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.btn-secondary,
+.btn-danger {
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-secondary {
+    background: rgba(224, 242, 241, 0.08);
+    border-color: rgba(77, 208, 225, 0.45);
+    color: #e0f2f1;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #c44536 0%, #8f2f25 100%);
+    border-color: #ff8a80;
+    color: #fff4f2;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(224, 242, 241, 0.16);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e15f4f 0%, #b93d30 100%);
+}
+
+.btn-secondary:disabled,
+.btn-danger:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 .action-section {
@@ -655,6 +773,7 @@
     .character-card {
         display:flex;
         flex-direction: row;
+        flex-wrap: wrap;
         align-items: center;
         text-align: center;
     }
@@ -667,6 +786,25 @@
     .btn-view-sheet {
         position: static;
         margin-top: 0.75rem;
+        width: 100%;
+    }
+
+    .card-actions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .card-actions .btn-view-sheet {
+        width: auto;
+        margin-top: 0;
+    }
+
+    .confirmation-actions {
+        flex-direction: column;
+    }
+
+    .btn-secondary,
+    .btn-danger {
         width: 100%;
     }
 
@@ -708,6 +846,16 @@
         right: 1rem;
         width: auto;
     }
+
+    .card-actions {
+        position: static;
+        margin-left: auto;
+    }
+
+    .card-actions .btn-view-sheet {
+        position: static;
+        right: auto;
+    }
 }
 
 /* Touch Optimizations */
@@ -715,6 +863,8 @@
     .btn-create,
     .btn-primary,
     .btn-view-sheet,
+    .btn-secondary,
+    .btn-danger,
     .btn-select-model {
         min-height: 44px;
     }
@@ -730,4 +880,21 @@
     top: 0;
     right: 0;
     z-index: 1;
+}
+/* Keep the primary entry compact, and avoid inheriting model-menu section styles. */
+.startup-menu { padding: clamp(1rem, 3vw, 2rem); }
+.startup-header h1 { font-size: clamp(2rem, 4vw, 2.6rem); }
+.menu-content { gap: 1.25rem; }
+.menu-section { margin-bottom: 0; padding: 1.5rem; }
+.adventure-entry h2 { font-size: 1.5rem; color: #d4af37; margin: 0 0 1rem; }
+.entry-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.entry-form { border-top: 1px solid #344451; margin-top: 1.25rem; padding-top: 1.25rem; }
+.entry-form label { display: block; max-width: 520px; }
+.entry-form button { margin: 0 .5rem .5rem 0; }
+.empty-state { padding: 1.5rem 1rem; color: #b0bec5; }
+.section-header { margin-bottom: 1rem; padding-bottom: .75rem; gap: .75rem; }
+@media (max-width: 700px) {
+    .entry-actions { grid-template-columns: 1fr; }
+    .entry-form button { width: 100%; margin-right: 0; }
+    .menu-section { padding: 1.25rem; }
 }

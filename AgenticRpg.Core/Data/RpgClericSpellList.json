@@ -1,0 +1,2936 @@
+[
+  {
+    "Id": "bane",
+    "Name": "Bane",
+    "Description": "Up to three creatures of your choice that you can see within range must make charisma saving throws. Whenever a target that fails this saving throw makes an attack roll or a saving throw before the spell ends, the target must roll a d4 and subtract the number rolled from the attack roll or saving throw. When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Targets up to three creatures; each must make a Charisma saving throw. On a failed save, the target subtracts 1d4 from attack rolls and saving throws for up to 1 minute (concentration). Higher-level slots add one extra target per slot level above 1st.",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": "Might",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "bless",
+    "Name": "Bless",
+    "Description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw.\nWhen you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Up to three creatures can add a d4 to attack rolls and saving throws for up to 1 minute (concentration).",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "command",
+    "Name": "Command",
+    "Description": "You speak a one-word command to a creature you can see within range. The target must succeed on a wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is undead, if it doesn\u2019t understand your language, or if your command is directly harmful to it.\n\nSome typical commands and their effects follow. You might issue a command other than one described here. If you do so, the GM determines how the target behaves. If the target can\u2019t follow your command, the spell ends.\n\nApproach. The target moves toward you by the shortest and most direct route, ending its turn if it moves within 5 feet of you.\n\nDrop. The target drops whatever it is holding and then ends its turn.\n\nFlee. The target spends its turn moving away from you by the fastest available means.\n\nGrovel. The target falls prone and then ends its turn.\n\nHalt. The target doesn\u2019t move and takes no actions. A flying creature stays aloft, provided that it is able to do so. If it must move to stay aloft, it flies the minimum distance needed to remain in the air.\n\nWhen you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "1 round",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "The target must fail a Wisdom saving throw and obey your one-word command on its next turn; at higher levels, you can target one additional creature per spell slot level above 1st.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 1,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "create-or-destroy-water",
+    "Name": "Create or Destroy Water",
+    "Description": "You either create or destroy water. ***Create Water.*** You create up to 10 gallons of clean water within range in an open container. Alternatively, the water falls as rain in a 30-foot cube within range. ***Destroy Water.*** You destroy up to 10 gallons of water in an open container within range. Alternatively, you destroy fog in a 30-foot cube within range.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates or destroys up to 10 gallons of water, or a 30\u2011foot cube of water/fog. When cast using a higher level slot, the amount or cube size increases by 10 gallons or 5 feet per slot level above 1.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 10,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "cure-wounds",
+    "Name": "Cure Wounds",
+    "Description": "A creature you touch regains a number of hit points equal to 1d8 \u002B your spellcasting ability modifier. This spell has no effect on undead or constructs. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d8 for each slot level above 1st.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Healing 1d8 \u002B spellcasting ability modifier (increases by 1d8 per slot level above 1st).",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "1d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "detect-evil-and-good",
+    "Name": "Detect Evil and Good",
+    "Description": "For the duration, you know if there is an aberration, celestial, elemental, fey, fiend, or undead within 30 feet of you, as well as where the creature is located. Similarly, you know if there is a place or object within 30 feet of you that has been magically consecrated or desecrated. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Detects aberrations, celestials, elementals, fey, fiends, undead, and consecrated or desecrated places or objects within 30 feet for up to 10 minutes, requiring concentration.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 30,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "detect-magic",
+    "Name": "Detect Magic",
+    "Description": "For the duration, you sense the presence of magic within 30 feet of you. If you sense magic in this way, you can use your action to see a faint aura around any visible creature or object in the area that bears magic, and you learn its school of magic, if any. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Senses magical auras within 30 feet and identifies their school of magic; can see a faint aura around magical creatures or objects. Duration up to 10 minutes, concentration.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "detect-poison-and-disease",
+    "Name": "Detect Poison and Disease",
+    "Description": "For the duration, you can sense the presence and location of poisons, poisonous creatures, and diseases within 30 feet of you. You also identify the kind of poison, poisonous creature, or disease in each case. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 10 minutes (concentration)",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Detects poisons, poisonous creatures, and diseases within a 30-foot radius and identifies them.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 30,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "divine-favor",
+    "Name": "Divine Favor",
+    "Description": "Your prayer empowers you with divine radiance. Until the spell ends, your weapon attacks deal an extra 1d4 radiant damage on a hit.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 bonus action",
+    "Range": "Self",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Your weapon attacks deal an extra 1d4 radiant damage on a hit.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "guidance",
+    "Name": "Guidance",
+    "Description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice. It can roll the die before or after making the ability check. The spell then ends.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Target can add a d4 roll to one ability check of its choice within one minute.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "guiding-bolt",
+    "Name": "Guiding Bolt",
+    "Description": "A flash of light streaks toward a creature of your choice within range. Make a ranged spell attack against the target. On a hit, the target takes 4d6 radiant damage, and the next attack roll made against this target before the end of your next turn has advantage, thanks to the mystical dim light glittering on the target until then.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "120 feet",
+    "Duration": "1 round",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "A flash of light streaks toward a creature of your choice within range. On a hit, the target takes 4d6 radiant damage, and the next attack roll made against this target before the end of your next turn has advantage. When cast using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "4d6",
+      "LevelBasedEffectDiceSlots": {
+        "1": "4d6",
+        "2": "5d6",
+        "3": "6d6",
+        "4": "7d6",
+        "5": "8d6",
+        "6": "9d6",
+        "7": "10d6",
+        "8": "11d6",
+        "9": "12d6"
+      },
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "healing-word",
+    "Name": "Healing Word",
+    "Description": "A creature of your choice that you can see within range regains hit points equal to 1d4 \u002B your spellcasting ability modifier. This spell has no effect on undead or constructs.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 bonus action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Heals a creature you can see within 60 feet for 1d4 plus your spellcasting ability modifier.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "heroism",
+    "Name": "Heroism",
+    "Description": "A willing creature you touch is imbued with bravery. Until the spell ends, the creature is immune to being frightened and gains temporary hit points equal to your spellcasting ability modifier at the start of each of its turns. When the spell ends, the target loses any remaining temporary hit points from this spell.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Target gains immunity to frightened and receives temporary hit points equal to the caster\u0027s spellcasting ability modifier at the start of each of its turns for up to 1 minute (concentration).",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "inflict-wounds",
+    "Name": "Inflict Wounds",
+    "Description": "Make a melee spell attack against a creature you can reach. On a hit, the target takes 3d10 necrotic damage. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Melee spell attack that deals necrotic damage (3d10) on a hit, scaling \u002B1d10 per slot level above 1st.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "3d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "light",
+    "Name": "Light",
+    "Description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet. The light can be colored as you like. Completely covering the object with something opaque blocks the light. The spell ends if you cast it again or dismiss it as an action. If you target an object held or worn by a hostile creature, that creature must succeed on a dexterity saving throw to avoid the spell.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "M"
+    ],
+    "EffectText": "Creates bright light in a 20-foot radius and dim light for an additional 20 ft from a touched object for 1 hour; a creature holding a hostile target can make a Dexterity saving throw to avoid the effect.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 20,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "mending",
+    "Name": "Mending",
+    "Description": "This spell repairs a single break or tear in an object you touch, such as a broken key, a torn cloak, or a leaking wineskin. As long as the break or tear is no longer than 1 foot in any dimension, you mend it, leaving no trace of the former damage. This spell can physically repair a magic item or construct, but the spell can\u0027t restore magic to such an object.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 minute",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Repairs a single break or tear in an object you touch, restoring it to its original condition.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "protection-from-evil-and-good",
+    "Name": "Protection from Evil and Good",
+    "Description": "Until the spell ends, one willing creature you touch is protected against certain types of creatures: aberrations, celestials, elementals, fey, fiends, and undead. The protection grants several benefits. Creatures of those types have disadvantage on attack rolls against the target. The target also can\u2019t be charmed, frightened, or possessed by them. If the target is already charmed, frightened, or possessed by such a creature, the target has advantage on any new saving throw against the relevant effect.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Target has disadvantage on attacks from aberrations, celestials, elementals, fey, fiends, and undead, cannot be charmed, frightened, or possessed by them, and gains advantage on saves against those effects.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "AC",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "purify-food-and-drink",
+    "Name": "Purify Food and Drink",
+    "Description": "All nonmagical food and drink within a 5-foot radius sphere centered on a point of your choice within range is purified and rendered free of poison and disease.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "10 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "All nonmagical food and drink within a 5-foot radius sphere centered on a point of your choice within range is purified and rendered free of poison and disease.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "resistance",
+    "Name": "Resistance",
+    "Description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one saving throw of its choice. It can roll the die before or after making the saving throw. The spell then ends.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Touch one willing creature. The target can roll a d4 and add the result to one saving throw of its choice, once, before the spell ends (up to 1 minute).",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 10,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "sacred-flame",
+    "Name": "Sacred Flame",
+    "Description": "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw. The spell\u2019s damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "A creature you can see must succeed on a Dexterity saving throw or take 1d8 radiant damage, increasing by 1d8 at higher levels.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "1d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Radiant"
+    }
+  },
+  {
+    "Id": "sanctuary",
+    "Name": "Sanctuary",
+    "Description": "You ward a creature within range against attack. Until the spell ends, any creature who targets the warded creature with an attack or a harmful spell must first make a wisdom saving throw. On a failed save, the creature must choose a new target or lose the attack or spell. This spell doesn\u2019t protect the warded creature from area effects, such as the explosion of a fireball. If the warded creature makes an attack or casts a spell that affects an enemy creature, this spell ends.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 bonus action",
+    "Range": "30 feet",
+    "Duration": "1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Targets a creature and prevents others from attacking or casting harmful spells on it unless they fail a Wisdom saving throw. The spell ends if the protected creature attacks or casts a spell that affects an enemy.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "shield-of-faith",
+    "Name": "Shield of Faith",
+    "Description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a \u002B2 bonus to AC for the duration.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 bonus action",
+    "Range": "60 feet",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a shimmering field that grants the target a \u002B2 bonus to AC for up to 10 minutes, requiring concentration.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "AC",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 2,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spare-the-dying",
+    "Name": "Spare the Dying",
+    "Description": "You touch a living creature that has 0 hit points. The creature becomes stable. This spell has no effect on undead or constructs.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Stabilizes a creature at 0 HP, making it no longer dying.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "thaumaturgy",
+    "Name": "Thaumaturgy",
+    "Description": "You manifest a minor wonder, a sign of supernatural power, within range. You create one of the following magical effects within range: Your voice booms up to three times as loud as normal for 1 minute; You cause flames to flicker, brighten, dim, or change color for 1 minute; You cause harmless tremors in the ground for 1 minute; You create an instantaneous sound that originates from a point of your choice within range; You instantaneously cause an unlocked door or window to fly open or slam shut; You alter the appearance of your eyes for 1 minute. If you cast this spell multiple times, you can have up to three of its 1\u2011minute effects active at a time, and you can dismiss such an effect as an action.",
+    "Level": 1,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "1 minute",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "You create minor magical effects such as a booming voice, flickering flames, harmless tremors, sounds, opening doors, or changing eye appearance, each lasting up to 1 minute.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "aid",
+    "Name": "Aid",
+    "Description": "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target\u2019s hit point maximum and current hit points increase by 5 for the duration. When you cast this spell using a spell slot of 3rd level or higher, a target\u2019s hit points increase by an additional 5 for each slot level above 2nd.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "8 hours",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Increases the hit point maximum and current HP of up to three creatures within 30 feet by 5 (or more if cast at higher levels) for 8 hours.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 5,
+      "EffectDuration": 4800,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "augury",
+    "Name": "Augury",
+    "Description": "By casting gem-inlaid sticks, rolling dragon bones, laying out ornate cards, or employing some other divining tool, you receive an omen from an otherworldly entity about the results of a specific course of action that you plan to take within the next 30 minutes. The GM chooses from the following possible omens:\n- Weal, for good results\n- Woe, for bad results\n- Weal and woe, for both good and bad results\n- Nothing, for results that aren\u2019t especially good or bad\nThe spell doesn\u2019t take into account any possible circumstances that might change the outcome, such as the casting of additional spells or the loss or gain of a companion.\nIf you cast the spell two or more times before completing your next long rest, there is a cumulative 25 percent chance for each casting after the first that you get a random reading. The GM makes this roll in secret.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 minute",
+    "Range": "Self",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Divination spell that reveals an omen (Weal, Woe, Weal and woe, or Nothing) about a planned action within the next 30 minutes.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "blindness-deafness",
+    "Name": "Blindness/Deafness",
+    "Description": "You can blind or deafen a foe. Choose one creature that you can see within range to make a constitution saving throw. If it fails, the target is either blinded or deafened (your choice) for the duration. At the end of each of its turns, the target can make a constitution saving throw. On a success, the spell ends. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "1 minute",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "You can blind or deafen a creature that fails a Constitution saving throw, causing it to become blinded or deafened for up to 1 minute. The target can repeat the save at the end of each of its turns, ending the effect on a success. At higher levels, the spell can target additional creatures.",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "branding-smite",
+    "Name": "Branding Smite",
+    "Description": "The next time you hit a creature with a weapon attack before this spell ends, the weapon gleams with astral radiance as you strike. The attack deals an extra 2d6 radiant damage to the target, which becomes visible if it\u0027s invisible, and the target sheds dim light in a 5-foot radius and can\u0027t become invisible until the spell ends. When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 bonus action",
+    "Range": "Self",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "The spell adds 2d6 radiant damage (increased by 1d6 per slot level above 2nd) to your next weapon attack, makes the target shed dim light in a 5\u2011foot radius, and prevents it from becoming invisible until the spell ends.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": "2d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "calm-emotions",
+    "Name": "Calm Emotions",
+    "Description": "You attempt to suppress strong emotions in a group of people. Each humanoid in a 20-foot-radius sphere centered on a point you choose within range must make a charisma saving throw; a creature can choose to fail this saving throw if it wishes. If a creature fails its saving throw, choose one of the following two effects. You can suppress any effect causing a target to be charmed or frightened. When this spell ends, any suppressed effect resumes, provided that its duration has not expired in the meantime. Alternatively, you can make a target indifferent about creatures of your choice that it is hostile toward. This indifference ends if the target is attacked or harmed by a spell or if it witnesses any of its friends being harmed. When the spell ends, the creature becomes hostile again, unless the GM rules otherwise.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "You attempt to suppress strong emotions in a group of people. Each humanoid in a 20-foot-radius sphere centered on a point you choose within range must make a charisma saving throw; a creature can choose to fail this saving throw if it wishes. If a creature fails its saving throw, choose one of the following two effects. You can suppress any effect causing a target to be charmed or frightened. When this spell ends, any suppressed effect resumes, provided that its duration has not expired in the meantime. Alternatively, you can make a target indifferent about creatures of your choice that it is hostile toward. This indifference ends if the target is attacked or harmed by a spell or if it witnesses any of its friends being harmed. When the spell ends, the creature becomes hostile again, unless the GM rules otherwise.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Presence",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 20,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "continual-flame",
+    "Name": "Continual Flame",
+    "Description": "A flame, equivalent in brightness to a torch, springs forth from an object that you touch. The effect looks like a regular flame, but it creates no heat and doesn\u0027t use oxygen. A continual flame can be covered or hidden but not smothered or quenched.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Until dispelled",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a non-heat, non-oxygen-consuming flame that sheds light equivalent to a torch; the flame can be covered or hidden but cannot be smothered or quenched.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "enhance-ability",
+    "Name": "Enhance Ability",
+    "Description": "You touch a creature and bestow upon it a magical enhancement. Choose one of the following effects; the target gains that effect until the spell ends. Bear\u2019s Endurance. The target has advantage on constitution checks. It also gains 2d6 temporary hit points, which are lost when the spell ends. Bull\u2019s Strength. The target has advantage on strength checks, and his or her carrying capacity doubles. Cat\u2019s Grace. The target has advantage on dexterity checks. It also doesn\u2019t take damage from falling 20 feet or less if it isn\u2019t incapacitated. Eagle\u2019s Splendor. The target has advantage on Charisma checks. Fox\u2019s Cunning. The target has advantage on intelligence checks. Owl\u2019s Wisdom. The target has advantage on wisdom checks. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Grants a chosen ability check advantage (and optionally 2d6 temporary hit points) to a touched creature for up to 1 hour, concentration.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 2,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "find-steed",
+    "Name": "Find Steed",
+    "Description": "You summon a spirit that assumes the form of an unusually intelligent, strong, and loyal steed, creating a long-lasting bond with it. Appearing in an unoccupied space within range, the steed takes on a form that you choose, such as a warhorse, a pony, a camel, an elk, or a mastiff. (Your GM might allow other animals to be summoned as steeds.) The steed has the statistics of the chosen form, though it is a celestial, fey, or fiend (your choice) instead of its normal type. Additionally, if your steed has an Intelligence of 5 or less, its Intelligence becomes 6, and it gains the ability to understand one language of your choice that you speak. Your steed serves you as a mount, both in combat and out, and you have an instinctive bond with it that allows you to fight as a seamless unit. While mounted on your steed, you can make any spell you cast that targets only you also target your steed. When the steed drops to 0 hit points, it disappears, leaving behind no physical form. You can also dismiss your steed at any time as an action, causing it to disappear. In either case, casting this spell again summons the same steed, restored to its hit point maximum. While your steed is within 1 mile of you, you can communicate with it telepathically. You can\u0027t have more than one steed bonded by this spell at a time. As an action, you can release the steed from its bond at any time, causing it to disappear.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "10 minutes",
+    "Range": "30 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Summons a loyal spirit steed that serves as a mount and can be dismissed at will; the steed persists until dismissed or reduced to 0 hit points, and you can communicate telepathically with it within 1 mile.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "find-traps",
+    "Name": "Find Traps",
+    "Description": "You sense the presence of any trap within range that is within line of sight. A trap, for the purpose of this spell, includes anything that would inflict a sudden or unexpected effect you consider harmful or undesirable, which was specifically intended as such by its creator. Thus, the spell would sense an area affected by the alarm spell, a glyph of warding, or a mechanical pit trap, but it would not reveal a natural weakness in the floor, an unstable ceiling, or a hidden sinkhole. This spell merely reveals that a trap is present. You don\u2019t learn the location of each trap, but you do learn the general nature of the danger posed by a trap you sense.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "120 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Detects the presence of traps within 120 feet line of sight, revealing only that a trap exists and its general nature.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "gentle-repose",
+    "Name": "Gentle Repose",
+    "Description": "You touch a corpse or other remains. For the duration, the target is protected from decay and can\u0027t become undead. The spell also effectively extends the time limit on raising the target from the dead, since days spent under the influence of this spell don\u0027t count against the time limit of spells such as raise dead.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "10 days",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Prevents the target corpse from decaying or becoming undead for 10 days.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 144000,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "hold-person",
+    "Name": "Hold Person",
+    "Description": "Choose a humanoid that you can see within range. The target must succeed on a wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another wisdom saving throw. On a success, the spell ends on the target. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Target must succeed on a Wisdom saving throw or be paralyzed for up to 1 minute; the condition ends on a successful save at the end of its turn.",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": "Agility",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "lesser-restoration",
+    "Name": "Lesser Restoration",
+    "Description": "You touch a creature and can end either one disease or one condition afflicting it. The condition can be blinded, deafened, paralyzed, or poisoned.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Ends one disease or condition (blinded, deafened, paralyzed, or poisoned) on a touched creature.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "locate-object",
+    "Name": "Locate Object",
+    "Description": "Describe or name an object that is familiar to you. You sense the direction to the object\u0027s location, as long as that object is within 1,000 feet of you. If the object is in motion, you know the direction of its movement. The spell can locate a specific object known to you, as long as you have seen it up close--within 30 feet--at least once. Alternatively, the spell can locate the nearest object of a particular kind, such as a certain kind of apparel, jewelry, furniture, tool, or weapon. This spell can\u0027t locate an object if any thickness of lead, even a thin sheet, blocks a direct path between you and the object.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Senses the direction to a familiar object within 1,000 feet, indicating its location or movement direction, lasting up to 10 minutes with concentration.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "prayer-of-healing",
+    "Name": "Prayer of Healing",
+    "Description": "Up to six creatures of your choice that you can see within range each regain hit points equal to 2d8 \u002B your spellcasting ability modifier. When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d8 for each slot level above 2nd.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "10 minutes",
+    "Range": "30 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Heals up to six creatures for 2d8 \u002B MOD hit points, scaling by 1d8 per slot level above 2nd.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "2d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "protection-from-poison",
+    "Name": "Protection from Poison",
+    "Description": "You touch a creature. If it is poisoned, you neutralize the poison. If more than one poison afflicts the target, you neutralize one poison that you know is present, or you neutralize one at random. For the duration, the target has advantage on saving throws against being poisoned, and it has resistance to poison damage.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Neutralizes poison on a touched creature and grants advantage on saving throws against poison and resistance to poison damage for 1 hour.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "silence",
+    "Name": "Silence",
+    "Description": "For the duration, no sound can be created within or pass through a 20-foot-radius sphere centered on a point you choose within range. Any creature or object entirely inside the sphere is immune to thunder damage, and creatures are deafened while entirely inside it. Casting a spell that includes a verbal component is impossible there.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Illusion",
+    "CastingTime": "1 action",
+    "Range": "120 feet",
+    "Duration": "Up to 10 minutes (concentration)",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creates a 20-foot-radius sphere of magical silence that blocks sound, deafens creatures inside, and grants them immunity to thunder damage.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spiritual-weapon",
+    "Name": "Spiritual Weapon",
+    "Description": "You create a floating, spectral weapon within range that lasts for the duration or until you cast this spell again. When you cast the spell, you can make a melee spell attack against a creature within 5 feet of the weapon. On a hit, the target takes force damage equal to 1d8 \u002B your spellcasting ability modifier. As a bonus action on your turn, you can move the weapon up to 20 feet and repeat the attack against a creature within 5 feet of it. The weapon can take whatever form you choose. Higher levels: When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above the 2nd.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 bonus action",
+    "Range": "60 feet",
+    "Duration": "1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Summons a floating weapon that can make melee spell attacks dealing 1d8 \u002B spellcasting modifier force damage. The weapon can be moved up to 20 feet and attack each turn as a bonus action. Damage increases by 1d8 for every two slot levels above 2nd.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "1d8",
+      "LevelBasedEffectDiceSlots": {
+        "2": "1d8",
+        "3": "1d8",
+        "4": "2d8",
+        "5": "2d8",
+        "6": "3d8",
+        "7": "3d8",
+        "8": "4d8",
+        "9": "4d8"
+      },
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "warding-bond",
+    "Name": "Warding Bond",
+    "Description": "This spell wards a willing creature you touch and creates a mystic connection between you and the target until the spell ends. While the target is within 60 feet of you, it gains a \u002B1 bonus to AC and saving throws, and it has resistance to all damage. Also, each time it takes damage, you take the same amount of damage. The spell ends if you drop to 0 hit points or if you and the target become separated by more than 60 feet. It also ends if the spell is cast again on either of the connected creatures. You can also dismiss the spell as an action.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Target gains \u002B1 to AC and saving throws, gains resistance to all damage, and any damage the target takes is also taken by the caster.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "AC",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "zone-of-truth",
+    "Name": "Zone of Truth",
+    "Description": "You create a magical zone that guards against deception in a 15-foot-radius sphere centered on a point of your choice within range. Until the spell ends, a creature that enters the spell\u0027s area for the first time on a turn or starts its turn there must make a Charisma saving throw. On a failed save, a creature can\u0027t speak a deliberate lie while in the radius. You know whether each creature succeeds or fails on its saving throw. An affected creature is aware of the spell and can thus avoid answering questions to which it would normally respond with a lie. Such a creature can remain evasive in its answers as long as it remains within the boundaries of the truth.",
+    "Level": 2,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "10 minutes",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creates a 15-foot-radius sphere that prevents creatures from speaking deliberate lies while they are within the area. A creature must succeed on a Charisma saving throw to avoid the effect.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Presence",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 1,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "animate-dead",
+    "Name": "Animate Dead",
+    "Description": "This spell creates an undead servant. Choose a pile of bones or a corpse of a Medium or Small humanoid within range. Your spell imbues the target with a foul mimicry of life, raising it as an undead creature. The target becomes a skeleton if you chose bones or a zombie if you chose a corpse (the GM has the creature\u2019s game statistics). On each of your turns, you can use a bonus action to mentally command any creature you made with this spell if the creature is within 60 feet of you (if you control multiple creatures, you can command any or all of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move during its next turn, or you can issue a general command, such as to guard a particular chamber or corridor. If you issue no commands, the creature only defends itself against hostile creatures. The creature is under your control for 24 hours, after which it stops obeying any command you\u2019ve given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature again before the current 24-hour period ends. This use of the spell reasserts your control over up to four creatures you have animated with this spell, rather than animating a new one.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 minute",
+    "Range": "10 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates an undead servant (skeleton or zombie) that you control for 24 hours and can command as a bonus action; control can be extended by recasting.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 14400,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "beacon-of-hope",
+    "Name": "Beacon of Hope",
+    "Description": "This spell bestows hope and vitality. Choose any number of creatures within range. For the duration, each target has advantage on wisdom saving throws and death saving throws, and regains the maximum number of hit points possible from any healing.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "This spell bestows hope and vitality. Choose any number of creatures within range. For the duration, each target has advantage on wisdom saving throws and death saving throws, and regains the maximum number of hit points possible from any healing.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "bestow-curse",
+    "Name": "Bestow Curse",
+    "Description": "You touch a creature, and that creature must succeed on a wisdom saving throw or become cursed for the duration of the spell. When you cast this spell, choose the nature of the curse from the following options: - Choose one ability score. While cursed, the target has disadvantage on ability checks and saving throws made with that ability score. - While cursed, the target has disadvantage on attack rolls against you. - While cursed, the target must make a wisdom saving throw at the start of each of its turns. If it fails, it wastes its action that turn doing nothing. - While the target is cursed, your attacks and spells deal an extra 1d8 necrotic damage to the target. A remove curse spell ends this effect. At the GM\u2019s option, you may choose an alternative curse effect, but it should be no more powerful than those described above. The GM has final say on such a curse\u2019s effect. If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn\u2019t require concentration.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 1 minute (concentration)",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "You touch a creature; it must succeed on a Wisdom saving throw or be cursed, imposing disadvantage on ability checks, attack rolls against you, or causing it to waste its action each turn, and you deal an extra 1d8 necrotic damage to the cursed target.",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": "1d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "clairvoyance",
+    "Name": "Clairvoyance",
+    "Description": "You create an invisible sensor within range in a location familiar to you (a place you have visited or seen before) or in an obvious location that is unfamiliar to you (such as behind a door, around a corner, or in a grove of trees). The sensor remains in place for the duration, and it can\u0027t be attacked or otherwise interacted with. When you cast the spell, you choose seeing or hearing. You can use the chosen sense through the sensor as if you were in its space. As your action, you can switch between seeing and hearing. A creature that can see the sensor (such as a creature benefiting from see invisibility or truesight) sees a luminous, intangible orb about the size of your fist.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "10 minutes",
+    "Range": "1 mile",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a sensor that allows the caster to see or hear through it for up to 10 minutes while maintaining concentration.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "create-food-and-water",
+    "Name": "Create Food and Water",
+    "Description": "You create 45 pounds of food and 30 gallons of water on the ground or in containers within range, enough to sustain up to fifteen humanoids or five steeds for 24 hours. The food is bland but nourishing, and spoils if uneaten after 24 hours. The water is clean and doesn\u2019t go bad.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creates 45 pounds of food and 30 gallons of water to sustain up to fifteen humanoids or five steeds for 24 hours.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "daylight",
+    "Name": "Daylight",
+    "Description": "A 60-foot-radius sphere of light spreads out from a point you choose within range. The sphere is bright light and sheds dim light for an additional 60 feet. If you chose a point on an object you are holding or one that isn\u2019t being worn or carried, the light shines from the object and moves with it. Completely covering the affected object with an opaque object, such as a bowl or a helm, blocks the light. If any of this spell\u2019s area overlaps with an area of darkness created by a spell of 3rd level or lower, the spell that created the darkness is dispelled.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creates a 60-foot-radius sphere of bright light that sheds dim light for an additional 60 feet, lasting 1 hour; the light can move with a held object, be blocked by opaque objects, and dispels darkness spells of 3rd level or lower in its area.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 60,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "dispel-magic",
+    "Name": "Dispel Magic",
+    "Description": "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on the target ends. For each spell of 4th level or higher on the target, make an ability check using your spellcasting ability. The DC equals 10 \u002B the spell\u2019s level. On a successful check, the spell ends.\nWhen you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell\u2019s level is equal to or less than the level of the spell slot you used.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "120 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Ends a spell on a creature, object, or magical effect within 120 feet; ends spells of 3rd level or lower automatically, and allows an ability check to end higher-level spells, with scaling when cast using higher-level slots.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "glyph-of-warding",
+    "Name": "Glyph of Warding",
+    "Description": "When you cast this spell, you inscribe a glyph that harms other creatures, either upon a surface (such as a table or a section of floor or wall) or within an object that can be closed (such as a book, a scroll, or a treasure chest) to conceal the glyph. If you choose a surface, the glyph can cover an area of the surface no larger than 10 feet in diameter. If you choose an object, that object must remain in its place; if the object is moved more than 10 feet from where you cast this spell, the glyph is broken, and the spell ends without being triggered. The glyph is nearly invisible and requires a successful Intelligence (Investigation) check against your spell save DC to be found. You decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, the most typical triggers include touching or standing on the glyph, removing another object covering the glyph, approaching within a certain distance of the glyph, or manipulating the object on which the glyph is inscribed. For glyphs inscribed within an object, the most common triggers include opening that object, approaching within a certain distance of the object, or seeing or reading the glyph. Once a glyph is triggered, this spell ends. You can further refine the trigger so the spell activates only under certain circumstances or according to physical characteristics (such as height or weight), creature kind (for example, the ward could be set to affect aberrations or drow), or alignment. You can also set conditions for creatures that don\u2019t trigger the glyph, such as those who say a certain password. When you inscribe the glyph, choose explosive runes or a spell glyph. Explosive Runes. When triggered, the glyph erupts with magical energy in a 20-foot-radius sphere centered on the glyph. The sphere spreads around corners. Each creature in the area must make a Dexterity saving throw. A creature takes 5d8 acid, cold, fire, lightning, or thunder damage on a failed saving throw (your choice when you create the glyph), or half as much damage on a successful one. Spell Glyph. You can store a prepared spell of 3rd level or lower in the glyph by casting it as part of creating the glyph. The spell must target a single creature or an area. The spell being stored has no immediate effect when cast in this way. When the glyph is triggered, the stored spell is cast. If the spell has a target, it targets the creature that triggered the glyph. If the spell affects an area, the area is centered on that creature. If the spell summons hostile creatures or creates harmful objects or traps, they appear as close as possible to the intruder and attack it. If the spell requires concentration, it lasts until the end of its full duration. When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 hour",
+    "Range": "Touch",
+    "Duration": "Until dispelled",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "When triggered, the glyph either erupts in a 20\u2011foot radius sphere dealing 5d8 damage of a chosen type (acid, cold, fire, lightning, or thunder) on a failed Dexterity save (half damage on success), or releases a stored spell of up to 3rd level targeting the creature that triggered it.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 5,
+      "EffectDuration": 0,
+      "EffectDice": "5d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "magic-circle",
+    "Name": "Magic Circle",
+    "Description": "You create a 10-foot radius, 20-foot-tall cylinder of magical energy centered on a point on the ground that you can see within range. Glowing runes appear whenever the cylinder intersects with the floor or other surface. Choose one or more of the following types of creatures: celestials, elementals, fey, fiends, or undead. The circle affects a creature of the chosen type in the following ways: - The creature can\u2019t willingly enter the cylinder by nonmagical means. If the creature tries to use teleportation or interplanar travel to do so, it must first succeed on a charisma saving throw. - The creature has disadvantage on attack rolls against targets within the cylinder. - Targets within the cylinder can\u2019t be charmed, frightened, or possessed by the creature. When you cast this spell, you can elect to cause its magic to operate in the reverse direction, preventing a creature of the specified type from leaving the cylinder and protecting targets outside it. When cast using a spell slot of 4th level or higher, the duration increases by 1 hour for each slot level above 3rd.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 minute",
+    "Range": "10 feet",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a 10\u2011foot radius, 20\u2011foot tall cylinder that blocks specified creature types from entering, gives them disadvantage on attacks, prevents them from charming, frightening, or possessing targets within, and can be reversed to block them from leaving.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "mass-healing-word",
+    "Name": "Mass Healing Word",
+    "Description": "As you call out words of restoration, up to six creatures of your choice that you can see within range regain hit points equal to 1d4 \u002B your spellcasting ability modifier. This spell has no effect on undead or constructs.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 bonus action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Heals up to six creatures you can see within 60 feet for 1d4 \u002B your spellcasting ability modifier hit points.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "1d4",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "meld-into-stone",
+    "Name": "Meld Into Stone",
+    "Description": "You step into a stone object or surface large enough to fully contain your body, melding yourself and all the equipment you carry with the stone for the duration. Using your movement, you step into the stone at a point you can touch. Nothing of your presence remains visible or otherwise detectable by nonmagical senses. While merged with the stone, you can\u2019t see what occurs outside it, and any Wisdom (Perception) checks you make to hear sounds outside it are made with disadvantage. You remain aware of the passage of time and can cast spells on yourself while merged in the stone. You can use your movement to leave the stone where you entered it, which ends the spell. You otherwise can\u2019t move. Minor physical damage to the stone doesn\u2019t harm you, but its partial destruction or a change in its shape (to the extent that you no longer fit within it) expels you and deals 6d6 bludgeoning damage to you. The stone\u2019s complete destruction (or transmutation into a different substance) expels you and deals 50 bludgeoning damage to you. If expelled, you fall prone in an unoccupied space closest to where you first entered.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "8 hours",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "You merge yourself into a stone object, becoming hidden and immobile for up to 8 hours. While merged you can cast spells on yourself and exit at will. If the stone is partially destroyed you take 6d6 bludgeoning damage, and if fully destroyed you take 50 bludgeoning damage, falling prone upon expulsion.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 4800,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "protection-from-energy",
+    "Name": "Protection From Energy",
+    "Description": "For the duration, the willing creature you touch has resistance to one damage type of your choice: acid, cold, fire, lightning, or thunder.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Up to 1 hour",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "The target gains resistance to a chosen damage type (acid, cold, fire, lightning, or thunder) for up to 1 hour, requiring concentration.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "AC",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "remove-curse",
+    "Name": "Remove Curse",
+    "Description": "At your touch, all curses affecting one creature or object end. If the object is a cursed magic item, its curse remains, but the spell breaks its owner\u0027s attunement to the object so it can be removed or discarded.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Ends all curses affecting a touched creature or object, and breaks attunement to a cursed magic item.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "revivify",
+    "Name": "Revivify",
+    "Description": "You touch a creature that has died within the last minute. That creature returns to life with 1 hit point. This spell can\u0027t return to life a creature that has died of old age, nor can it restore any missing body parts.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Returns a dead creature to life with 1 hit point if it died within the last minute.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "sending",
+    "Name": "Sending",
+    "Description": "You send a short message of twenty-five words or less to a creature with which you are familiar. The creature hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately. The spell enables creatures with Intelligence scores of at least 1 to understand the meaning of your message. You can send the message across any distance and even to other planes of existence, but if the target is on a different plane than you, there is a 5 percent chance that the message doesn\u0027t arrive.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "Unlimited",
+    "Duration": "1 round",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You can send a brief message (up to 25 words) to a familiar creature, regardless of distance or plane, with the creature hearing it in its mind and able to reply instantly; there is a 5% chance of failure when targeting a creature on a different plane.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 1,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "speak-with-dead",
+    "Name": "Speak with Dead",
+    "Description": "You grant the semblance of life and intelligence to a corpse of your choice within range, allowing it to answer the questions you pose. The corpse must still have a mouth and can\u0027t be undead. The spell fails if the corpse was the target of this spell within the last 10 days. Until the spell ends, you can ask the corpse up to five questions. The corpse knows only what it knew in life, including the languages it knew. Answers are usually brief, cryptic, or repetitive, and the corpse is under no compulsion to offer a truthful answer if you are hostile to it or it recognizes you as an enemy. This spell doesn\u0027t return the creature\u0027s soul to its body, only its animating spirit. Thus, the corpse can\u0027t learn new information, doesn\u0027t comprehend anything that has happened since it died, and can\u0027t speculate about future events.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "10 feet",
+    "Duration": "10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Allows the caster to ask up to five questions of a corpse within 10 feet, receiving brief answers for up to 10 minutes.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 5,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "spirit-guardians",
+    "Name": "Spirit Guardians",
+    "Description": "You call forth spirits to protect you. They flit around you to a distance of 15 feet for the duration. An affected creature\u0027s speed is halved in the area, and when the creature enters the area for the first time on a turn or starts its turn there, it must make a Wisdom saving throw. On a failed save, the creature takes 3d8 radiant damage (or necrotic if you are evil); on a successful save, it takes half as much damage.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Spirit Guardians creates a 15\u2011foot radius of protective spirits around you. Creatures in the area have their speed halved. When a creature enters the area for the first time on a turn or starts its turn there, it must make a Wisdom saving throw. On a failed save, it takes 3d8 radiant damage (or necrotic if you are evil); on a successful save, it takes half damage. The spell lasts up to 10 minutes and requires concentration. When cast using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": "3d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "tongues",
+    "Name": "Tongues",
+    "Description": "This spell grants the creature you touch the ability to understand any spoken language it hears. Moreover, when the target speaks, any creature that knows at least one language and can hear the target understands what it says.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "M"
+    ],
+    "EffectText": "The target can understand all spoken languages and can be understood by any creature that can hear them.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "water-walk",
+    "Name": "Water Walk",
+    "Description": "This spell grants the ability to move across any liquid surface--such as water, acid, mud, snow, quicksand, or lava--as if it were harmless solid ground (creatures crossing molten lava can still take damage from the heat). Up to ten willing creatures you can see within range gain this ability for the duration. If you target a creature submerged in a liquid, the spell carries the target to the surface of the liquid at a rate of 60 feet per round.",
+    "Level": 3,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Grants up to ten willing creatures the ability to walk on liquids as if solid ground for 1 hour, and can bring a submerged target to the surface at 60 ft per round.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Agility",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 10,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "arcane-eye",
+    "Name": "Arcane Eye",
+    "Description": "You create an invisible, magical eye within range that hovers in the air for the duration. You mentally receive visual information from the eye, which has normal vision and darkvision out to 30 feet. The eye can look in every direction. As an action, you can move the eye up to 30 feet in any direction. There is no limit to how far away from you the eye can move, but it can\u0027t enter another plane of existence. A solid barrier blocks the eye\u0027s movement, but the eye can pass through an opening as small as 1 inch in diameter.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "Up to 1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates an invisible magical eye that can see and move within 30 feet, providing visual information to the caster for up to 1 hour (concentration).",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "banishment",
+    "Name": "Banishment",
+    "Description": "You attempt to send one creature that you can see within range to another plane of existence. The target must succeed on a charisma saving throw or be banished. If the target is native to the plane of existence you\u0027re on, you banish the target to a harmless demiplane. While there, the target is incapacitated. The target remains there until the spell ends, at which point the target reappears in the space it left or in the nearest unoccupied space if that space is occupied. If the target is native to a different plane of existence than the one you\u0027re on, the target is banished with a faint popping noise, returning to its home plane. If the spell ends before 1 minute has passed, the target reappears in the space it left or in the nearest unoccupied space if that space is occupied. Otherwise, the target doesn\u2019t return. When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Target must fail a Charisma saving throw or be banished to another plane, becoming incapacitated or removed for up to 1 minute (10 rounds).",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "control-water",
+    "Name": "Control Water",
+    "Description": "Until the spell ends, you control any freestanding water inside an area you choose that is a cube up to 100 feet on a side. You can choose from any of the following effects when you cast this spell. As an action on your turn, you can repeat the same effect or choose a different one.\nFlood. You cause the water level of all standing water in the area to rise by as much as 20 feet. If the area includes a shore, the flooding water spills over onto dry land.\nIf you choose an area in a large body of water, you instead create a 20-foot tall wave that travels from one side of the area to the other and then crashes down. Any Huge or smaller vehicles in the wave\u2019s path are carried with it to the other side. Any Huge or smaller vehicles struck by the wave have a 25 percent chance of capsizing.\nThe water level remains elevated until the spell ends or you choose a different effect. If this effect produced a wave, the wave repeats on the start of your next turn while the flood effect lasts.\nPart Water. You cause water in the area to move apart and create a trench. The trench extends across the spell\u2019s area, and the separated water forms a wall to either side. The trench remains until the spell ends or you choose a different effect. The water then slowly fills in the trench over the course of the next round until the normal water level is restored.\nRedirect Flow. You cause flowing water in the area to move in a direction you choose, even if the water has to flow over obstacles, up walls, or in other unlikely directions. The water in the area moves as you direct it, but once it moves beyond the spell\u2019s area, it resumes its flow based on the terrain conditions. The water continues to move in the direction you chose until the spell ends or you choose a different effect.\nWhirlpool. This effect requires a body of water at least 50 feet square and 25 feet deep. You cause a whirlpool to form in the center of the area. The whirlpool forms a vortex that is 5 feet wide at the base, up to 50 feet wide at the top, and 25 feet tall. Any creature or object in the water and within 25 feet of the vortex is pulled 10 feet toward it. A creature can swim away from the vortex by making a Strength (Athletics) check against your spell save DC.\nWhen a creature enters the vortex for the first time on a turn or starts its turn there, it must make a strength saving throw. On a failed save, the creature takes 2d8 bludgeoning damage and is caught in the vortex until the spell ends. On a successful save, the creature takes half damage, and isn\u2019t caught in the vortex. A creature caught in the vortex can use its action to try to swim away from the vortex as described above, but has disadvantage on the Strength (Athletics) check to do so.\nThe first time each turn that an object enters the vortex, the object takes 2d8 bludgeoning damage; this damage occurs each round it remains in the vortex.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "300 feet",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Manipulates water within a 100\u2011foot cube, allowing you to flood the area, part the water, redirect flow, or create a whirlpool that deals 2d8 bludgeoning damage on a failed Strength saving throw.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 20,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {
+        "4": "2d8"
+      },
+      "SavingThrowDamageType": "Bludgeoning"
+    }
+  },
+  {
+    "Id": "death-ward",
+    "Name": "Death Ward",
+    "Description": "You touch a creature and grant it a measure of protection from death. The first time the target would drop to 0 hit points as a result of taking damage, the target instead drops to 1 hit point, and the spell ends. If the spell is still in effect when the target is subjected to an effect that would kill it instantaneously without dealing damage, that effect is instead negated against the target, and the spell ends.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "8 hours",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Grants a creature protection from death; the first instance of dropping to 0 HP instead leaves it at 1 HP, and it negates any instant death effects while active.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 4800,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "freedom-of-movement",
+    "Name": "Freedom of Movement",
+    "Description": "You touch a willing creature. For the duration, the target\u2019s movement is unaffected by difficult terrain, and spells and other magical effects can neither reduce the target\u2019s speed nor cause the target to be paralyzed or restrained. The target can also spend 5 feet of movement to automatically escape from nonmagical restraints, such as manacles or a creature that has it grappled. Finally, being underwater imposes no penalties on the target\u2019s movement or attacks.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Target\u0027s movement is unaffected by difficult terrain, cannot be slowed, paralyzed, or restrained by magical effects, can spend 5 feet of movement to escape nonmagical restraints, and is not hindered by underwater conditions for 1 hour.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "Agility",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "guardian-of-faith",
+    "Name": "Guardian of Faith",
+    "Description": "A Large spectral guardian appears and hovers for the duration in an unoccupied space of your choice that you can see within range. The guardian occupies that space and is indistinct except for a gleaming sword and shield emblazoned with the symbol of your deity. Any creature hostile to you that moves to a space within 10 feet of the guardian for the first time on a turn must succeed on a dexterity saving throw. The creature takes 20 radiant damage on a failed save, or half as much damage on a successful one. The guardian vanishes when it has dealt a total of 60 damage.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "30 feet",
+    "Duration": "8 hours",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Summons a spectral guardian that deals 20 radiant damage to hostile creatures that enter its 10\u2011foot radius (Dex save for half damage). The guardian lasts for 8 hours.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 20,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Radiant"
+    }
+  },
+  {
+    "Id": "locate-creature",
+    "Name": "Locate Creature",
+    "Description": "Describe or name a creature that is familiar to you. You sense the direction to the creature\u0027s location, as long as that creature is within 1,000 feet of you. If the creature is moving, you know the direction of its movement. The spell can locate a specific creature known to you, or the nearest creature of a specific kind (such as a human or a unicorn), so long as you have seen such a creature up close--within 30 feet--at least once. If the creature you described or named is in a different form, such as being under the effects of a polymorph spell, this spell doesn\u0027t locate the creature. This spell can\u0027t locate a creature if running water at least 10 feet wide blocks a direct path between you and the creature.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Concentration, up to 1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You sense the direction to a familiar creature within 1,000 feet as long as you maintain concentration, up to 1 hour.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "stone-shape",
+    "Name": "Stone Shape",
+    "Description": "You touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any dimension and form it into any shape that suits your purpose. So, for example, you could shape a large rock into a weapon, idol, or coffer, or make a small passage through a wall, as long as the wall is less than 5 feet thick. You could also shape a stone door or its frame to seal the door shut. The object you create can have up to two hinges and a latch, but finer mechanical detail isn\u0027t possible.",
+    "Level": 4,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You touch a stone object of Medium size or smaller (or a section of stone up to 5 feet in any dimension) and reshape it into any form you desire.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "commune",
+    "Name": "Commune",
+    "Description": "You contact your deity or a divine proxy and ask up to three questions that can be answered with a yes or no. You must ask your questions before the spell ends. You receive a correct answer for each question.\n\nDivine beings aren\u2019t necessarily omniscient, so you might receive \u201Cunclear\u201D as an answer if a question pertains to information that lies beyond the deity\u2019s knowledge. In a case where a one-word answer could be misleading or contrary to the deity\u2019s interests, the GM might offer a short phrase as an answer instead.\n\nIf you cast the spell two or more times before finishing your next long rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer. The GM makes this roll in secret.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 minute",
+    "Range": "Self",
+    "Duration": "1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Ask up to three yes-or-no questions of your deity; receive truthful answers unless unclear, with a chance of no answer on repeated castings.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 3,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "commune-with-nature",
+    "Name": "Commune With Nature",
+    "Description": "You briefly become one with nature and gain knowledge of the surrounding territory. In the outdoors, the spell gives you knowledge of the land within 3 miles of you. In caves and other natural underground settings, the radius is limited to 300 feet. The spell doesn\u2019t function where nature has been replaced by construction, such as in dungeons and towns. You instantly gain knowledge of up to three facts of your choice about any of the following subjects as they relate to the area: terrain and bodies of water, prevalent plants, minerals, animals, or peoples, powerful celestials, fey, fiends, elementals, or undead, influence from other planes of existence, buildings. For example, you could determine the location of powerful undead in the area, the location of major sources of safe drinking water, and the location of any nearby towns.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 minute",
+    "Range": "Self",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Gain knowledge of the surrounding land (up to 3 miles outdoors, 300 ft underground) and learn up to three facts about terrain, flora/fauna, powerful beings, planar influence, or structures.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 3,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "contagion",
+    "Name": "Contagion",
+    "Description": "Your touch inflicts disease. Make a melee spell attack against a creature within your reach. On a hit, you afflict the creature with a disease of your choice from any of the ones described below.\nAt the end of each of the target\u0027s turns, it must make a Constitution saving throw. After failing three of these saving throws, the disease\u0027s effects last for the duration, and the creature stops making these saves. After succeeding on three of these saving throws, the creature recovers from the disease, and the spell ends.\nSince this spell induces a natural disease in its target, any effect that removes a disease or otherwise ameliorates a disease\u0027s effects apply to it.\nBlinding Sickness. Pain grips the creature\u0027s mind, and its eyes turn milky white. The creature has disadvantage on wisdom checks and wisdom saving throws and is blinded.\nFilth Fever. A raging fever sweeps through the creature\u0027s body. The creature has disadvantage on strength checks, strength saving throws, and attack rolls that use Strength.\nFlesh Rot. The creature\u0027s flesh decays. The creature has disadvantage on Charisma checks and vulnerability to all damage.\nMindfire. The creature\u0027s mind becomes feverish. The creature has disadvantage on intelligence checks and intelligence saving throws, and the creature behaves as if under the effects of the confusion spell during combat.\nSeizure. The creature is overcome with shaking. The creature has disadvantage on dexterity checks, dexterity saving throws, and attack rolls that use Dexterity.\nSlimy Doom. The creature begins to bleed uncontrollably. The creature has disadvantage on constitution checks and constitution saving throws. In addition, whenever the creature takes damage, it is stunned until the end of its next turn.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "7 days",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "A melee spell attack that inflicts a disease on the target, causing various debilitating effects (disadvantages on ability checks, saving throws, vulnerability, blindness, stunned, etc.) until the target succeeds on three Constitution saving throws or the spell\u0027s duration ends (7 days).",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 100800,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "dispel-evil-and-good",
+    "Name": "Dispel Evil and Good",
+    "Description": "Shimmering energy surrounds and protects you from fey, undead, and creatures originating from beyond the Material Plane. For the duration, celestials, elementals, fey, fiends, and undead have disadvantage on attack rolls against you. You can end the spell early by using either of the following special functions. Break Enchantment: As your action, you touch a creature you can reach that is charmed, frightened, or possessed by a celestial, an elemental, a fey, a fiend, or an undead. The creature you touch is no longer charmed, frightened, or possessed by such creatures. Dismissal: As your action, make a melee spell attack against a celestial, an elemental, a fey, a fiend, or an undead you can reach. On a hit, you attempt to drive the creature back to its home plane. The creature must succeed on a charisma saving throw or be sent back to its home plane (if it isn\u0027t already). If they aren\u0027t on their home plane, undead are sent to the Shadowfell, and fey are sent to the Feywild.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Concentration, up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Provides a protective aura that gives celestials, elementals, fey, fiends, and undead disadvantage on attack rolls against you. While active, you can use a bonus action to break charm, fright, or possession on a creature, or make a melee spell attack to attempt to dismiss a celestial, elemental, fey, fiend, or undead to its home plane (Charisma save).",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": "Might",
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 1,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "flame-strike",
+    "Name": "Flame Strike",
+    "Description": "A vertical column of divine fire roars down from the heavens in a location you specify. Each creature in a 10-foot-radius, 40-foot-high cylinder centered on a point within range must make a dexterity saving throw. A creature takes 4d6 fire damage and 4d6 radiant damage on a failed save, or half as much damage on a successful one.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Deals 4d6 fire and 4d6 radiant damage in a 10\u2011foot radius, 40\u2011foot high cylinder; half damage on a successful Dexterity saving throw.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "4d6\u002B4d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Fire"
+    }
+  },
+  {
+    "Id": "geas",
+    "Name": "Geas",
+    "Description": "You place a magical command on a creature that you can see within range, forcing it to carry out some service or refrain from some action or course of activity as you decide. If the creature can understand you, it must succeed on a wisdom saving throw or become charmed by you for the duration. While the creature is charmed by you, it takes 5d10 psychic damage each time it acts in a manner directly counter to your instructions, but no more than once each day. A creature that can\u0027t understand you is unaffected by the spell. You can issue any command you choose, short of an activity that would result in certain death. Should you issue a suicidal command, the spell ends. You can end the spell early by using an action to dismiss it. A remove curse, greater restoration, or wish spell also ends it. When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Enchantment",
+    "CastingTime": "1 minute",
+    "Range": "60 feet",
+    "Duration": "30 days",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "The target must succeed on a Wisdom saving throw or become charmed for 30 days, taking 5d10 psychic damage each day it disobeys the command.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 30,
+      "EffectDice": "5d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Psychic"
+    }
+  },
+  {
+    "Id": "greater-restoration",
+    "Name": "Greater Restoration",
+    "Description": "You imbue a creature you touch with positive energy to undo a debilitating effect. You can reduce the target\u0027s exhaustion level by one, or end one of the following effects on the target: One effect that charmed or petrified the target. One curse, including the target\u0027s attunement to a cursed magic item. Any reduction to one of the target\u0027s ability scores. One effect reducing the target\u0027s hit point maximum.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Removes a condition, reduces exhaustion by 1, ends curses, restores ability scores or hit point maximum.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "hallow",
+    "Name": "Hallow",
+    "Description": "You touch a point and infuse an area around it with holy (or unholy) power. The area can have a radius up to 60 feet, and the spell fails if the radius includes an area already under the effect a hallow spell. The affected area is subject to the following effects. First, celestials, elementals, fey, fiends, and undead can\u2019t enter the area, nor can such creatures charm, frighten, or possess creatures within it. Any creature charmed, frightened, or possessed by such a creature is no longer charmed, frightened, or possessed upon entering the area. You can exclude one or more of those types of creatures from this effect. Second, you can bind an extra effect to the area. Choose the effect from the following list, or choose an effect offered by the GM. Some of these effects apply to creatures in the area; you can designate whether the effect applies to all creatures, creatures that follow a specific deity or leader, or creatures of a specific sort, such as ores or trolls. When a creature that would be affected enters the spell\u2019s area for the first time on a turn or starts its turn there, it can make a charisma saving throw. On a success, the creature ignores the extra effect until it leaves the area. Courage: Affected creatures can\u2019t be frightened while in the area. Darkness: Darkness fills the area. Normal light, as well as magical light created by spells of a lower level than the slot you used to cast this spell, can\u2019t illuminate the area. Daylight: Bright light fills the area. Magical darkness created by spells of a lower level than the slot you used to cast this spell can\u2019t extinguish the light. Energy Protection: Affected creatures in the area have resistance to one damage type of your choice, except for bludgeoning, piercing, or slashing. Energy Vulnerability: Affected creatures in the area have vulnerability to one damage type of your choice, except for bludgeoning, piercing, or slashing. Everlasting Rest: Dead bodies interred in the area can\u2019t be turned into undead. Extradimensional Interference: Affected creatures can\u2019t move or travel using teleportation or by extradimensional or interplanar means. Fear: Affected creatures are frightened while in the area. Silence: No sound can emanate from within the area, and no sound can reach into it. Tongues: Affected creatures can communicate with any other creature in the area, even if they don\u2019t share a common language.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "24 hours",
+    "Range": "Touch",
+    "Duration": "Until dispelled",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a 60\u2011foot radius area that blocks certain creature types, prevents charm, fear and possession, and allows you to bind one extra effect (e.g., Courage, Darkness, Daylight, etc.). Creatures must succeed on a Charisma saving throw to ignore the extra effect.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 60,
+      "EffectDuration": -1,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "insect-plague",
+    "Name": "Insect Plague",
+    "Description": "Swarming, biting locusts fill a 20-foot-radius sphere centered on a point you choose within range. The sphere spreads around corners. The sphere remains for the duration, and its area is lightly obscured. The sphere\u0027s area is difficult terrain.\nWhen the area appears, each creature in it must make a constitution saving throw. A creature takes 4d10 piercing damage on a failed save, or half as much damage on a successful one. A creature must also make this saving throw when it enters the spell\u2019s area for the first time on a turn or ends its turn there.\nHigher level: When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d10 for each slot level above 5th.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "300 feet",
+    "Duration": "Up to 10 minutes (Concentration)",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a 20-foot-radius sphere of biting locusts that deals 4d10 piercing damage (half on a successful Constitution save) to each creature in the area and on each entry or exit turn; the effect persists for up to 10 minutes with concentration.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": "4d10",
+      "LevelBasedEffectDiceSlots": {
+        "5": "4d10",
+        "6": "5d10",
+        "7": "6d10",
+        "8": "7d10",
+        "9": "8d10"
+      },
+      "SavingThrowDamageType": "Piercing"
+    }
+  },
+  {
+    "Id": "legend-lore",
+    "Name": "Legend Lore",
+    "Description": "Name or describe a person, place, or object. The spell brings to your mind a brief summary of the significant lore about the thing you named. The lore might consist of current tales, forgotten stories, or even secret lore that has never been widely known. If the thing you named isn\u2019t of legendary importance, you gain no information. The more information you already have about the thing, the more precise and detailed the information you receive is. The information you learn is accurate but might be couched in figurative language. For example, if you have a mysterious magic axe on hand the spell might yield this information: \u201CWoe to the evildoer whose hand touches the axe, for even the haft slices the hand of the evil ones. Only a true Child of Stone, lover and beloved of Moradin, may awaken the true powers of the axe, and only with the sacred word Rudnogg on the lips.\u201D",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "10 minutes",
+    "Range": "Self",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You learn detailed lore about a named person, place, or object, gaining accurate but possibly figurative information instantly.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "mass-cure-wounds",
+    "Name": "Mass Cure Wounds",
+    "Description": "A wave of healing energy washes out from a point of your choice within range. Choose up to six creatures in a 30-foot-radius sphere centered on that point. Each target regains hit points equal to 3d8 \u002B your spellcasting ability modifier. This spell has no effect on undead or constructs. When you cast this spell using a spell slot of 6th level or higher, the healing increases by 1d8 for each slot level above 5th.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Heals up to six creatures in a 30-foot radius for 3d8 \u002B your spellcasting ability modifier hit points (scales \u002B1d8 per slot level above 5th).",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 6,
+      "EffectDuration": 0,
+      "EffectDice": "3d8",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "planar-binding",
+    "Name": "Planar Binding",
+    "Description": "With this spell, you attempt to bind a celestial, an elemental, a fey, or a fiend to your service. The creature must be within range for the entire casting of the spell. (Typically, the creature is first summoned into the center of an inverted magic circle in order to keep it trapped while this spell is cast.) At the completion of the casting, the target must make a charisma saving throw. On a failed save, it is bound to serve you for the duration. If the creature was summoned or created by another spell, that spell\u0027s duration is extended to match the duration of this spell. A bound creature must follow your instructions to the best of its ability. You might command the creature to accompany you on an adventure, to guard a location, or to deliver a message. The creature obeys the letter of your instructions, but if the creature is hostile to you, it strives to twist your words to achieve its own objectives. If the creature carries out your instructions completely before the spell ends, it travels to you to report this fact if you are on the same plane of existence. If you are on a different plane of existence, it returns to the place where you bound it and remains there until the spell ends. When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 hour",
+    "Range": "60 feet",
+    "Duration": "24 hours",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "The caster attempts to bind a celestial, elemental, fey, or fiend to serve them. The target makes a Charisma saving throw; on a failure it is bound to obey the caster\u0027s instructions for 24 hours (duration can be extended with higher-level slots).",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 14400,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "raise-dead",
+    "Name": "Raise Dead",
+    "Description": "You return a dead creature you touch to life, provided that it has been dead no longer than 10 days. If the creature\u2019s soul is both willing and at liberty to rejoin the body, the creature returns to life with 1 hit point. This spell also neutralizes any poisons and cures nonmagical diseases that affected the creature at the time it died. This spell doesn\u2019t, however, remove magical diseases, curses, or similar effects; if these aren\u2019t first removed prior to casting the spell, they take effect when the creature returns to life. The spell can\u2019t return an undead creature to life. This spell closes all mortal wounds, but it doesn\u2019t restore missing body parts. If the creature is lacking body parts or organs integral for its survival--its head, for instance--the spell automatically fails. Coming back from the dead is an ordeal. The target takes a -4 penalty to all attack rolls, saving throws, and ability checks. Every time the target finishes a long rest, the penalty is reduced by 1 until it disappears.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 hour",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Returns a dead creature you touch to life with 1 hit point, neutralizes nonmagical diseases and poisons, and imposes a -4 penalty to attack rolls, saving throws, and ability checks that reduces by 1 each long rest.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "scrying",
+    "Name": "Scrying",
+    "Description": "You can see and hear a particular creature you choose that is on the same plane of existence as you. The target must make a wisdom saving throw, which is modified by how well you know the target and the sort of physical connection you have to it. If a target knows you\u2019re casting this spell, it can fail the saving throw voluntarily if it wants to be observed. Knowledge Save Modifier: Secondhand (you have heard of the target) \u002B5; Firsthand (you have met the target) \u002B0; Familiar (you know the target well) -5. Connection Save Modifier: Likeness or picture -2; Possession or garment -4; Body part, lock of hair, bit of nail, or the like -10. On a successful save, the target isn\u2019t affected, and you can\u2019t use this spell against it again for 24 hours. On a failed save, the spell creates an invisible sensor within 10 feet of the target. You can see and hear through the sensor as if you were there. The sensor moves with the target, remaining within 10 feet of it for the duration. A creature that can see invisible objects sees the sensor as a luminous orb about the size of your fist. Instead of targeting a creature, you can choose a location you have seen before as the target of this spell. When you do, the sensor appears at that location and doesn\u2019t move.",
+    "Level": 5,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "10 minutes",
+    "Range": "Self",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You can observe a creature or location via an invisible sensor within 10 feet of the target for up to 10 minutes (concentration), granting you sight and hearing as if you were there.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 100,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "blade-barrier",
+    "Name": "Blade Barrier",
+    "Description": "You create a vertical wall of whirling, razor-sharp blades made of magical energy. The wall appears within range and lasts for the duration. You can make a straight wall up to 100 feet long, 20 feet high, and 5 feet thick, or a ringed wall up to 60 feet in diameter, 20 feet high, and 5 feet thick. The wall provides three-quarters cover to creatures behind it, and its space is difficult terrain. When a creature enters the wall\u2019s area for the first time on a turn or starts its turn there, the creature must make a dexterity saving throw. On a failed save, the creature takes 6d10 slashing damage. On a successful save, the creature takes half as much damage.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "90 feet",
+    "Duration": "Up to 10 minutes",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Creates a vertical wall of whirling blades up to 100 feet long (or a ringed wall up to 60 ft in diameter) that provides three-quarters cover and difficult terrain. Creatures entering the wall or starting their turn there must make a Dex save, taking 6d10 slashing damage on a failure, or half on a success.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Line",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "6d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Slashing"
+    }
+  },
+  {
+    "Id": "create-undead",
+    "Name": "Create Undead",
+    "Description": "You can cast this spell only at night. Choose up to three corpses of Medium or Small humanoids within range. Each corpse becomes a ghoul under your control. (The GM has game statistics for these creatures.) As a bonus action on each of your turns, you can mentally command any creature you animated with this spell if the creature is within 120 feet of you (if you control multiple creatures, you can command any or all of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move during its next turn, or you can issue a general command, such as to guard a particular chamber or corridor. If you issue no commands, the creature only defends itself against hostile creatures. Once given an order, the creature continues to follow it until its task is complete. The creature is under your control for 24 hours, after which it stops obeying any command you have given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature before the current 24-hour period ends. This use of the spell reasserts your control over up to three creatures you have animated with this spell, rather than animating new ones. When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 minute",
+    "Range": "10 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Animates up to three Medium or Small humanoid corpses into ghouls you control for 24 hours; you can command them as a bonus action, and higher-level slots increase the number or type of undead created.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 3,
+      "EffectDuration": 14400,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "find-the-path",
+    "Name": "Find the Path",
+    "Description": "This spell allows you to find the shortest, most direct physical route to a specific fixed location that you are familiar with on the same plane of existence. If you name a destination on another plane of existence, a destination that moves (such as a mobile fortress), or a destination that isn\u2019t specific (such as a green dragon\u0027s lair), the spell fails. For the duration, as long as you are on the same plane of existence as the destination, you know how far it is and in what direction it lies. While you are traveling there, whenever you are presented with a choice of paths along the way, you automatically determine which path is the shortest and most direct route (but not necessarily the safest route) to the destination).",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 minute",
+    "Range": "Self",
+    "Duration": "Up to 24 hours",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You know the exact direction and distance to a familiar location on the same plane and automatically choose the shortest path while traveling.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 14400,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "forbiddance",
+    "Name": "Forbiddance",
+    "Description": "You create a ward against magical travel that protects up to 40,000 square feet of floor space to a height of 30 feet above the floor. For the duration, creatures can\u0027t teleport into the area or use portals, such as those created by the gate spell, to enter the area. The spell proofs the area against planar travel, and therefore prevents creatures from accessing the area by way of the Astral Plane, Ethereal Plane, Feywild, Shadowfell, or the plane shift spell. In addition, the spell damages types of creatures that you choose when you cast it. Choose one or more of the following: celestials, elementals, fey, fiends, and undead. When a chosen creature enters the spell\u0027s area for the first time on a turn or starts its turn there, the creature takes 5d10 radiant or necrotic damage (your choice when you cast this spell). When you cast this spell, you can designate a password. A creature that speaks the password as it enters the area takes no damage from the spell. The spell\u0027s area can\u0027t overlap with the area of another forbiddance spell. If you cast forbiddance every day for 30 days in the same location, the spell lasts until it is dispelled, and the material components are consumed on the last casting.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "10 minutes",
+    "Range": "Touch",
+    "Duration": "24 hours",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a 40,000\u2011sq\u2011ft ward that blocks teleportation and planar travel; deals 5d10 radiant or necrotic damage to chosen creature types that enter the area (damage avoided by password). Duration 24\u202Fh, non\u2011concentration.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "5d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "harm",
+    "Name": "Harm",
+    "Description": "You unleash a virulent disease on a creature that you can see within range. The target must make a constitution saving throw. On a failed save, it takes 14d6 necrotic damage, or half as much damage on a successful save. The damage can\u0027t reduce the target\u0027s hit points below 1. If the target fails the saving throw, its hit point maximum is reduced for 1 hour by an amount equal to the necrotic damage it took. Any effect that removes a disease allows a creature\u0027s hit point maximum to return to normal before that time passes.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "You unleash a virulent disease that deals 14d6 necrotic damage on a failed Constitution save (half on a success) and reduces the target\u0027s hit point maximum by the damage taken for 1 hour.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "14d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Necrotic"
+    }
+  },
+  {
+    "Id": "heal",
+    "Name": "Heal",
+    "Description": "Choose a creature that you can see within range. A surge of positive energy washes through the creature, causing it to regain 70 hit points. This spell also ends blindness, deafness, and any diseases affecting the target. This spell has no effect on constructs or undead. When you cast this spell using a spell slot of 7th level or higher, the amount of healing increases by 10 for each slot level above 6th.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "The target regains 70 hit points, ending blindness, deafness, and any diseases. Healing increases by 10 per slot level above 6th. No effect on constructs or undead.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 70,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "heroes-feast",
+    "Name": "Heroes\u0027 Feast",
+    "Description": "You bring forth a great feast, including magnificent food and drink. The feast takes 1 hour to consume and disappears at the end of that time, and the beneficial effects don\u0027t set in until this hour is over. Up to twelve other creatures can partake of the feast. A creature that partakes of the feast gains several benefits. The creature is cured of all diseases and poison, becomes immune to poison and being frightened, and makes all wisdom saving throws with advantage. Its hit point maximum also increases by 2d10, and it gains the same number of hit points. These benefits last for 24 hours.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "10 minutes",
+    "Range": "30 feet",
+    "Duration": "24 hours",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Up to 12 creatures that eat the feast are cured of disease and poison, become immune to poison and fear, gain advantage on wisdom saving throws, and increase their maximum HP by 2d10 (also gaining the same HP) for 24 hours.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 14400,
+      "EffectDice": "2d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "planar-ally",
+    "Name": "Planar Ally",
+    "Description": "You beseech an otherworldly entity for aid. The being must be known to you: a god, a primordial, a demon prince, or some other being of cosmic power. That entity sends a celestial, an elemental, or a fiend loyal to it to aid you, making the creature appear in an unoccupied space within range. If you know a specific creature\u2019s name, you can speak that name when you cast this spell to request that creature, though you might get a different creature anyway (GM\u2019s choice). When the creature appears, it is under no compulsion to behave in any particular way. You can ask the creature to perform a service in exchange for payment, but it isn\u2019t obliged to do so. The requested task could range from simple (fly us across the chasm, or help us fight a battle) to complex (spy on our enemies, or protect us during our foray into the dungeon). You must be able to communicate with the creature to bargain for its services. Payment can take a variety of forms. A celestial might require a sizable donation of gold or magic items to an allied temple, while a fiend might demand a living sacrifice or a gift of treasure. Some creatures might exchange their service for a quest undertaken by you. As a rule of thumb, a task that can be measured in minutes requires a payment worth 100 gp per minute. A task measured in hours requires 1,000 gp per hour. And a task measured in days (up to 10 days) requires 10,000 gp per day. The GM can adjust these payments based on the circumstances under which you cast the spell. If the task is aligned with the creature\u2019s ethos, the payment might be halved or even waived. Nonhazardous tasks typically require only half the suggested payment, while especially dangerous tasks might require a greater gift. Creatures rarely accept tasks that seem suicidal. After the creature completes the task, or when the agreed-upon duration of service expires, the creature returns to its home plane after reporting back to you, if appropriate to the task and if possible. If you are unable to agree on a price for the creature\u2019s service, the creature immediately returns to its home plane. A creature enlisted to join your group counts as a member of it, receiving a full share of experience points awarded.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "10 minutes",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Summons a celestial, elemental, or fiend to appear within range and provide services for a negotiated price, with the creature acting independently of the caster.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "true-seeing",
+    "Name": "True Seeing",
+    "Description": "This spell gives the willing creature you touch the ability to see things as they actually are. For the duration, the creature has truesight, notices secret doors hidden by magic, and can see into the Ethereal Plane, all out to a range of 120 feet.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Divination",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Grants the target truesight, allowing them to see magical concealments, secret doors, and the Ethereal Plane up to 120 feet for 1 hour.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "word-of-recall",
+    "Name": "Word of Recall",
+    "Description": "You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanctuary (see below). If you cast this spell without first preparing a sanctuary, the spell has no effect. You must designate a sanctuary by casting this spell within a location, such as a temple, dedicated to or strongly linked to your deity. If you attempt to cast the spell in this manner in an area that isn\u2019t dedicated to your deity, the spell has no effect.",
+    "Level": 6,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "5 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "Teleport yourself and up to five willing creatures within 5 feet to a designated sanctuary.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "conjure-celestial",
+    "Name": "Conjure Celestial",
+    "Description": "You summon a celestial of challenge rating 4 or lower, which appears in an unoccupied space that you can see within range. The celestial disappears when it drops to 0 hit points or when the spell ends. The celestial is friendly to you and your companions for the duration. Roll initiative for the celestial, which has its own turns. It obeys any verbal commands that you issue to it (no action required by you), as long as they don\u0027t violate its alignment. If you don\u0027t issue any commands to the celestial, it defends itself from hostile creatures but otherwise takes no actions. The GM has the celestial\u0027s statistics. When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 minute",
+    "Range": "90 feet",
+    "Duration": "Up to 1 hour",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Summons a friendly celestial of CR 4 or lower (CR 5 at 9th-level slot) within 90 feet; the creature remains for up to 1 hour (concentration) and follows your verbal commands.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 600,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "divine-word",
+    "Name": "Divine Word",
+    "Description": "You utter a divine word, imbued with the power that shaped the world at the dawn of creation. Choose any number of creatures you can see within range. Each creature that can hear you must make a Charisma saving throw. On a failed save, a creature suffers an effect based on its current hit points: - 50 hit points or fewer: deafened for 1 minute - 40 hit points or fewer: deafened and blinded for 10 minutes - 30 hit points or fewer: blinded, deafened, and stunned for 1 hour - 20 hit points or fewer: killed instantly. Regardless of its current hit points, a celestial, an elemental, a fey, or a fiend that fails its save is forced back to its plane of origin (if it isn\u2019t there already) and can\u2019t return to your current plane for 24 hours by any means short of a wish spell.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 bonus action",
+    "Range": "30 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V"
+    ],
+    "EffectText": "The caster utters a divine word causing creatures within 30 feet to make a Charisma saving throw; based on their current hit points they may be deafened, blinded, stunned, or killed instantly, and celestials, elementals, fey, or fiends are banished for 24 hours.",
+    "Effect": {
+      "EffectType": "Debuff",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 1,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "etherealness",
+    "Name": "Etherealness",
+    "Description": "You step into the border regions of the Ethereal Plane, in the area where it overlaps with your current plane. You remain in the Border Ethereal for the duration or until you use your action to dismiss the spell. During this time, you can move in any direction. If you move up or down, every foot of movement costs an extra foot. You can see and hear the plane you originated from, but everything there looks gray, and you can\u2019t see anything more than 60 feet away. While on the Ethereal Plane, you can only affect and be affected by other creatures on that plane. Creatures that aren\u2019t on the Ethereal Plane can\u2019t perceive you and can\u2019t interact with you, unless a special ability or magic has given them the ability to do so. You ignore all objects and effects that aren\u2019t on the Ethereal Plane, allowing you to move through objects you perceive on the plane you originated from. When the spell ends, you immediately return to the plane you originated from in the spot you currently occupy. If you occupy the same spot as a solid object or creature when this happens, you are immediately shunted to the nearest unoccupied space that you can occupy and take force damage equal to twice the number of feet you are moved. This spell has no effect if you cast it while you are on the Ethereal Plane or a plane that doesn\u2019t border it, such as one of the Outer Planes. When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "8 hours",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "You become ethereal, allowing you to move through objects and be unseen by creatures not on the Ethereal Plane for up to 8 hours.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 0,
+      "EffectDuration": 4800,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "fire-storm",
+    "Name": "Fire Storm",
+    "Description": "A storm made up of sheets of roaring flame appears in a location you choose within range. The area of the storm consists of up to ten 10-foot cubes, which you can arrange as you wish. Each cube must have at least one face adjacent to the face of another cube. Each creature in the area must make a dexterity saving throw. It takes 7d10 fire damage on a failed save, or half as much damage on a successful one. The fire damages objects in the area and ignites flammable objects that aren\u0027t being worn or carried. If you choose, plant life in the area is unaffected by this spell.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "150 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "Fire Storm creates a storm of fire covering up to ten 10-foot cubes, dealing 7d10 fire damage to each creature in the area on a failed Dexterity saving throw (half damage on success).",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "7d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Fire"
+    }
+  },
+  {
+    "Id": "plane-shift",
+    "Name": "Plane Shift",
+    "Description": "You and up to eight willing creatures who link hands in a circle are transported to a different plane of existence. You can specify a target destination in general terms, such as the City of Brass on the Elemental Plane of Fire or the palace of Dispater on the second level of the Nine Hells, and you appear in or near that destination. If you are trying to reach the City of Brass, for example, you might arrive in its Street of Steel, before its Gate of Ashes, or looking at the city from across the Sea of Fire, at the GM\u2019s discretion. Alternatively, if you know the sigil sequence of a teleportation circle on another plane of existence, this spell can take you to that circle. If the teleportation circle is too small to hold all the creatures you transported, they appear in the closest unoccupied spaces next to the circle. You can use this spell to banish an unwilling creature to another plane. Choose a creature within your reach and make a melee spell attack against it. On a hit, the creature must make a charisma saving throw. If the creature fails this save, it is transported to a random location on the plane of existence you specify. A creature so transported must find its own way back to your current plane of existence.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Transports you and up to eight willing creatures to a chosen plane, or banishes an unwilling creature on a failed Charisma saving throw.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Self",
+      "EffectMagnitude": 9,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "regenerate",
+    "Name": "Regenerate",
+    "Description": "You touch a creature and stimulate its natural healing ability. The target regains 4d8\u002B15 hit points. For the duration of the spell, the target regains 1 hit point at the start of each of its turns (10 hit points each minute). The target\u0027s severed body members (fingers, legs, tails, and so on), if any, are restored after 2 minutes. If you have the severed part and hold it to the stump, the spell instantaneously causes the limb to knit to the stump.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "1 minute",
+    "Range": "Touch",
+    "Duration": "1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Heals the target for 4d8\u002B15 HP immediately and restores 1 HP at the start of each of its turns for 1 hour, also restores severed limbs.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 1,
+      "EffectDuration": 600,
+      "EffectDice": "4d8\u002B15",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "resurrection",
+    "Name": "Resurrection",
+    "Description": "You touch a dead creature that has been dead for no more than a century, that didn\u0027t die of old age, and that isn\u0027t undead. If its soul is free and willing, the target returns to life with all its hit points. This spell neutralizes any poisons and cures normal diseases afflicting the creature when it died. It doesn\u0027t, however, remove magical diseases, curses, and the like; if such effects aren\u0027t removed prior to casting the spell, they afflict the target on its return to life. This spell closes all mortal wounds and restores any missing body parts. Coming back from the dead is an ordeal. The target takes a -4 penalty to all attack rolls, saving throws, and ability checks. Every time the target finishes a long rest, the penalty is reduced by 1 until it disappears. Casting this spell to restore life to a creature that has been dead for one year or longer taxes you greatly. Until you finish a long rest, you can\u0027t cast spells again, and you have disadvantage on all attack rolls, ability checks, and saving throws.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 hour",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Restores a dead creature to life with full hit points, cures nonmagical diseases and poisons, heals mortal wounds, restores missing body parts, and imposes a temporary -4 penalty to attack rolls, saving throws, and ability checks that lessens each long rest.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "symbol",
+    "Name": "Symbol",
+    "Description": "When you cast this spell, you inscribe a harmful glyph either on a surface (such as a section of floor, a wall, or a table) or within an object that can be closed to conceal the glyph (such as a book, a scroll, or a treasure chest). If you choose a surface, the glyph can cover an area of the surface no larger than 10 feet in diameter. If you choose an object, that object must remain in its place; if the object is moved more than 10 feet from where you cast this spell, the glyph is broken, and the spell ends without being triggered.\nThe glyph is nearly invisible, requiring an Intelligence (Investigation) check against your spell save DC to find it.\nYou decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, the most typical triggers include touching or stepping on the glyph, removing another object covering it, approaching within a certain distance of it, or manipulating the object that holds it. For glyphs inscribed within an object, the most common triggers are opening the object, approaching within a certain distance of it, or seeing or reading the glyph.\nYou can further refine the trigger so the spell is activated only under certain circumstances or according to a creature\u2019s physical characteristics (such as height or weight), or physical kind (for example, the ward could be set to affect hags or shapechangers). You can also specify creatures that don\u2019t trigger the glyph, such as those who say a certain password.\nWhen you inscribe the glyph, choose one of the options below for its effect. Once triggered, the glyph glows, filling a 60\u2011foot\u2011radius sphere with dim light for 10 minutes, after which time the spell ends. Each creature in the sphere when the glyph activates is targeted by its effect, as is a creature that enters the sphere for the first time on a turn or ends its turn there.\nDeath. Each target must make a constitution saving throw, taking 10d10 necrotic damage on a failed save, or half as much damage on a successful save.\nDiscord. Each target must make a constitution saving throw. On a failed save, a target bickers and argues with other creatures for 1 minute. During this time, it is incapable of meaningful communication and has disadvantage on attack rolls and ability checks.\nFear. Each target must make a wisdom saving throw and becomes frightened for 1 minute on a failed save. While frightened, the target drops whatever it is holding and must move at least 30 feet away from the glyph on each of its turns, if able.\nHopelessness. Each target must make a charisma saving throw. On a failed save, the target is overwhelmed with despair for 1 minute. During this time, it can\u2019t attack or target any creature with harmful abilities, spells, or other magical effects.\nInsanity. Each target must make an intelligence saving throw. On a failed save, the target is driven insane for 1 minute. An insane creature can\u2019t take actions, can\u2019t understand what other creatures say, can\u2019t read, and speaks only in gibberish. The GM controls its movement, which is erratic.\nPain. Each target must make a constitution saving throw and becomes incapacitated with excruciating pain for 1 minute on a failed save.\nSleep. Each target must make a wisdom saving throw and falls unconscious for 10 minutes on a failed save. A creature awakens if it takes damage or if someone uses an action to shake or slap it awake.\nStunning. Each target must make a wisdom saving throw and becomes stunned for 1 minute on a failed save.",
+    "Level": 7,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 minute",
+    "Range": "Touch",
+    "Duration": "Until dispelled",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "When triggered, the glyph creates a 60\u2011foot\u2011radius sphere; each creature within must make the appropriate saving throw and suffers the chosen effect\u2014most notably 10d10 necrotic damage on a failed Constitution save, or a condition such as fear, stun, sleep, etc., on a failed save.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": "10d10",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Necrotic"
+    }
+  },
+  {
+    "Id": "antimagic-field",
+    "Name": "Antimagic Field",
+    "Description": "A 10-foot-radius invisible sphere of antimagic surrounds you. This area is divorced from the magical energy that suffuses the multiverse. Within the sphere, spells can\u0027t be cast, summoned creatures disappear, and even magic items become mundane. Until the spell ends, the sphere moves with you, centered on you. Spells and other magical effects, except those created by an artifact or a deity, are suppressed in the sphere and can\u0027t protrude into it. A slot expended to cast a suppressed spell is consumed. While an effect is suppressed, it doesn\u0027t function, but the time it spends suppressed counts against its duration. Targeted Effects. Spells and other magical effects, such as magic missile and charm person, that target a creature or an object in the sphere have no effect on that target. Areas of Magic. The area of another spell or magical effect, such as fireball, can\u0027t extend into the sphere. If the sphere overlaps an area of magic, the part of the area that is covered by the sphere is suppressed. For example, the flames created by a wall of fire are suppressed within the sphere, creating a gap in the wall if the overlap is large enough. Spells. Any active spell or other magical effect on a creature or an object in the sphere is suppressed while the creature or object is in it. Magic Items. The properties and powers of magic items are suppressed in the sphere. For example, a \u002B1 longsword in the sphere functions as a nonmagical longsword. A magic weapon\u0027s properties and powers are suppressed if it is used against a target in the sphere or wielded by an attacker in the sphere. If a magic weapon or a piece of magic ammunition fully leaves the sphere (for example, if you fire a magic arrow or throw a magic spear at a target outside the sphere), the magic of the item ceases to be suppressed as soon as it exits. Magical Travel. Teleportation and planar travel fail to work in the sphere, whether the sphere is the destination or the departure point for such magical travel. A portal to another location, world, or plane of existence, as well as an opening to an extradimensional space such as that created by the rope trick spell, temporarily closes while in the sphere. Creatures and Objects. A creature or object summoned or created by magic temporarily winks out of existence in the sphere. Such a creature instantly reappears once the space the creature occupied is no longer within the sphere. Dispel Magic. Spells and magical effects such as dispel magic have no effect on the sphere. Likewise, the spheres created by different antimagic field spells don\u0027t nullify each other.",
+    "Level": 8,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 1 hour",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a 10-foot-radius sphere of antimagic centered on the caster, suppressing all magical effects, spells, and magical items within it for up to 1 hour (concentration).",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "control-weather",
+    "Name": "Control Weather",
+    "Description": "You take control of the weather within 5 miles of you for the duration. You must be outdoors to cast this spell. Moving to a place where you don\u2019t have a clear path to the sky ends the spell early.\nWhen you cast the spell, you change the current weather conditions, which are determined by the GM based on the climate and season. You can change precipitation, temperature, and wind. It takes 1d4 x 10 minutes for the new conditions to take effect. Once they do so, you can change the conditions again. When the spell ends, the weather gradually returns to normal.\nWhen you change the weather conditions, find a current condition on the following tables and change its stage by one, up or down. When changing the wind, you can change its direction.\nPrecipitation:\n1: Clear\n2: Light clouds\n3: Overcast or ground fog\n4: Rain, hail, or snow\n5: Torrential rain, driving hail, or blizzard\nTemperature:\n1: Unbearable heat\n2: Hot\n3: Warm\n4: Cool\n5: Cold\n6: Arctic cold\nWind:\n1: Calm\n2: Moderate wind\n3: Strong wind\n4: Gale\n5: Storm",
+    "Level": 8,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Transmutation",
+    "CastingTime": "10 minutes",
+    "Range": "Self",
+    "Duration": "Up to 8 hours",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "You control the weather within 5 miles, altering precipitation, temperature, and wind for up to 8 hours, requiring concentration.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 4800,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "earthquake",
+    "Name": "Earthquake",
+    "Description": "You create a seismic disturbance at a point on the ground that you can see within range. For the duration, an intense tremor rips through the ground in a 100-foot-radius circle centered on that point and shakes creatures and structures in contact with the ground in that area. The ground in the area becomes difficult terrain. Each creature on the ground that is concentrating must make a Constitution saving throw or have its concentration broken. When you cast this spell and at the end of each turn you spend concentrating on it, each creature on the ground in the area must make a Dexterity saving throw; on a failed save, the creature is knocked prone. The spell can have additional effects depending on the terrain, such as fissures that open, dealing 5d6 bludgeoning damage to creatures that fail a Dexterity save, and structures that take 50 bludgeoning damage each turn, potentially collapsing.",
+    "Level": 8,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Evocation",
+    "CastingTime": "1 action",
+    "Range": "500 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a 100\u2011foot\u2011radius seismic disturbance that makes the area difficult terrain, forces concentration checks, may knock creatures prone, can cause fissures that deal 5d6 bludgeoning damage to creatures, and deals 50 bludgeoning damage to structures each turn.",
+    "Effect": {
+      "EffectType": "Damage",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 50,
+      "EffectDuration": 10,
+      "EffectDice": "5d6",
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": "Bludgeoning"
+    }
+  },
+  {
+    "Id": "holy-aura",
+    "Name": "Holy Aura",
+    "Description": "Divine light washes out from you and coalesces in a soft radiance in a 30-foot radius around you. Creatures of your choice in that radius when you cast this spell shed dim light in a 5-foot radius and have advantage on all saving throws, and other creatures have disadvantage on attack rolls against them until the spell ends. In addition, when a fiend or an undead hits an affected creature with a melee attack, the aura flashes with brilliant light. The attacker must succeed on a constitution saving throw or be blinded until the spell ends.",
+    "Level": 8,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Abjuration",
+    "CastingTime": "1 action",
+    "Range": "Self",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Divine light washes out from you and coalesces in a soft radiance in a 30-foot radius around you. Creatures of your choice in that radius when you cast this spell shed dim light in a 5-foot radius and have advantage on all saving throws, and other creatures have disadvantage on attack rolls against them until the spell ends. In addition, when a fiend or an undead hits an affected creature with a melee attack, the aura flashes with brilliant light. The attacker must succeed on a constitution saving throw or be blinded until the spell ends.",
+    "Effect": {
+      "EffectType": "Buff",
+      "AffectedAttribute": "Wits",
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 2,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "astral-projection",
+    "Name": "Astral Projection",
+    "Description": "You and up to eight willing creatures within range project your astral bodies into the Astral Plane (the spell fails and the casting is wasted if you are already on that plane). The material body you leave behind is unconscious and in a state of suspended animation; it doesn\u2019t need food or air and doesn\u2019t age. Your astral body resembles your mortal form in almost every way, replicating your game statistics and possessions. The principal difference is the addition of a silvery cord that extends from between your shoulder blades and trails behind you, fading to invisibility after 1 foot. This cord is your tether to your material body. As long as the tether remains intact, you can find your way home. If the cord is cut--something that can happen only when an effect specifically states that it does--your soul and body are separated, killing you instantly. Your astral form can freely travel through the Astral Plane and can pass through portals there leading to any other plane. If you enter a new plane or return to the plane you were on when casting this spell, your body and possessions are transported along the silver cord, allowing you to re-enter your body as you enter the new plane. Your astral form is a separate incarnation. Any damage or other effects that apply to it have no effect on your physical body, nor do they persist when you return to it. The spell ends for you and your companions when you use your action to dismiss it. When the spell ends, the affected creature returns to its physical body, and it awakens. The spell might also end early for you or one of your companions. A successful dispel magic spell used against an astral or physical body ends the spell for that creature. If a creature\u2019s original body or its astral form drops to 0 hit points, the spell ends for that creature. If the spell ends and the silver cord is intact, the cord pulls the creature\u2019s astral form back to its body, ending its state of suspended animation. If you are returned to your body prematurely, your companions remain in their astral forms and must find their own way back to their bodies, usually by dropping to 0 hit points. Material components: For each creature you affect with this spell, you must provide one jacinth worth at least 1,000 gp and one ornately carved bar of silver worth at least 100 gp, all of which the spell consumes.",
+    "Level": 9,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 hour",
+    "Range": "10 feet",
+    "Duration": "Special",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Projects you and up to eight willing creatures into the Astral Plane, leaving your bodies in suspended animation and granting travel in astral form; the spell ends when dismissed, the silver cord is broken, or the caster/companion returns to their body.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "gate",
+    "Name": "Gate",
+    "Description": "You conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence. The portal is a circular opening, which you can make 5 to 20 feet in diameter. You can orient the portal in any direction you choose. The portal lasts for the duration. The portal has a front and a back on each plane where it appears. Travel through the portal is possible only by moving through its front. Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal. Deities and other planar rulers can prevent portals created by this spell from opening in their presence or anywhere within their domains. When you cast this spell, you can speak the name of a specific creature (a pseudonym, title, or nickname doesn\u0027t work). If that creature is on a plane other than the one you are on, the portal opens in the named creature\u0027s immediate vicinity and draws the creature through it to the nearest unoccupied space on your side of the portal. You gain no special power over the creature, and it is free to act as the GM deems appropriate. It might leave, attack you, or help you.",
+    "Level": 9,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Up to 1 minute",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Creates a portal up to 20 feet in diameter that links a point within 60 feet to a location on another plane, allowing travel for any creature that passes through its front.",
+    "Effect": {
+      "EffectType": "Utility",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 0,
+      "EffectDuration": 10,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "mass-heal",
+    "Name": "Mass Heal",
+    "Description": "A flood of healing energy flows from you into injured creatures around you. You restore up to 700 hit points, divided as you choose among any number of creatures that you can see within range. Creatures healed by this spell are also cured of all diseases and any effect making them blinded or deafened. This spell has no effect on undead or constructs.",
+    "Level": 9,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Conjuration",
+    "CastingTime": "1 action",
+    "Range": "60 feet",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S"
+    ],
+    "EffectText": "A flood of healing energy flows from you into injured creatures around you. You restore up to 700 hit points, divided as you choose among any number of creatures that you can see within range. Creatures healed by this spell are also cured of all diseases and any effect making them blinded or deafened. This spell has no effect on undead or constructs.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": null,
+      "AreaOfEffect": "Area",
+      "EffectMagnitude": 700,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  },
+  {
+    "Id": "true-resurrection",
+    "Name": "True Resurrection",
+    "Description": "You touch a creature that has been dead for no longer than 200 years and that died for any reason except old age. If the creature\u0027s soul is free and willing, the creature is restored to life with all its hit points. This spell closes all wounds, neutralizes any poison, cures all diseases, and lifts any curses affecting the creature when it died. The spell replaces damaged or missing organs and limbs. The spell can even provide a new body if the original no longer exists, in which case you must speak the creature\u0027s name. The creature then appears in an unoccupied space you choose within 10 feet of you.",
+    "Level": 9,
+    "SpellClass": "ClericAndPaladin",
+    "School": "Necromancy",
+    "CastingTime": "1 hour",
+    "Range": "Touch",
+    "Duration": "Instantaneous",
+    "Components": [
+      "V",
+      "S",
+      "M"
+    ],
+    "EffectText": "Restores a dead creature to life with full hit points, heals all wounds, cures poison, disease, and curses, and can provide a new body.",
+    "Effect": {
+      "EffectType": "Healing",
+      "AffectedAttribute": "Vitality",
+      "AreaOfEffect": "SingleTarget",
+      "EffectMagnitude": 0,
+      "EffectDuration": 0,
+      "EffectDice": null,
+      "LevelBasedEffectDiceSlots": {},
+      "SavingThrowDamageType": null
+    }
+  }
+]

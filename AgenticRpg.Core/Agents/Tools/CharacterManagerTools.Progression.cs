@@ -134,7 +134,7 @@ public partial class CharacterManagerTools
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character is null)
             {
                 return JsonSerializer.Serialize(new GetAvailableSpellsResult

@@ -9,9 +9,6 @@
         <button class="@(ActiveTab == NarrativeTab.Global ? "active" : "")" @onclick="() => SetTab(NarrativeTab.Global)">
             Global
         </button>
-        <button class="@(ActiveTab == NarrativeTab.GM ? "active" : "")" @onclick="() => SetTab(NarrativeTab.GM)">
-            GM Only
-        </button>
         <button class="@(ActiveTab == NarrativeTab.Character ? "active" : "")" @onclick="() => SetTab(NarrativeTab.Character)">
             Character
         </button>
@@ -20,7 +17,7 @@
     <div class="narrative-content">
         @if (FilteredNarratives.Any())
         {
-            @foreach (var narrative in FilteredNarratives)
+            @foreach (var narrative in FilteredNarratives.DistinctBy(n => n.Id))
             {
                 <div class="narrative-entry">
                     <div class="narrative-header">
@@ -87,16 +84,12 @@
             {
                 NarrativeTab.Global => Narratives
                     .Where(n => n.Visibility == NarrativeVisibility.Global)
-                    .OrderBy(n => n.SequenceNumber),
-                
-                NarrativeTab.GM => Narratives
-                    .Where(n => n.Visibility == NarrativeVisibility.GMOnly)
-                    .OrderBy(n => n.SequenceNumber),
+                    .OrderByDescending(n => n.SequenceNumber),
                 
                 NarrativeTab.Character => Narratives
                     .Where(n => n.Visibility == NarrativeVisibility.CharacterSpecific 
                         && n.TargetCharacterId == CurrentCharacterId)
-                    .OrderBy(n => n.SequenceNumber),
+                    .OrderByDescending(n => n.SequenceNumber),
                 
                 _ => Enumerable.Empty<Narrative>()
             };
@@ -128,7 +121,6 @@
     public enum NarrativeTab
     {
         Global,
-        GM,
         Character
     }
 }

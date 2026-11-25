@@ -64,8 +64,8 @@ public class AttributeCalculator
                 
             case CharacterRace.Emberfolk:
                 // Charismatic fire-touched: +2 Presence, -1 Wits
-                modifiedAttributes[AttributeType.Presence] += 2;
-                modifiedAttributes[AttributeType.Wits] -= 1;
+                modifiedAttributes[AttributeType.Vitality] -= 1;
+                modifiedAttributes[AttributeType.Wits] += 2;
                 break;
                 
             case CharacterRace.Stoneborn:

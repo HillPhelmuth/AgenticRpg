@@ -10,7 +10,10 @@ using System;
 using System.ClientModel;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
+using OpenAI.Responses;
 using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
+#pragma warning disable OPENAI001
 
 
 namespace AgenticRpg.Core.Services;
@@ -66,7 +69,7 @@ public class QuestGenService
         var templateConfig = new PromptTemplateConfig(Instructions);
         var instructions = await promptTemplateFactory.Create(templateConfig).RenderAsync(kernel, args);
         var client = new OpenAIClient(new ApiKeyCredential(Configuration.OpenRouterApiKey),
-            new OpenAIClientOptions { Endpoint = new Uri(Configuration.OpenRouterEndpoint) }).GetChatClient("x-ai/grok-4.1-fast");
+            new OpenAIClientOptions { Endpoint = new Uri(Configuration.OpenRouterEndpoint) }).GetResponsesClient();
         ChatClientAgent agent = client.AsAIAgent(new ChatClientAgentOptions()
         {
             Description = "Generates a primary quest for a new campaign",
@@ -76,9 +79,9 @@ public class QuestGenService
                 Instructions = instructions,
                 ResponseFormat = ChatResponseFormat.ForJsonSchema<Quest>()
             }
-        });
+        }, "deepseek/deepseek-v4-pro");
         
-        var response = await agent.RunAsync<Quest>($"Generate a primary quest based on this description: '{description}'");
-        return response.Result;
+        var response = await agent.RunAsync($"Generate a primary quest based on this description: '{description}'");
+        return JsonSerializer.Deserialize<Quest>(response.Text.Replace("```json", "").Replace("```", ""))!;
     }
 }

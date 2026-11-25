@@ -53,6 +53,8 @@ public class QuickCreateWorld
 
 public class World
 {
+    public string? CompletionSessionId { get; set; }
+
     /// <summary>
     /// Unique identifier for the world
     /// </summary>

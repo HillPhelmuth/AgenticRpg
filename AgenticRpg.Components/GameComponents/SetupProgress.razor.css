@@ -1,0 +1,5 @@
+.setup-progress { display: flex; flex-wrap: wrap; gap: .5rem; padding: .75rem; border: 1px solid #344451; border-radius: 8px; background: #111827; color: #b0bec5; }
+span { flex: 1 1 120px; padding: .55rem .75rem; border: 1px solid transparent; border-radius: 5px; font-size: .9rem; }
+.current { font-weight: 700; color: #f0cf76; background: #2d2a20; border-color: #a38942; }
+.complete { color: #80deea; }
+@media (max-width: 480px) { span { flex-basis: calc(50% - .5rem); } }

@@ -9,7 +9,7 @@
 
 .model-label {
     font-weight: 600;
-    color: var(--text-secondary, #666);
+    color: var(--text-secondary, #b0bec5);
     white-space: nowrap;
 }
 
@@ -25,10 +25,10 @@
     min-width: 200px;
     height: 1.9rem;
     padding: 0 0.55rem;
-    border: 1px solid var(--border-color, #ccc);
+    border: 1px solid var(--border-color, #67838d);
     border-radius: 4px;
-    background-color: var(--background-color, #fff);
-    color: var(--text-primary, #333);
+    background-color: var(--background-color, #111827);
+    color: var(--text-primary, #e0f2f1);
     font-size: 0.8rem;
     cursor: pointer;
 }
@@ -56,9 +56,9 @@
     left: 0;
     width: 260px;
     padding: 0.35rem;
-    border: 1px solid var(--border-color, #ccc);
+    border: 1px solid var(--border-color, #67838d);
     border-radius: 6px;
-    background-color: var(--background-color, #fff);
+    background-color: var(--background-color, #111827);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
     z-index: 10;
 }
@@ -67,7 +67,7 @@
     width: 100%;
     height: 1.7rem;
     padding: 0 0.45rem;
-    border: 1px solid var(--border-color, #ccc);
+    border: 1px solid var(--border-color, #67838d);
     border-radius: 4px;
     font-size: 0.8rem;
 }
@@ -93,7 +93,7 @@
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--text-primary, #333);
+    color: var(--text-primary, #e0f2f1);
     font-size: 0.8rem;
     cursor: pointer;
 }
@@ -106,7 +106,7 @@
 .model-empty {
     padding: 0.35rem 0.4rem;
     font-size: 0.78rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-secondary, #b0bec5);
 }
 
 .btn-select-model {
@@ -153,3 +153,11 @@
 .model-toast.error {
     background: rgba(192, 57, 43, 0.9);
 }
+
+/* Shared picker defaults match the dark game theme, including the campaign form. */
+.model-selector { flex-wrap: wrap; min-width: 0; }
+.model-dropdown-container { flex: 1 1 180px; min-width: 0; max-width: 380px; }
+.model-toggle { width: 100%; min-width: 0; min-height: 44px; height: auto; padding: .5rem .65rem; }
+.model-panel { width: min(320px, calc(100vw - 3rem)); max-width: 100%; }
+.model-filter { min-height: 44px; background: var(--background-color, #111827); color: var(--text-primary, #e0f2f1); }
+.model-option { min-height: 44px; }

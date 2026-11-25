@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Threading;
 using AgenticRpg.DevUtility;
+using AgenticRpg.Core.Helpers;
 
 var builder = new ConfigurationBuilder()
     .AddUserSecrets<Program>();
@@ -43,7 +44,7 @@ const string options = """
                        4. Update Spells
                        5. Show Spells
                        6. Test Sora API
-                       7. Generate Schema for AgentSuggestedActions
+                       7. Generate Schema for Spell
                        """;
 Console.WriteLine(options);
 var input = Console.ReadLine();
@@ -72,13 +73,13 @@ switch (selectedOption)
         {
             var userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var dataPath = Path.Combine(userPath, @"source\repos\AgenticRpg\AgenticRpg.Core\Data");
-            var outputPath = Path.Combine(dataPath, "RpgConvertedSpells-Divination.json");
-            var spellData = await DndApiService.GetSpellData();
-            var spells = await DndApiService.RetrieveSpells(spellData);
+            var outputPath = Path.Combine(dataPath, "RpgConvertedSpells-all.json");
+            //var spellData = await DndApiService.GetSpellData();
+            var spells = await DndApiService.RetrieveSpellsAsDndSpells();
             var taskList = spells.Select(DndApiService.ConvertSpellAsync).ToList();
             var convertedSpells = await Task.WhenAll(taskList);
             await File.WriteAllTextAsync(outputPath,
-                JsonSerializer.Serialize(convertedSpells.Where(x => x != null), cachedJsonOptions));
+                JsonSerializer.Serialize(convertedSpells.Where(x => x != null && !string.IsNullOrEmpty(x.Name)), cachedJsonOptions));
             break;
         }
     case 3:
@@ -162,8 +163,21 @@ switch (selectedOption)
         }
     case 7:
         {
-            var schema = GenerateSchema.GenerateSchemaFrom<AgentSuggestedActions>();
+            var schema = GenerateSchema.GenerateSchemaFrom<Spell>();
             Console.WriteLine($"Schema for AgentSuggestedActions:\n\n{schema}");
+            break;
+        }
+    case 8:
+        {
+            var allSpells = FileHelper.ExtractFromAssembly<List<Spell>>("RpgConvertedSpells-all.json");
+            var userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var dataPath = Path.Combine(userPath, @"source\repos\AgenticRpg\AgenticRpg.Core\Data");
+            var clericSpells = allSpells.Where(x => x.SpellClass == SpellClass.ClericAndPaladin).OrderBy(x => x.Level).ToList(); 
+            var outputPathCleric = Path.Combine(dataPath, "RpgClericSpellList.json");
+            var wizardSpells = allSpells.Where(x => x.SpellClass == SpellClass.WizardAndWarMage).OrderBy(x => x.Level).ToList();
+            var outputPathWizard = Path.Combine(dataPath, "RpgWizardSpellList.json");
+            File.WriteAllText(outputPathCleric, JsonSerializer.Serialize(clericSpells, cachedJsonOptions));
+            File.WriteAllText(outputPathWizard, JsonSerializer.Serialize(wizardSpells, cachedJsonOptions));
             break;
         }
 }

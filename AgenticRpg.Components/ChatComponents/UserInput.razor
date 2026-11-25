@@ -2,26 +2,27 @@
 @namespace AgenticRpg.Components.ChatComponents
 
 <div class="user-input @CssClass">
+    @if (!string.IsNullOrEmpty(_submissionError)) { <div role="status" aria-live="polite">@_submissionError</div> }
     <div class="input-container">
         @if (_isTextArea)
         {
-            <textarea class="input-field @(IsProcessing ? "disabled" : "")"
+            <textarea class="input-field @(DraftDisabled ? "disabled" : "")"
                       placeholder="@Placeholder"
-                      @bind="_inputValue"
+                      @bind="_inputValue" @bind:after="PersistDraft"
                       @onkeydown="HandleKeyDown"
                       @bind:event="oninput"
                       rows="@Rows"
-                      disabled="@IsProcessing">
+                      disabled="@DraftDisabled">
                     </textarea>
         }
         else
         {
-            <input class="input-field @(IsProcessing ? "disabled" : "")"
+            <input class="input-field @(DraftDisabled ? "disabled" : "")"
                    placeholder="@Placeholder"
-                   @bind="_inputValue"
+                   @bind="_inputValue" @bind:after="PersistDraft"
                    @onkeydown="HandleKeyDown"
                    @bind:event="oninput"
-                   disabled="@IsProcessing" />
+                   disabled="@DraftDisabled" />
         }
         <button class="input-toggle-button" @onclick="@(() => _isTextArea = !_isTextArea)">
             @if (_isTextArea)
@@ -34,21 +35,18 @@
             }
         </button>
         <div class="input-actions">
-            @if (IsProcessing)
+            @if (IsProcessing && OnCancel.HasDelegate)
             {
-                <button class="btn-cancel" @onclick="CancelProcessing">
+                <button class="btn-cancel" disabled="@IsUnavailable" @onclick="CancelProcessing">
                     <span class="spinner"></span>
                     Cancel
                 </button>
             }
-            else
-            {
                 <button class="btn-submit"
                         @onclick="SubmitMessage"
-                        disabled="@(string.IsNullOrWhiteSpace(_inputValue))">
-                    Send
+                        disabled="@(string.IsNullOrWhiteSpace(_inputValue) || IsProcessing || IsUnavailable)">
+                    @(IsProcessing ? "Waiting..." : "Send")
                 </button>
-            }
         </div>
     </div>
 

@@ -1,3 +1,4 @@
+@using AgenticRpg.Core.Rules
 @using AgenticRpg.Core.Models
 @using AgenticRpg.Core.Models.Enums
 @using AgenticRpg.Core.Models.Game
@@ -16,10 +17,10 @@
             <h2>@Character.Name</h2>
             <div class="sheet-navigation">
                 <button class="@(CurrentPage == 1 ? "active" : "")" @onclick="() => SetPage(1)">
-                    Stats
+                    Stats & Abilities
                 </button>
                 <button class="@(CurrentPage == 2 ? "active" : "")" @onclick="() => SetPage(2)">
-                    Abilities
+                    Inventory & Background
                 </button>
                 <button class="@(CurrentPage == 3 ? "active" : "")" @onclick="() => SetPage(3)">
                     Portrait
@@ -152,9 +153,10 @@
                                     @if (Character.Equipment.MainHand != null)
                                     {
                                         <tr>
-                                            <td>@Character.Equipment.MainHand.Name</td>
-                                            <td>+@(Character.GetAttributeModifier(AttributeType.Might) + Character.Level / 2)</td>
-                                            <td>@Character.Equipment.MainHand.DamageDice (@Character.Equipment.MainHand.DamageType)</td>
+                                            <td>@Character.Equipment.MainHand.Name
+                                            </td>
+                                            <td title="@WeaponMechanics.For(Character, Character.Equipment.MainHand!).AttackExplanation">@WeaponMechanics.Signed(WeaponMechanics.For(Character, Character.Equipment.MainHand!).Attack)</td>
+                                            <td>@WeaponMechanics.For(Character, Character.Equipment.MainHand).DamageExplanation (@Character.Equipment.MainHand.DamageType)</td>
                                         </tr>
                                     }
                                     @if (Character.Equipment.OffHand != null && Character.Equipment.OffHand.ItemType == ItemType.Weapon)
@@ -162,11 +164,11 @@
                                         var offhandWeapon = Character.Equipment.OffHand as WeaponItem;
                                         <tr>
                                             <td>@Character.Equipment.OffHand.Name</td>
-                                            <td>+@(Character.GetAttributeModifier(AttributeType.Might) + Character.Level / 2)</td>
+                                            <td title="@(offhandWeapon is null ? null : WeaponMechanics.For(Character, offhandWeapon).AttackExplanation)">@(offhandWeapon is null ? "—" : WeaponMechanics.Signed(WeaponMechanics.For(Character, offhandWeapon).Attack))</td>
                                             <td>
                                                 @if (offhandWeapon != null)
                                                 {
-                                                    @offhandWeapon.DamageDice <text>(@offhandWeapon.DamageType)</text>
+                                                    @WeaponMechanics.For(Character, offhandWeapon).DamageExplanation <text>(@offhandWeapon.DamageType)</text>
                                                 }
                                                 else
                                                 {

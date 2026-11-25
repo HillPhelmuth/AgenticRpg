@@ -24,7 +24,7 @@ namespace AgenticRpg.Core.Agents.Tools;
 /// </summary>
 public class WorldBuilderTools(
     IWorldRepository worldRepository, ISessionStateManager sessionStateManager,
-    AgentConfiguration configuration) : IAITools
+    AgentConfiguration configuration, ISessionCompletionService completionService) : IAITools
 {
     private const string QuickCreateInstructions = """
                                                    Using the provided world concept, create a complete campaign world.
@@ -471,7 +471,7 @@ public class WorldBuilderTools(
                  **Combat Frequency:** {combatFrequency.ToString()} - {combatFrequency.GetDescription()}
                  """;
             
-            var chatClient = client.GetChatClient("x-ai/grok-4.1-fast").AsIChatClient();
+            var chatClient = client.GetChatClient("~x-ai/grok-latest").AsIChatClient();
             var quickCreateAgent = chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
@@ -483,7 +483,7 @@ public class WorldBuilderTools(
                         ResponseFormat = ChatResponseFormat.ForJsonSchema<World>(),
                         RawRepresentationFactory = _ => new OpenRouterChatCompletionOptions()
                         {
-                            ReasoningEffortLevel = "high",
+                            ReasoningEffortLevel = "low",
                             Provider = new Provider() { Sort = "throughput" },
                         }
                     }
@@ -593,12 +593,7 @@ public class WorldBuilderTools(
         world.UpdatedAt = DateTime.UtcNow;
         
         // Save to repository
-        await worldRepository.CreateAsync(world);
-        
-        // Update campaign state with the world
-        
-        // Mark session as completed
-        await sessionStateManager.CompleteSessionAsync(sessionId, world.Id);
+        await completionService.FinalizeWorldAsync(sessionId);
 
         // Count lore entries (WorldEvents with Status="Lore")
         var loreCount = world.Events.Count(e => e.Status == "Lore");

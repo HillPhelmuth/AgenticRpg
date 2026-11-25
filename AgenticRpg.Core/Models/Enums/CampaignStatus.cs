@@ -22,9 +22,9 @@ public enum CampaignStatus
     /// Campaign is actively being played
     /// </summary>
     Active,
-    
+
     /// <summary>
-    /// Campaign is temporarily paused
+    /// No campaign players are currently active, but the campaign is not yet concluded. This could be due to a temporary pause in play or players taking a break.
     /// </summary>
     Paused,
     

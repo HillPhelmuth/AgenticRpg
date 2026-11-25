@@ -1,8 +1,12 @@
-﻿using System;
+﻿using AgenticRpg.Core.Helpers;
+using Google.Apis.Http;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Serialization;
-using AgenticRpg.Core.Helpers;
+using IHttpClientFactory = System.Net.Http.IHttpClientFactory;
 
 namespace AgenticRpg.Core.Agents.Llms;
 
@@ -10,11 +14,20 @@ public class OpenRouterModels
 {
     [JsonPropertyName("data")]
     public List<OpenRouterModel> Data { get; set; }
-
-    public static List<string> GetAllModelsFromEmbeddedFile()
+    private const string OpenRouterBaseUrl = "https://openrouter.ai/api/v1";
+    private List<string> _cachedModels = [];
+    public async Task<List<string>> GetAllModelsFromEmbeddedFile(IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
-        var allModels = FileHelper.ExtractFromAssembly<OpenRouterModels>("OpenRouterModels.json").GetModelsWithToolsAndStructuredOutputs();
-        return allModels.Select(x => x.Id).OrderBy(x => x).ToList();
+        if (_cachedModels.Any())
+        {
+            return _cachedModels;
+        }
+        var client = httpClientFactory.CreateClient("openrouter");
+        client.DefaultRequestHeaders.Authorization = new("Bearer", configuration["OpenRouter:ApiKey"]);
+        var response = await client.GetFromJsonAsync<OpenRouterModels>($"{OpenRouterBaseUrl}/models?limit=1000&output_modalities=text");
+        var allModels = response.Data; /*FileHelper.ExtractFromAssembly<OpenRouterModels>("OpenRouterModels.json").GetModelsWithToolsAndStructuredOutputs()*/;
+        _cachedModels = allModels.Select(x => x.Id).OrderBy(x => x).ToList();
+        return _cachedModels;
     }
     public static List<OpenRouterModel> GetAllModelDataFromEmbeddedFile()
     {
@@ -38,7 +51,8 @@ public static class OpenRouterModelExtensions
     public static List<OpenRouterModel> GetModelsWithToolsAndStructuredOutputs(this OpenRouterModels allModelData, decimal maxPromptPrice = 5.0m, decimal maxCompletionPrice = 16.0m)
     {
         return allModelData.Data
-            .Where(model => model.SupportedParameters.Contains("tools") && model.SupportedParameters.Contains("tool_choice") && model.SupportedParameters.Contains("structured_outputs") && model.Architecture.OutputModalities.Contains("text") && model.Pricing.PromptPerMillion() <= maxPromptPrice && model.Pricing.CompletionPerMillion() <= maxCompletionPrice).OrderBy(x => x.Id)
+            .Where(model => model.SupportedParameters.Contains("tools") && model.SupportedParameters.Contains("tool_choice") &&
+                            (model.SupportedParameters.Contains("structured_outputs") || model.SupportedParameters.Contains("response_format")) && model.Architecture.OutputModalities.Contains("text") && model.Pricing.PromptPerMillion() <= maxPromptPrice && model.Pricing.CompletionPerMillion() <= maxCompletionPrice).OrderBy(x => x.Id)
             .ToList();
     }
     public static bool ModelSupportsImageInput(this OpenRouterModel model)

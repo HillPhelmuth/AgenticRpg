@@ -65,7 +65,7 @@ public partial class CharacterManagerTools : IAITools
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character is null)
             {
                 return JsonSerializer.Serialize(new FinalizeLevelResult
@@ -173,7 +173,7 @@ public partial class CharacterManagerTools : IAITools
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character is null)
             {
                 return JsonSerializer.Serialize(new UpdateCharacterStatsResult
@@ -349,7 +349,7 @@ public partial class CharacterManagerTools : IAITools
                 });
             }
 
-            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId);
+            var character = gameState.Characters.FirstOrDefault(c => c.Id == characterId || c.Name == characterId);
             if (character is null)
             {
                 return JsonSerializer.Serialize(new UpdateSkillResult

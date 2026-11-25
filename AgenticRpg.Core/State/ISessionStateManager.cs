@@ -1,6 +1,7 @@
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Models.Enums;
-using AgenticRpg.Core.Agents; // For Message class
+using AgenticRpg.Core.Agents;
+using AgenticRpg.Core.Models.Game; // For Message class
 
 namespace AgenticRpg.Core.State;
 
@@ -14,8 +15,9 @@ public interface ISessionStateManager
     /// </summary>
     /// <param name="sessionType">Type of session to create</param>
     /// <param name="playerId">ID of the player creating the session</param>
+    /// <param name="world"></param>
     /// <returns>The created session state</returns>
-    Task<SessionState> CreateSessionAsync(SessionType sessionType, string playerId);
+    Task<SessionState> CreateSessionAsync(SessionType sessionType, string playerId, World? world = null);
     
     /// <summary>
     /// Gets session state by ID

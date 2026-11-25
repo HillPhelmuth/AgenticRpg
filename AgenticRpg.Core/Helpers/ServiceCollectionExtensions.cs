@@ -18,11 +18,13 @@ public static class ServiceCollectionExtensions
     {
         public IServiceCollection AddRollDiceHubService()
         {
-            return services.AddSingleton<IRollDiceService, RollDiceHubService>();
+            services.AddSingleton<RollDiceHubService>();
+            return services.AddSingleton<IRollDiceService>(sp => sp.GetRequiredService<RollDiceHubService>());
         }
 
         public IServiceCollection AddCoreRpgServices()
         {
+            services.AddSingleton<IRecoveryRepository, RecoveryRepository>();
             services.AddSingleton<ICampaignRepository, CampaignRepository>();
             services.AddSingleton<ICharacterRepository, CharacterRepository>();
             services.AddSingleton<IWorldRepository, WorldRepository>();
@@ -40,7 +42,16 @@ public static class ServiceCollectionExtensions
             // Shared agent thread store (scopeId + AgentType -> AgentThread)
             services.AddSingleton<IAgentSessionStore, InMemoryAgentSessionStore>();
 
+            services.AddSingleton<ICampaignQuestPreparation, CampaignQuestPreparation>();
             services.AddSingleton<ISessionCompletionService, SessionCompletionService>();
+            services.AddSingleton<ScopeOperationLocks>();
+            services.AddSingleton<GameConnectionRegistry>();
+            services.AddSingleton<PlayerCampaignAccessService>();
+            services.AddSingleton<IPlayerStateProjector, PlayerStateProjector>();
+            services.AddSingleton<PlayerStateBroadcaster>();
+            services.AddSingleton<IGameMessageProcessor, GameMessageProcessor>();
+            services.AddSingleton<RuntimeProgress>();
+            services.AddSingleton<GameRuntimeCoordinator>();
         
             // Register AI Agents
             services.AddSingleton<GameMasterAgent>();

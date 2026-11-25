@@ -23,11 +23,17 @@ jobs:
         with:
           dotnet-version: '10.x'
 
+      - name: Restore packages
+        run: dotnet restore AgenticRpg.slnx -p:Configuration=Release
+
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build AgenticRpg.slnx --configuration Release --no-restore
+
+      - name: Validate player experience
+        run: dotnet test AgenticRpg.PlayerExperienceTests/AgenticRpg.PlayerExperienceTests.csproj --configuration Release --no-build
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish AgenticRpg/AgenticRpg/AgenticRpg.csproj -c Release --no-build -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -47,7 +53,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -62,4 +68,4 @@ jobs:
           app-name: 'NotSkynet'
           slot-name: 'Production'
           package: .
-          
+

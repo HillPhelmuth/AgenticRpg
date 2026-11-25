@@ -264,7 +264,7 @@
     flex-shrink: 0;
 }
 
-.chat-container > :first-child {
+.chat-container ::deep .chat-view {
     flex: 1;
     min-height: 0;
 }

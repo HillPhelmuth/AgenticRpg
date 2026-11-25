@@ -91,6 +91,9 @@ public class EndCombatResult
 // Unified combat result for attacks (weapons or spells)
 public class CombatAttackResult
 {
+    public string? AttackExplanation { get; set; }
+    public string? DamageExplanation { get; set; }
+
     public bool Success { get; set; }
     public string? AttackerName { get; set; }
     public string? TargetName { get; set; }

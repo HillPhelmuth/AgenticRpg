@@ -10,10 +10,15 @@
             @foreach (var message in Messages)
             {
                 <MessageView
-                    Message="@message"
+                    @key="message.Id" Message="@message"
                     OnEdit="@HandleEdit"
                     OnDelete="@HandleDelete" IsLastMessage="@(!string.IsNullOrEmpty(lastMessageId)
                                                             && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)">
+                    @if (message.IsUser && (CurrentPlayerId is null || message.PlayerId == CurrentPlayerId) && message.Failure?.Action == AgenticRpg.Core.Models.RecoveryAction.ReloadState) { <button @onclick="() => OnReloadState.InvokeAsync()">Reload state</button> }
+                    @if (message.IsUser && (CurrentPlayerId is null || message.PlayerId == CurrentPlayerId) && message.Failure?.Action == AgenticRpg.Core.Models.RecoveryAction.RestoreText)
+                    { <button disabled="@IsProcessing" @onclick="() => OnRestoreText.InvokeAsync(message.Content)">Restore text</button><span>Reference: @message.Failure.CorrelationId</span> }
+                    @if (message.IsUser && (CurrentPlayerId is null || message.PlayerId == CurrentPlayerId) && (message.Status is AgenticRpg.Core.Messaging.MessageProcessingStatus.Failed or AgenticRpg.Core.Messaging.MessageProcessingStatus.Cancelled or AgenticRpg.Core.Messaging.MessageProcessingStatus.Interrupted) && OnRetry.HasDelegate)
+                    { <button type="button" disabled="@IsProcessing" @onclick="() => OnRetry.InvokeAsync(message)">Retry</button> }
                     @if (!string.IsNullOrEmpty(lastMessageId)
                          && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)
                     {
@@ -34,28 +39,6 @@
                 </MessageView>
 
                 @if (!string.IsNullOrEmpty(lastMessageId)
-                     && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase)
-                     && message.SuggestedActions is { Count: > 0 })
-                {
-                    var actions = message.SuggestedActions
-                        .Where(a => !string.IsNullOrWhiteSpace(a))
-                        .Select(a => a.Trim())
-                        .Distinct(StringComparer.Ordinal)
-                        .ToList();
-
-                    if (actions.Count > 0)
-                    {
-                        <div class="suggested-actions" role="group" aria-label="Suggested actions">
-                            @foreach (var action in actions)
-                            {
-                                <button type="button" class="suggested-action-btn" @onclick="() => HandleSuggestedAction(action)">
-                                    @action
-                                </button>
-                            }
-                        </div>
-                    }
-                }
-                @if (!string.IsNullOrEmpty(lastMessageId)
                      && string.Equals(message.Id, lastMessageId, StringComparison.OrdinalIgnoreCase) && isAgent)
                 {
                     <div></div>
@@ -71,11 +54,22 @@
         }
     </div>
 
+    @if (RelevantSuggestions is { Count: > 0 } suggestions)
+    {
+        <details class="suggested-actions">
+            <summary>Suggested actions (@suggestions.Count)</summary>
+            <div class="suggestion-options" role="group" aria-label="Suggested actions">
+                @foreach (var action in suggestions)
+                { <button type="button" class="suggested-action-btn" disabled="@IsProcessing" @onclick="() => HandleSuggestedAction(action)">@action</button> }
+            </div>
+        </details>
+    }
+
     @if (!_isAtBottom)
     {
         <button class="scroll-to-bottom-btn" @onclick="ScrollToBottom">
             <span>↓</span>
-            <span>New Messages</span>
+            <span>@(_hasUnread ? "New Messages" : "Back to latest")</span>
         </button>
     }
 </div>

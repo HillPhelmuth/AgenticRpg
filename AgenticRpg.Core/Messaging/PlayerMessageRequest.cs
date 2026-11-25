@@ -9,6 +9,8 @@ namespace AgenticRpg.Core.Messaging;
 /// </summary>
 public sealed class PlayerMessageRequest
 {
+    public CancellationToken CancellationToken { get; init; }
+    public AgenticRpg.Core.Models.PlayerActionIntent? ActionIntent { get; init; }
     /// <summary>
     /// Campaign identifier associated with this request.
     /// </summary>
@@ -84,7 +86,10 @@ public enum MessageProcessingStatus
     Queued,
     Processing,
     Completed,
-    Failed
+    Failed,
+    Interrupted,
+    Cancelling,
+    Cancelled
 }
 
 /// <summary>

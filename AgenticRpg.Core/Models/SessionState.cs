@@ -33,6 +33,9 @@ public class SessionState
 
         }
     }
+    public long Revision { get; set; }
+    public DateTime? LastSavedAt { get; set; }
+    public bool FinalizationPending { get; set; }
     public string? SelectedModel { get; set; }
     /// <summary>
     /// Type of session
@@ -91,6 +94,13 @@ public class SessionState
 /// </summary>
 public class SessionContext
 {
+    public bool IsCharacterModification { get; set; }
+    public List<string> InitialCharacterSkills { get; set; } = [];
+    public bool StartNewAdventure { get; set; }
+    public string? QuickStarter { get; set; }
+    public string? OriginalWorldId { get; set; }
+    public string? PersistenceEntityId { get; set; }
+    public string? CampaignId { get; set; }
     /// <summary>
     /// Draft character being created (for CharacterCreation sessions)
     /// </summary>

@@ -44,7 +44,7 @@ On their turn, a character can take one of the following actions:
 ### 3. Attacks
 
 **Making an Attack:**\
-To attack, roll a **d20** and add the relevant attribute modifier and skill rank.
+To attack, roll a **d20** and add the shared WeaponMechanics attack bonus. It preserves the attribute, proficiency, and additional combat-skill contributions from the live tools.
 
 - **Melee Attacks** – d20 + Might modifier + Melee Combat skill rank.
 - **Ranged Attacks** – d20 + Agility modifier + Ranged Combat skill rank.
@@ -64,18 +64,17 @@ AC represents how hard a character is to hit.
 ### 4. Damage
 
 **Calculating Damage:**\
-When an attack hits, roll the weapon’s damage die and add the relevant attribute modifier.
+When an attack hits, roll the weapon’s dice and add the full shared attack bonus plus the weapon’s fixed dice bonus.
 
-- **Melee Damage:** Weapon damage + Might modifier.
-- **Ranged Damage:** Weapon damage + Agility modifier.
+- **Weapon Damage:** Rolled dice + shared attack bonus + fixed weapon bonus.
 
 **Critical Hits:**\
-On a natural 20, the attack is a **critical hit**. Roll the weapon’s damage die **twice** and add the results together, then add the attribute modifier.
+On a natural 20, the attack is a **critical hit**. Double the rolled weapon total, then add the shared attack bonus and fixed weapon bonus once.
 
 **Weapon Damage Example:**
 
-- **Sword (1d8)** – On hit: 1d8 + Might modifier. On critical: 2d8 + Might modifier.
-- **Bow (1d6)** – On hit: 1d6 + Agility modifier. On critical: 2d6 + Agility modifier.
+- **Sword (1d8)** – Roll 1d8; add the shared attack and fixed weapon bonuses. On critical: double that roll before bonuses.
+- **Bow (1d6)** – Roll 1d6; apply the same shared damage calculation.
 
 ---
 
@@ -117,3 +116,7 @@ When a character reaches 0 HP:
 - **Randomness:** Dice rolls determine success, but modifiers from skills and attributes minimize total randomness, ensuring skilled characters perform reliably.
 - **Tactical Depth:** Combat encourages smart positioning, defense actions, and use of class abilities for a balance of simplicity and strategic options.
 
+
+## Executable weapon formulas
+
+The shared WeaponMechanics calculations define live player attacks and the sheet. Attack bonus is the attribute selected by StatsCalculator (best Might/Agility for finesse; Agility for ranged/dual-use; otherwise Might), plus its proficiency contribution, plus the combat tool's combat-skill contribution. Both skill contributions are intentionally preserved. Damage is the rolled weapon total plus the full attack bonus and the weapon's fixed dice bonus. A critical doubles the rolled total before adding these bonuses; it does not request additional dice. These formulas supersede the attack, damage, and critical examples above. HP, MP, armor, initiative, and progression formulas remain unchanged.

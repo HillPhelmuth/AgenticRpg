@@ -24,4 +24,14 @@ public class HandoffIntent
     /// Whether a handoff was detected
     /// </summary>
     public bool HandoffDetected { get; set; }
+    public override string ToString()
+    {
+        return $"""
+                **HandoffIntent:**
+                 - **TargetAgent:** {TargetAgent}
+                 - **Context:** {Context}
+                 - **Reason:** {Reason}
+
+                """;
+    }
 }

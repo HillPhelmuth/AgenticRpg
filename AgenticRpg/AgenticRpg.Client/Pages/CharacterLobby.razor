@@ -2,6 +2,7 @@
 @using AgenticRpg.Core.Models
 @inherits RpgPageBase
 <div class="lobby-container">
+    @if (StartNewAdventure) { <SetupProgress Step="4" /> }
     <div class="lobby-header">
         <div class="campaign-info">
             <h1>@(Campaign?.Name ?? "Loading...")</h1>
@@ -12,6 +13,10 @@
         </button>
     </div>
 
+    <div class="connection-status runtime-connection">@ConnectionStatusLabel
+        @if (!HubConnected) { <button class="runtime-control" @onclick="RetryConnection">Reconnect</button> }
+        @if (!string.IsNullOrEmpty(ConnectionError)) { <span>@ConnectionError</span> }
+    </div>
     @if (!string.IsNullOrEmpty(ErrorMessage))
     {
         <div class="alert alert-error">

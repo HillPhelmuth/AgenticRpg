@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace AgenticRpg.Core.Helpers;
 
-internal class FileHelper
+public class FileHelper
 {
     public static T ExtractFromAssembly<T>(string fileName)
     {

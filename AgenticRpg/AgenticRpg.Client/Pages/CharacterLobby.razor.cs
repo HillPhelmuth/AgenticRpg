@@ -8,6 +8,7 @@ namespace AgenticRpg.Client.Pages;
 
 public partial class CharacterLobby : IAsyncDisposable
 {
+    [SupplyParameterFromQuery(Name = "journey")] public bool StartNewAdventure { get; set; }
     [Parameter]
     [SupplyParameterFromQuery(Name = "campaignId")]
     public string CampaignId { get; set; } = string.Empty;
@@ -30,7 +31,7 @@ public partial class CharacterLobby : IAsyncDisposable
     private bool IsReady { get; set; }
     private bool AllPlayersReady { get; set; }
     private bool IsStarting { get; set; }
-    private bool IsConnected { get; set; }
+    private bool _transferringToGame;
     private Dictionary<string, PlayerReadyStatus> ReadyStatuses { get; set; } = new();
     private string _currentUserId = "player-1"; // TODO: Replace with authenticated user context
 
@@ -42,6 +43,7 @@ public partial class CharacterLobby : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         try
         {
             var user = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -69,36 +71,30 @@ public partial class CharacterLobby : IAsyncDisposable
             CurrentCharacter ??= await CharacterService.GetCharacterByIdAsync(CharacterId);
             if (Characters.All(x => x.Id != CurrentCharacter?.Id))
             {
-                Characters.Add(CurrentCharacter);
+                if (CurrentCharacter is not null) Characters.Add(CurrentCharacter);
             }
             // Connect to SignalR hub
             await HubService.StartAsync();
-            await HubService.JoinCampaignAsync(
-                Campaign.Id,
-                CurrentUserId,
-                CurrentCharacter.Id,
-                CurrentCharacter.Name
-            );
-            // Subscribe to lobby events
-            HubService.OnPlayerJoined(HandlePlayerJoined);
-            HubService.OnPlayerLeft(HandlePlayerLeft);
-            HubService.OnReadyStatusUpdated(HandleReadyStatusUpdated);
-            HubService.OnReadyStatusSnapshot(HandleReadyStatusSnapshot);
-            HubService.OnAllPlayersReady(HandleAllPlayersReady);
-            HubService.OnCampaignStarted(HandleCampaignStarted);
-            HubService.OnStateUpdated(HandleStateUpdated);
-
-            // Join campaign lobby
-            if (CurrentCharacter != null)
+            Track(HubService.OnPlayerJoined(HandlePlayerJoined));
+            Track(HubService.OnPlayerLeft(HandlePlayerLeft));
+            Track(HubService.OnReadyStatusUpdated(HandleReadyStatusUpdated));
+            Track(HubService.OnReadyStatusSnapshot(HandleReadyStatusSnapshot));
+            Track(HubService.OnAllPlayersReady(HandleAllPlayersReady));
+            Track(HubService.OnCampaignStarted(HandleCampaignStarted));
+            Track(HubService.OnStateUpdated(HandleStateUpdated));
+            Track(HubService.OnRecovered(snapshot =>
             {
-                
-                IsConnected = true;
-
-                // Check if already ready
-                if (ReadyStatuses.TryGetValue(CurrentUserId, out var readyStatus))
-                {
-                    IsReady = readyStatus.IsReady;
-                }
+                if (IsDisposed || snapshot.ScopeId != CampaignId || snapshot.GameState is null) return;
+                HandleStateUpdated(snapshot.GameState);
+                if (snapshot.GameState.Campaign.StartedAt is not null) HandleCampaignStarted(CampaignId);
+            }));
+            if (CurrentCharacter is null) throw new InvalidOperationException("Select a character before joining.");
+            var recovery = await HubService.JoinCampaignAsync(Campaign.Id, CurrentUserId, CurrentCharacter.Id,
+                CurrentCharacter.Name, ScopeLeaseId);
+            if (recovery.GameState is not null)
+            {
+                HandleStateUpdated(recovery.GameState);
+                if (recovery.GameState.Campaign.StartedAt is not null) HandleCampaignStarted(Campaign.Id);
             }
 
             Logger.LogInformation("Joined lobby for campaign {CampaignId}", CampaignId);
@@ -121,7 +117,8 @@ public partial class CharacterLobby : IAsyncDisposable
             {
                 IsReady = readyValue.IsReady;
             }
-            //Characters = gameState.Characters;
+            Campaign = gameState.Campaign;
+            Characters = gameState.Characters;
             StateHasChanged();
         });
     }
@@ -194,6 +191,8 @@ public partial class CharacterLobby : IAsyncDisposable
         // Navigate to game page
         InvokeAsync(() =>
         {
+            if (IsDisposed || campaignId != CampaignId || _transferringToGame) return;
+            _transferringToGame = true;
             NavManager.NavigateTo($"/game?campaignId={campaignId}&characterId={CurrentCharacter?.Id}");
         });
     }
@@ -253,23 +252,16 @@ public partial class CharacterLobby : IAsyncDisposable
 
     private async Task GoBack()
     {
-        await HubService.LeaveCampaignAsync(CampaignId, _currentUserId, CharacterId!);
+        await HubService.DetachScopeAsync(CampaignId, ScopeLeaseId);
         NavManager.NavigateTo("/startup");
 
     }
 
-    public async ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        try
-        {
-            if (IsConnected)
-            {
-                await HubService.LeaveCampaignAsync(CampaignId, _currentUserId, CharacterId!);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error during disposal");
-        }
+        DisposeSubscriptions();
+        try { if (!_transferringToGame) await HubService.DetachScopeAsync(CampaignId, ScopeLeaseId); }
+        catch (Exception ex) { Logger.LogWarning(ex, "Lobby detach failed"); }
+        finally { await base.DisposeAsync(); }
     }
 }

@@ -12,6 +12,7 @@ public partial class CharacterSheetView
 
     [Parameter] public int InitialPage { get; set; } = 1;
 
+    private string? _characterId;
     private int CurrentPage { get; set; } = 1;
 
     protected override void OnInitialized()
@@ -22,8 +23,9 @@ public partial class CharacterSheetView
     protected override void OnParametersSet()
     {
         // Reset to initial page if character changes
-        if (Character != null)
+        if (Character?.Id != _characterId)
         {
+            _characterId = Character?.Id;
             CurrentPage = InitialPage;
         }
     }

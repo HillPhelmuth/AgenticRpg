@@ -27,10 +27,10 @@ namespace AgenticRpg.Core.Agents.Tools;
 /// Each method is decorated with [Description] for AI function calling.
 /// These tools save data progressively to session state for real-time display and recovery.
 /// </summary>
-public class CharacterCreationTools(
+public partial class CharacterCreationTools(
     ICharacterRepository characterRepository,
     ISessionStateManager sessionStateManager,
-    AgentConfiguration configuration, IRollDiceService rollDiceService) : IAITools
+    AgentConfiguration configuration, IRollDiceService rollDiceService, ISessionCompletionService completionService) : IAITools
 {
     private const string? QuickCreateInstructions = $"""
                                                     Using the provided character concept, create a detailed character profile.
@@ -62,18 +62,15 @@ public class CharacterCreationTools(
 
                                                     #### Available Skills and Spells
                                                     Use the following skill list when assigning skills:
-                                                    
+
                                                     {SkillList}
-                                                    
+
                                                     If the character is a spellcaster (Wizard, Cleric, Paladin, WarMage), select appropriate starting spells from these lists:
                                                     **Wizard or WarMage Spells:**
                                                     {WizardSpellList}
-                                                    
-                                                    **Cleric or Paladin Spells (Light Domain):**
-                                                    {LightClericOrPaladinSpellList}
-                                                    
-                                                    **Cleric or Paladin Spells (Shadow Domain):**
-                                                    {DarkClericOrPaladinSpellList}
+
+                                                    **Cleric or Paladin Spells:**
+                                                    {ClericOrPaladinSpellList}
 
                                                     #### Step 5: Background (Optional but Recommended)
                                                     Create a colorful backstory, personality, and motivations for the character.
@@ -105,6 +102,8 @@ public class CharacterCreationTools(
             });
         }
         session.Context.DraftCharacter = character;
+        session.Context.IsCharacterModification = true;
+        session.Context.InitialCharacterSkills.Clear();
         session.Context.CurrentStep = "modify";
 
         await sessionStateManager.UpdateSessionStateAsync(session);
@@ -424,32 +423,28 @@ public class CharacterCreationTools(
         }
         var windowOptions = new RollDiceWindowOptions() { Title = $"Roll {4}{DieType.D6} for an Attribute", Location = Location.Center, Style = "width:max-content;min-width:40vw;height:max-content" };
         var parameters = new RollDiceParameters() { ["DieType"] = DieType.D6, ["NumberOfRolls"] = 4 };
-        //List<RollDiceResults> rollDiceResults = new();
-        //for (var i = 1; i <= 6; i++)
-        //{
-        //    var intermediateResult = await rollDiceService.RequestDiceRoll(sessionId, parameters, windowOptions, 1);
-        //    rollDiceResults.AddRange(intermediateResult);
-        //}
+
         var result = await rollDiceService.RequestDiceRoll(sessionId, parameters, windowOptions, 6);
         // This tool provides guidance to use the RollPlayerDice tool
         // The actual dice rolling will be handled by RollPlayerDice from IRollDiceService
         return JsonSerializer.Serialize(result);
     }
 
-    [Description("Saves the character name and selected skills (must choose 4 from 14 available skills) to the character in progress, calculates all derived stats (HP, MP, AC, Initiative), and returns the complete character sheet ready for final review. Requires sessionId.")]
+    [Description("Saves the name and four initial skill choices for a character starting at any selected level from 1 to 7, and initializes derived stats at that level without changing it. These are base skill choices, not the full higher-level allocation. Use GetStartingProgression and SaveStartingSkillRanks to allocate earned ranks before final review. Requires sessionId.")]
     public async Task<string> SaveNameAndSkills(
         [Description("The unique session ID for this character creation session.")] string sessionId,
         [Description("The character's chosen name. This is the display name used throughout the game.")] string characterName,
-        [Description($"Array of exactly 4 skill names chosen by the player. Valid skills: {SkillList}")] string[] selectedSkills)
+        [Description($"Array of exactly 4 distinct initial skill names, each starting at rank 1. For higher starting levels, allocate additional earned ranks separately with SaveStartingSkillRanks. Valid skills: {SkillList}")] string[] selectedSkills)
     {
-        var skills = Skill.GetAllSkillsFromFile().Where(x => selectedSkills.Contains(x.Name));
+        var definitions = Skill.GetAllSkillsFromFile();
+        var skills = definitions.Where(x => selectedSkills.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
         // Validate skill count
-        if (selectedSkills.Length != 4)
+        if (selectedSkills.Length != 4 || selectedSkills.Distinct(StringComparer.OrdinalIgnoreCase).Count() != 4 || skills.Count() != 4)
         {
             return JsonSerializer.Serialize(new CharacterSheetResult
             {
                 Valid = false,
-                Error = $"You must select exactly 4 skills. Available skills: {SkillList}"
+                Error = $"You must select exactly 4 distinct valid initial skills before allocating earned ranks. Available skills: {SkillList}"
             });
         }
 
@@ -476,19 +471,24 @@ public class CharacterCreationTools(
             });
         }
 
+        if (session.IsCompleted) return CreationError("Character creation is already completed.");
+        if (!session.Context.IsCharacterModification && !CharacterCreationRules.IsValidLevel(character.Level))
+            return CreationError("Starting level must be between 1 and 7.");
         // Save name and skills
         character.Name = characterName;
-        character.Level = 1;
-        character.Experience = 0;
-
-        character.Skills.Clear();
-        foreach (var skill in selectedSkills)
+        if (!session.Context.IsCharacterModification)
         {
-            character.Skills[skill] = 1;
+            session.Context.InitialCharacterSkills = skills.Select(s => s.Name).ToList();
+            CharacterCreationRules.InitializeStats(character);
         }
 
-        character.CharacterSkills = skills.ToList();
-        character.CharacterSkills.ForEach(skill => skill.Rank = 1);
+        if (session.Context.IsCharacterModification)
+        {
+            var ranks = new Dictionary<string, int>(character.Skills);
+            foreach (var skill in skills) ranks.TryAdd(skill.Name, 1);
+            CharacterCreationRules.ApplySkills(character, ranks);
+        }
+        else CharacterCreationRules.ApplySkills(character, skills.ToDictionary(s => s.Name, _ => 1));
         // Calculate all derived stats
         character.CurrentHP = character.MaxHP;
         character.CurrentMP = character.MaxMP;
@@ -540,10 +540,10 @@ public class CharacterCreationTools(
         });
     }
 
-    [Description("Saves known spells for spellcasting classes (Wizard, Cleric, Paladin, War Mage). Parameters: sessionId, spellNames (array of spell names the character knows). Level 1 characters typically start with 3-6 spells depending on class. Returns updated character with spells.")]
+    [Description("Saves known spells for spellcasting classes (Wizard, Cleric, Paladin, War Mage). Parameters: sessionId, spellNames (array of spell names the character knows). Include starting spells followed by earned spells in grant-level order; retrieve requirements with GetStartingProgression. Returns updated character with spells.")]
     public async Task<string> SaveKnownSpells(
         [Description("The unique session ID for this character creation session.")] string sessionId,
-        [Description($"Array of spell names that the character knows. Should include 3-6 starting spells appropriate to the character's class (Wizard, Cleric, Paladin, or WarMage only). If the character is a Wizard or WarMage, available starting spells are {WizardSpellList}. If a Cleric or Paladin, available starting spells are {LightClericOrPaladinSpellList} (for light or neutral aligned faiths) or {DarkClericOrPaladinSpellList} for dark aligned faiths.")] string[] spellNames)
+        [Description("Complete list of distinct known spell names for the selected class and starting level (1–7). Use GetStartingProgression for the authoritative eligible spell catalog, exact count, and per-choice spell-level limits. List base spells first, then earned spells in grant-level order; higher-level choices are not restricted to the base spell list.")] string[] spellNames)
     {
         var session = await sessionStateManager.GetSessionStateAsync(sessionId);
         if (session?.Context.DraftCharacter == null)
@@ -557,6 +557,7 @@ public class CharacterCreationTools(
 
         var character = session.Context.DraftCharacter;
 
+        if (session.IsCompleted) return CreationError("Character creation is already completed.");
         // Validate class is a spellcaster
         var spellcastingClasses = new[] { CharacterClass.Wizard, CharacterClass.Cleric, CharacterClass.Paladin, CharacterClass.WarMage };
         if (!spellcastingClasses.Contains(character.Class))
@@ -568,39 +569,23 @@ public class CharacterCreationTools(
             });
         }
 
-        // Create spell objects from names
-        character.KnownSpells.Clear();
-        List<Spell> allSpells = [];
-        if (character.Class is CharacterClass.Wizard or CharacterClass.WarMage)
-            allSpells = Spell.GetAllWizardSpellsFromFile();
-        else if (character.Class is CharacterClass.Cleric or CharacterClass.Paladin)
-            allSpells = Spell.GetAllClericSpellsFromFile();
-        foreach (var spellName in spellNames)
+        List<Spell> resolved;
+        if (session.Context.IsCharacterModification)
         {
-            var spell = allSpells.Find(s => s.Name.Equals(spellName, StringComparison.OrdinalIgnoreCase));
-            character.KnownSpells.Add(spell!);
+            var available = CharacterProgression.GetSpellsForClass(character.Class,
+                CharacterProgression.GetMaxSpellLevelForCharacterLevel(character.Level));
+            resolved = spellNames.Select(name => available.FirstOrDefault(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase))).ToList()!;
+            if (resolved.Any(s => s is null) || spellNames.Distinct(StringComparer.OrdinalIgnoreCase).Count() != spellNames.Length)
+                return CreationError("Choose distinct valid spells for this class and level.");
         }
-
-        // Set spell slots based on class at level 1
-        character.MaxSpellSlots.Clear();
-        character.CurrentSpellSlots.Clear();
-
-        switch (character.Class)
+        else
         {
-            case CharacterClass.Wizard:
-            case CharacterClass.Cleric:
-                character.MaxSpellSlots[1] = 4; // 4 first-level spell slots
-                character.CurrentSpellSlots[1] = 4;
-                break;
-            case CharacterClass.WarMage:
-                character.MaxSpellSlots[1] = 2;
-                character.CurrentSpellSlots[1] = 2;
-                break;
-            case CharacterClass.Paladin:
-                character.MaxSpellSlots[1] = 2;
-                character.CurrentSpellSlots[1] = 2;
-                break;
+            var error = CharacterCreationRules.ResolveSpells(character.Class, character.Level, spellNames, out resolved);
+            if (error is not null) return CreationError(error);
         }
+        character.KnownSpells = resolved;
+        if (!session.Context.IsCharacterModification) CharacterCreationRules.InitializeSpellSlots(character);
+        if (!session.Context.CompletedSteps.Contains("spells")) session.Context.CompletedSteps.Add("spells");
 
         session.LastUpdatedAt = DateTime.UtcNow;
         await sessionStateManager.UpdateSessionStateAsync(session);
@@ -612,24 +597,37 @@ public class CharacterCreationTools(
         });
     }
 
-    [Description("Creates a complete character from a brief description or concept. Use this when the player wants quick character creation. Parameters: sessionId, characterConcept (brief description like 'elven wizard scholar' or 'gruff dwarven warrior'), characterName (optional), campaignId. Returns fully created character ready to play.")]
+    [Description("Creates a complete character at the chosen startingLevel from 1 through 7, including earned skill ranks, spells, and level-scaled stats. Resolve the player's starting-level preference first and pass startingLevel explicitly; its default is 1. Use this for quick creation from a character concept. Returns a fully created character ready to play.")]
     public async Task<string> CreateQuickCharacter(
         [Description("The unique session ID for this character creation session.")] string sessionId,
         [Description("A description of the desired character concept, based on the user's indicated preferences or description.")] string characterConcept,
         [Description("Optional character name. If not provided, a default name will be generated based on race and class.")] string? characterName,
-        [Description("The unique ID of the campaign this character will join. (optional)")] string campaignId = "")
+        [Description("The unique ID of the campaign this character will join. (optional)")] string campaignId = "",
+        [Description("Starting character level, from 1 to 7. Defaults to 1.")] int startingLevel = 1)
     {
+        if (!CharacterCreationRules.IsValidLevel(startingLevel)) return CreationError("Starting level must be between 1 and 7.");
+        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
+        if (session is null) return CreationError("Session not found");
+        if (session.SessionType != SessionType.CharacterCreation || session.IsCompleted || session.Context.IsCharacterModification) return CreationError("Quick creation requires an unfinished new-character session.");
         var client = new OpenAIClient(new ApiKeyCredential(configuration.OpenRouterApiKey), new OpenAIClientOptions() { Endpoint = new Uri(configuration.OpenRouterEndpoint) });
         var goalInstructions =
             $"""
              ## Goal
 
              Create a complete character using the concept as guidance.
-             **Character Concept:** 
+             Starting level: {startingLevel}. Generate exactly {4 + CharacterCreationRules.AdditionalSkillRanks(startingLevel)} total skill ranks,
+             with at least four distinct skills at positive ranks; put the four initial skills first in the Skills dictionary.
+             Spell acquisition limits by class (each array entry is the maximum spell level for that choice):
+             {JsonSerializer.Serialize(Enum.GetValues<CharacterClass>().Where(c => c != CharacterClass.None).ToDictionary(c => c.ToString(), c => CharacterCreationRules.SpellLimits(c, startingLevel)))}
+             KnownSpells must contain exactly those choices in acquisition order, with distinct valid class spells.
+             Use the class spell catalogs below; do not invent spells or skills.
+             Wizard/War Mage catalog: {JsonSerializer.Serialize(CharacterProgression.GetSpellsForClass(CharacterClass.Wizard, 3).Select(s => new { s.Name, s.Level, s.Description }))}
+             Cleric/Paladin catalog: {JsonSerializer.Serialize(CharacterProgression.GetSpellsForClass(CharacterClass.Cleric, 3).Select(s => new { s.Name, s.Level, s.Description }))}
+             **Character Concept:**
              {characterConcept}
              **Character Name:** {characterName} (if empty, generate a fitting name)
-             
-            
+
+
              """;
         // Get chat client for the specified deployment and convert to IChatClient
         var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
@@ -653,22 +651,8 @@ public class CharacterCreationTools(
             });
         var response = await quickCreateAgent.RunAsync<Character>(goalInstructions);
         var character = response.Result;
-        foreach (var skill in character.Skills)
-        {
-            character.Skills[skill.Key] = 1;
-        }
-
-        character.Skills = character.Skills.Take(4).ToDictionary();
-        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
-        if (session == null)
-        {
-            return JsonSerializer.Serialize(new CharacterSheetResult
-            {
-                Valid = false,
-                Error = "Session not found"
-            });
-        }
-
+        var validationError = CharacterCreationRules.NormalizeQuickCharacter(character, startingLevel, out var initialSkills);
+        if (validationError is not null) return CreationError($"Quick creation needs correction: {validationError} Retry quick creation or use step-by-step creation.");
 
         // Set campaign ID
         character.CampaignId = campaignId;
@@ -677,12 +661,10 @@ public class CharacterCreationTools(
         // Generate Image
         var imageResponse = await ImageGenService.GenerateCharacterImage(character, "A detailed and creative character portrait.");
         character.PortraitUrl = imageResponse;
-        // Save to repository
-        await characterRepository.CreateAsync(character);
-
-        // Update session
         session.Context.DraftCharacter = character;
-        await sessionStateManager.CompleteSessionAsync(sessionId, character.Id);
+        session.Context.InitialCharacterSkills = initialSkills;
+        await sessionStateManager.UpdateSessionStateAsync(session);
+        await completionService.FinalizeCharacterAsync(sessionId);
 
         return JsonSerializer.Serialize(new CharacterSheetResult
         {
@@ -794,76 +776,20 @@ public class CharacterCreationTools(
             Message = "Starting equipment selected successfully!"
         });
     }
-    [Description("Finalizes and saves the completed character from the session to the repository and campaign. This is the final step in character creation.")]
+    [Description("Finalizes and saves the completed character at the selected starting level (1–7), validating the full skill and spell progression for that level. Complete earned skill ranks and spell choices before calling. Existing-character modifications retain their level. This is the final step in character creation.")]
     public async Task<string> FinalizeCharacter(
         [Description("The unique session ID for this character creation session.")] string sessionId)
     {
         // Get session and draft character
-        var session = await sessionStateManager.GetSessionStateAsync(sessionId);
-        if (session?.Context.DraftCharacter == null)
+        try
         {
-            return JsonSerializer.Serialize(new SaveCharacterResult
-            {
-                Success = false,
-                Message = "Character creation session not found"
-            });
+            var characterId = await completionService.FinalizeCharacterAsync(sessionId);
+            return JsonSerializer.Serialize(new SaveCharacterResult { Success = true, CharacterId = characterId, Message = "Character saved successfully!" });
         }
-
-        var character = session.Context.DraftCharacter;
-        //var allInventory = InventoryItem.GetAllItemsFromFile();
-        var allWeapons = WeaponItem.GetAllWeaponsFromFile();
-        var allArmor = ArmorItem.GetAllArmorFromFile();
-        if (character.Class is CharacterClass.Warrior or CharacterClass.WarMage && character.Equipment.MainHand is null)
+        catch (InvalidOperationException ex)
         {
-            character.Inventory.AddRange([allWeapons.Find(x => x.Name.Equals("Shortsword", StringComparison.OrdinalIgnoreCase))!, allArmor.Find(x => x.Name.Contains("Leather", StringComparison.OrdinalIgnoreCase))!]);
+            return JsonSerializer.Serialize(new SaveCharacterResult { Success = false, Message = ex.Message });
         }
-
-        if (character.Class is CharacterClass.Cleric or CharacterClass.Paladin && character.Equipment.MainHand is null)
-        {
-            character.Inventory.AddRange([allWeapons.Find(x => x.Name.Equals("Mace", StringComparison.OrdinalIgnoreCase))!, allArmor.Find(x => x.Name.Contains("Leather", StringComparison.OrdinalIgnoreCase))!]);
-        }
-
-        if (character.Class is CharacterClass.Wizard && character.Equipment.MainHand is null)
-        {
-            character.Inventory.AddRange([allWeapons.Find(x => x.Name.Equals("Quarterstaff", StringComparison.OrdinalIgnoreCase))!, allArmor.Find(x => x.Name.Contains("Leather", StringComparison.OrdinalIgnoreCase))!]);
-        }
-
-        if (character.Class is CharacterClass.Rogue && character.Equipment.MainHand is null)
-        {
-            character.Inventory.AddRange([allWeapons.Find(x => x.Name.Equals("Dagger", StringComparison.OrdinalIgnoreCase))!, allArmor.Find(x => x.Name.Contains("Leather", StringComparison.OrdinalIgnoreCase))!]);
-        }
-        character.Equipment.Armor = character.Inventory.FirstOrDefault(x => x.ItemType == ItemType.Armor) as ArmorItem;
-        character.Equipment.MainHand = character.Inventory.FirstOrDefault(x => x.ItemType == ItemType.Weapon) as WeaponItem;
-        //// Validate character is complete
-        if (string.IsNullOrEmpty(character.Name) ||
-            character.Race == default ||
-            character.Class == default ||
-            character.Attributes.Count == 0 ||
-            character.MaxHP == 0)
-        {
-            return JsonSerializer.Serialize(new SaveCharacterResult
-            {
-                Success = false,
-                Message = "Character is incomplete. Please ensure all steps are completed."
-            });
-        }
-
-
-        character.CreatedAt = DateTime.UtcNow;
-        character.UpdatedAt = DateTime.UtcNow;
-
-        character.PlayerId = session.PlayerId;
-
-        await characterRepository.CreateAsync(character);
-
-        await sessionStateManager.CompleteSessionAsync(sessionId, character.Id);
-
-        return JsonSerializer.Serialize(new SaveCharacterResult
-        {
-            Success = true,
-            CharacterId = character.Id,
-            Message = $"Character '{character.Name}' created successfully!"
-        });
     }
 
 
@@ -889,42 +815,79 @@ public class CharacterCreationTools(
     private const string WizardSpellList =
         """
         **Wizard Spells:**
-        - **Magic Missile**: Launch multiple bolts of pure force that never miss.
-        - **Shield**: Form an invisible barrier that intercepts harm.
-        - **Burning Hands**: Project a fan of roaring flame.
-        - **Mage Armor**: Wrap a target in spectral plates of force.
-        - **Arcane Sight**: Open your senses to magical auras.
-        - **Illusory Disguise**: Layer a believable glamour over a creature.
-        - **Feather Fall**: Slow falling creatures before impact.
+        - **Acid Splash**: Splashes acid on one creature, or two adjacent creatures, that fail a Dexterity save.
+        - **Alarm**: Wards an area and alerts you when a creature enters it.
+        - **Animal Friendship**: Charms a beast that fails a Wisdom save until harmed.
+        - **Burning Hands**: Blasts a 15-foot cone for fire damage, halved on a successful Dexterity save.
+        - **Charm Person**: Charms a humanoid that fails a Wisdom save.
+        - **Chill Touch**: Deals necrotic damage at range and prevents healing until your next turn.
+        - **Comprehend Languages**: Lets you understand spoken and written languages for 1 hour.
+        - **Dancing Lights**: Creates up to four movable lights that shed dim light.
+        - **Disguise Self**: Changes your appearance with an illusion for up to 1 hour.
+        - **Eldritch Blast**: Fires a force beam that deals damage on a hit.
+        - **Entangle**: Creates difficult terrain and can restrain creatures in the area.
+        - **False Life**: Grants temporary hit points for 1 hour.
+        - **Feather Fall**: Slows up to five falling creatures so they land safely.
+        - **Fire Bolt**: Hurls fire at a target for ranged fire damage.
+        - **Floating Disk**: Summons a floating disk that carries up to 500 pounds.
+        - **Fog Cloud**: Fills an area with heavy fog that obscures vision.
+        - **Grease**: Covers an area in slippery grease that creates difficult terrain and knocks creatures prone.
+        - **Hellish Rebuke**: Burns a creature that damaged you with fire on a failed Dexterity save.
+        - **Identify**: Reveals the magical properties of an object or active spells on a creature.
+        - **Illusory Script**: Hides writing behind a magical illusion readable only by chosen creatures.
+        - **Mage Armor**: Sets an unarmored target's base AC to 13 + Dexterity modifier.
+        - **Magic Missile**: Fires force darts that automatically hit.
+        - **Message**: Sends a whispered message and allows a whispered reply.
+        - **Minor Illusion**: Creates a small sound or image illusion.
+        - **Poison Spray**: Deals poison damage to a nearby creature that fails a Constitution save.
+        - **Produce Flame**: Creates a flame that sheds light or can be thrown for fire damage.
+        - **Ray of Frost**: Deals cold damage and reduces the target's speed on a hit.
+        - **Shield**: Gives you +5 AC until your next turn and blocks magic missile.
+        - **Shocking Grasp**: Deals lightning damage on touch and prevents reactions.
+        - **Silent Image**: Creates a movable visual illusion within range.
+        - **Sleep**: Puts creatures with the lowest current hit points in an area to sleep.
+        - **Speak with Animals**: Lets you communicate with beasts for the duration.
+        - **Thunderwave**: Unleashes thunder damage in a cube and pushes creatures away.
+        - **Unseen Servant**: Summons an invisible servant that performs simple tasks.
         """;
 
-    private const string LightClericOrPaladinSpellList =
+    private const string ClericOrPaladinSpellList =
         """
-        
-        **Cleric/Paladin Spells (Light Domain):**
-        - **Healing Light**: Channel warm radiance to close wounds and steady an ally.
-        - **Divine Shield**: Call down a shimmering ward of light that deflects incoming blows.
-        - **Bless**: Bolster the resolve of nearby allies with gentle radiance.
-        - **Turn Undead**: Radiant command that drives undead away.
-        - **Sacred Flame**: Summon a column of brilliant fire to scour foes.
-       
+        **Cleric/Paladin Spells:**
+        - **Bane**: Forces up to three creatures to subtract a d4 from attacks and saves on a failed Charisma save.
+        - **Bless**: Lets up to three creatures add a d4 to attacks and saves.
+        - **Command**: Forces a creature that fails a Wisdom save to obey a one-word command.
+        - **Create or Destroy Water**: Creates or destroys water in a container or small area.
+        - **Cure Wounds**: Restores hit points to a creature you touch.
+        - **Detect Evil and Good**: Reveals nearby aberrations, celestials, elementals, fey, fiends, undead, and consecrated or desecrated objects.
+        - **Detect Magic**: Senses nearby magic and reveals magical auras.
+        - **Detect Poison and Disease**: Detects nearby poisons, poisonous creatures, and diseases.
+        - **Divine Favor**: Adds radiant damage to your weapon hits.
+        - **Guidance**: Lets a willing creature add a d4 to one ability check.
+        - **Guiding Bolt**: Deals radiant damage on a hit and grants advantage on the next attack against the target.
+        - **Healing Word**: Heals a creature you can see at range.
+        - **Heroism**: Makes a creature immune to fear and grants temporary hit points each turn.
+        - **Inflict Wounds**: Deals heavy necrotic damage with a melee spell attack.
+        - **Light**: Makes a touched object shine bright light.
+        - **Mending**: Repairs a small break or tear in an object.
+        - **Protection from Evil and Good**: Protects a creature against aberrations, celestials, elementals, fey, fiends, and undead.
+        - **Purify Food and Drink**: Cleanses food and drink of poison and disease.
+        - **Resistance**: Lets a willing creature add a d4 to one saving throw.
+        - **Sacred Flame**: Deals radiant damage to a creature that fails a Dexterity save.
+        - **Sanctuary**: Wards a creature so enemies must pass a Wisdom save to target it.
+        - **Shield of Faith**: Grants a creature +2 AC while the spell lasts.
+        - **Spare the Dying**: Stabilizes a living creature at 0 hit points.
+        - **Thaumaturgy**: Produces minor divine magical effects such as booming voice, tremors, or flickering flames.
         """;
-    private const string DarkClericOrPaladinSpellList =
-        """
-        
-        **Cleric/Paladin Spells (Shadow Domain):**
-        - **Soul Rot**: Inflict necrotic decay that feeds on vitality.
-        - **Umbral Armor**: Sheathe an ally in solidified gloom.
-        - **Despair**: Siphon courage from nearby foes.
-        - **Invoke Terror**: Unleash nightmarish whispers that shatter morale.
-        - **Void Lash**: Manifest a whip of hungry darkness.
-        
-        """;
+
 
     public List<AITool> GetAvailableTools()
     {
         return
         [
+            AIFunctionFactory.Create(SaveStartingLevel),
+            AIFunctionFactory.Create(GetStartingProgression),
+            AIFunctionFactory.Create(SaveStartingSkillRanks),
             AIFunctionFactory.Create(SaveRaceChoice),
             AIFunctionFactory.Create(SaveClassChoice),
             AIFunctionFactory.Create(SaveAttributeAllocation),

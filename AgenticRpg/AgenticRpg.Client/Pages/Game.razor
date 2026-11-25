@@ -19,10 +19,10 @@
             </button>
             <button class="btn-leave" @onclick="LeaveCampaign">
                 <span class="icon">🚪</span>
-                Leave
+                Leave campaign
             </button>
-            <button class="menu-button" @onclick="ToggleModelMenu" title="Model settings" aria-label="Open model settings">
-                <span class="menu-icon" aria-hidden="true">☰</span>
+            <button class="menu-button" @onclick="ToggleModelMenu" title="Advanced Settings" aria-label="Open Advanced Settings">
+                <span class="menu-icon" aria-hidden="true">⚙</span> Advanced Settings
             </button>
         </div>
     </div>
@@ -36,15 +36,17 @@
 
     @if (Campaign != null && CurrentCharacter != null && GameState != null)
     {
+        <AdventureOverview State="GameState" Character="CurrentCharacter" />
         <!-- Mobile View Toggle (visible only on mobile/tablet) -->
         <div class="mobile-view-toggle">
-            <button class="toggle-btn @(CurrentMobileView == MobileView.Game ? "active" : "")" 
+            <button class="toggle-btn @(CurrentMobileView == MobileView.Game ? "active" : "")"
                     @onclick='() => SetMobileView(MobileView.Game)'>
                 📖 Game
             </button>
-            <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")" 
+            <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")"
                     @onclick='() => SetMobileView(MobileView.Chat)'>
                 💬 Chat
+                @if (_unreadResponses.Count > 0) { <span class="unread-badge" aria-label="Unread responses">@_unreadResponses.Count</span> }
             </button>
         </div>
 
@@ -52,28 +54,30 @@
             <!-- Left Panel: Game Information Tabs -->
             <div class="info-panel @(CurrentMobileView == MobileView.Game ? "mobile-visible" : "mobile-hidden")">
                 <div class="tab-header">
-                    <button class="tab-button @(ActiveTab == "story" ? "active" : "")" 
+                    <button class="tab-button @(ActiveTab == "story" ? "active" : "")"
                             @onclick='() => SetActiveTab("story")'>
                         📖 Story
                     </button>
-                    <button class="tab-button @(ActiveTab == "character" ? "active" : "")" 
+                    <button class="tab-button @(ActiveTab == "character" ? "active" : "")"
                             @onclick='() => SetActiveTab("character")'>
                         👤 Character
                     </button>
-                    <button class="tab-button @(ActiveTab == "world" ? "active" : "")" 
+                    <button class="tab-button @(ActiveTab == "world" ? "active" : "")"
                             @onclick='() => SetActiveTab("world")'>
                         🗺️ World
                     </button>
                     @if (IsInCombat)
                     {
-                        <button class="tab-button combat-tab @(ActiveTab == "combat" ? "active" : "")" 
+                        <button class="tab-button combat-tab @(ActiveTab == "combat" ? "active" : "")"
                                 @onclick='() => SetActiveTab("combat")'>
                             ⚔️ Combat
                         </button>
                     }
+                    <button class="tab-button @(ActiveTab == "journal" ? "active" : "")" @onclick='() => SetActiveTab("journal")'>📜 Journal</button>
                 </div>
 
                 <div class="tab-content">
+                    @if (ActiveTab == "journal") { <AdventureJournal State="GameState" CharacterId="@CurrentCharacter.Id" /> }
                     @if (ActiveTab == "story")
                     {
                         <NarrativeView Narratives="@GameState.RecentNarratives.DistinctBy(x => x.Id).ToList()"
@@ -97,21 +101,29 @@
             <!-- Right Panel: Game Master Chat -->
             <div class="chat-panel @(CurrentMobileView == MobileView.Chat ? "mobile-visible" : "mobile-hidden")">
                 <div class="panel-header">
-                   
+
                     <div class="connection-status">
-                        <span class="@(IsConnected ? "status-connected" : "status-disconnected")"></span>
-                        @(IsConnected ? "Connected" : "Disconnected")
+                        <span class="@(HubConnected ? "status-connected" : "status-disconnected")"></span>
+                        @ConnectionStatusLabel
+                            @if (!HubConnected)
+                            {
+                                <button type="button" @onclick="RetryConnection">Reconnect</button>
+                            }
+                            @ConnectionError
                     </div>
                 </div>
 
                 <div class="chat-container">
-                    <ChatView Messages="@ChatMessages" 
+                    @if (TranscriptCursor is not null) { <button @onclick="() => LoadEarlier(ChatMessages, _runtimeChat, CurrentUserId, CurrentCharacter?.Name)">Load earlier messages</button> }
+                    @if (ReviewRequired) { <div role="alert">An action was interrupted. Review the current state before continuing. <button @onclick="ConfirmReview">I reviewed the current state</button></div> }
+                    <div role="status" aria-live="polite">@RecoveryError</div>
+                    <ChatView CurrentPlayerId="@CurrentUserId" SuggestionContext="@PlayerActionRules.TurnContext(GameState)" OnRetry="RetryMessage" OnReloadState="RetryConnection" OnRestoreText="@(text => UserInputRef?.SetValue(text))" IsProcessing="@(IsProcessing || !HubConnected || ReviewRequired)" Messages="@ChatMessages"
                              OnMessageDeleted="HandleMessageDeleted"
                              OnMessageEdited="HandleMessageEdited"
                               OnSuggestedActionInvoked="SendMessage" OnSpeakText="PlaySpeechAsync" IsPlaybackActive="_speechGenerating" CancelPlayback="CancelPlayback" />
 
-                    <UserInput @ref="UserInputRef"
-                              OnSubmit="SendMessage"
+                    <UserInput SubmissionAccepted="@(() => SubmissionConfirmed)" AccountId="@CurrentUserId" ScopeId="@CampaignId" IsUnavailable="@(!HubConnected || ReviewRequired)" @ref="UserInputRef"
+                              OnSubmit="SendMessage" OnCancel="CancelResponse"
                               IsProcessing="@IsProcessing"
                               Placeholder="Describe your actions, talk to NPCs, ask questions..." />
                 </div>

@@ -70,19 +70,27 @@
                             <div class="world-card-grid">
                                 @foreach (var location in World.Locations)
                                 {
-                                    <div class="world-card location-card @(SelectedLocation?.Id == location.Id ? "selected" : "")" @onclick="() => SelectLocation(location)">
-                                        <h4>@location.Name</h4>
-                                        <p class="world-meta">@location.Type</p>
-                                        <p class="world-desc">@location.Description</p>
-                                        @if (location.Tags.Any())
-                                        {
-                                            <div class="tags">
-                                                @foreach (var tag in location.Tags)
-                                                {
-                                                    <span class="tag">@tag</span>
-                                                }
-                                            </div>
-                                        }
+                                    var isExpanded = IsExpanded(LocationCardKind, location.Id);
+                                    <div class="world-card location-card @(isExpanded ? "expanded" : string.Empty)">
+                                        <div class="card-header-row">
+                                            <h4>@location.Name</h4>
+                                            <button type="button" class="card-toggle" @onclick="() => ToggleExpanded(LocationCardKind, location.Id)" aria-expanded="@isExpanded">
+                                                @GetToggleText(isExpanded)
+                                            </button>
+                                        </div>
+                                        <div class="card-preview @(isExpanded ? "expanded" : string.Empty)">
+                                            <p class="world-meta">@location.Type</p>
+                                            <p class="world-desc">@location.Description</p>
+                                            @if (location.Tags.Any())
+                                            {
+                                                <div class="tags">
+                                                    @foreach (var tag in location.Tags)
+                                                    {
+                                                        <span class="tag">@tag</span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -92,23 +100,6 @@
                             <p class="empty-message">No locations recorded</p>
                         }
 
-                        @if (SelectedLocation != null)
-                        {
-                            <div class="selected-location">
-                                <h4>@SelectedLocation.Name</h4>
-                                <p class="world-meta">@SelectedLocation.Type</p>
-                                <p class="world-desc">@SelectedLocation.Description</p>
-                                @if (SelectedLocation.Tags.Any())
-                                {
-                                    <div class="tags">
-                                        @foreach (var tag in SelectedLocation.Tags)
-                                        {
-                                            <span class="tag">@tag</span>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        }
                     </div>
 
                     <div class="world-section">
@@ -118,15 +109,23 @@
                             <div class="world-card-grid">
                                 @foreach (var npc in World.NPCs)
                                 {
-                                    <div class="world-card npc-card">
-                                        <div class="npc-header">
+                                    var isExpanded = IsExpanded(NpcCardKind, npc.Id);
+                                    <div class="world-card npc-card @(isExpanded ? "expanded" : string.Empty)">
+                                        <div class="npc-header card-header-row">
                                             <h4>@npc.Name</h4>
-                                            <span class="disposition @npc.Disposition.ToString().ToLower()">@npc.Disposition</span>
+                                            <div class="card-header-actions">
+                                                <span class="disposition @npc.Disposition.ToString().ToLower()">@npc.Disposition</span>
+                                                <button type="button" class="card-toggle" @onclick="() => ToggleExpanded(NpcCardKind, npc.Id)" aria-expanded="@isExpanded">
+                                                    @GetToggleText(isExpanded)
+                                                </button>
+                                            </div>
                                         </div>
-                                        <p class="world-meta">@npc.Role</p>
-                                        <p class="world-desc">@npc.Description</p>
-                                        <div class="npc-status">
-                                            <span class="status @npc.Status.ToLower()">@npc.Status</span>
+                                        <div class="card-preview @(isExpanded ? "expanded" : string.Empty)">
+                                            <p class="world-meta">@npc.Role</p>
+                                            <p class="world-desc">@npc.Description</p>
+                                            <div class="npc-status">
+                                                <span class="status @npc.Status.ToLower()">@npc.Status</span>
+                                            </div>
                                         </div>
                                     </div>
                                 }
@@ -149,19 +148,27 @@
                             <div class="world-card-grid">
                                 @foreach (var quest in World.SideQuests)
                                 {
-                                    <div class="quest-card">
-                                        <div class="quest-header">
+                                    var isExpanded = IsExpanded(QuestCardKind, quest.Id);
+                                    <div class="quest-card @(isExpanded ? "expanded" : string.Empty)">
+                                        <div class="quest-header card-header-row">
                                             <h4>@quest.Name</h4>
-                                            <span class="quest-status @quest.Status.ToString().ToLower()">@quest.Status</span>
-                                        </div>
-                                        <p class="world-meta">Quest Giver: @quest.QuestGiver</p>
-                                        <p class="world-desc">@quest.Description</p>
-                                        @if (quest.Reward != null && quest.Reward.Gold > 0)
-                                        {
-                                            <div class="quest-reward">
-                                                Reward: @quest.Reward.Gold GP
+                                            <div class="card-header-actions">
+                                                <span class="quest-status @quest.Status.ToString().ToLower()">@quest.Status</span>
+                                                <button type="button" class="card-toggle" @onclick="() => ToggleExpanded(QuestCardKind, quest.Id)" aria-expanded="@isExpanded">
+                                                    @GetToggleText(isExpanded)
+                                                </button>
                                             </div>
-                                        }
+                                        </div>
+                                        <div class="card-preview @(isExpanded ? "expanded" : string.Empty)">
+                                            <p class="world-meta">Quest Giver: @quest.QuestGiver</p>
+                                            <p class="world-desc">@quest.Description</p>
+                                            @if (quest.Reward != null && quest.Reward.Gold > 0)
+                                            {
+                                                <div class="quest-reward">
+                                                    Reward: @quest.Reward.Gold GP
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -179,67 +186,75 @@
                             <div class="world-card-grid">
                                 @foreach (var evt in World.Events)
                                 {
-                                    <div class="world-card @(evt.Status == "Lore" ? "lore-entry" : "")">
-                                        <div class="event-header">
+                                    var isExpanded = IsExpanded(LoreCardKind, evt.Id);
+                                    <div class="world-card @(evt.Status == "Lore" ? "lore-entry" : "") @(isExpanded ? "expanded" : string.Empty)">
+                                        <div class="event-header card-header-row">
                                             <h4>@evt.Name</h4>
-                                            <span class="event-status @evt.Status.ToLower()">@evt.Status</span>
+                                            <div class="card-header-actions">
+                                                <span class="event-status @evt.Status.ToLower()">@evt.Status</span>
+                                                <button type="button" class="card-toggle" @onclick="() => ToggleExpanded(LoreCardKind, evt.Id)" aria-expanded="@isExpanded">
+                                                    @GetToggleText(isExpanded)
+                                                </button>
+                                            </div>
                                         </div>
-                                        <p class="world-desc">@evt.Description</p>
-                                        @if (evt.Status != "Lore")
-                                        {
-                                            <div class="event-timing">
-                                                <span class="timing-label">Started:</span>
-                                                <span class="timing-value">@evt.StartTime.ToString("MMM dd, yyyy")</span>
-                                            </div>
-                                        }
-                                        @if (evt.AffectedLocationIds.Any() || evt.AffectedNPCIds.Any())
-                                        {
-                                            <div class="event-affected">
-                                                @if (evt.AffectedLocationIds.Any())
-                                                {
-                                                    <div class="affected-section">
-                                                        <strong>Locations:</strong>
-                                                        @foreach (var locId in evt.AffectedLocationIds)
-                                                        {
-                                                            var loc = World.Locations.FirstOrDefault(l => l.Id == locId);
-                                                            if (loc != null)
+                                        <div class="card-preview @(isExpanded ? "expanded" : string.Empty)">
+                                            <p class="world-desc">@evt.Description</p>
+                                            @if (evt.Status != "Lore")
+                                            {
+                                                <div class="event-timing">
+                                                    <span class="timing-label">Started:</span>
+                                                    <span class="timing-value">@evt.StartTime.ToString("MMM dd, yyyy")</span>
+                                                </div>
+                                            }
+                                            @if (evt.AffectedLocationIds.Any() || evt.AffectedNPCIds.Any())
+                                            {
+                                                <div class="event-affected">
+                                                    @if (evt.AffectedLocationIds.Any())
+                                                    {
+                                                        <div class="affected-section">
+                                                            <strong>Locations:</strong>
+                                                            @foreach (var locId in evt.AffectedLocationIds)
                                                             {
-                                                                <span class="affected-item">@loc.Name</span>
+                                                                var loc = World.Locations.FirstOrDefault(l => l.Id == locId);
+                                                                if (loc != null)
+                                                                {
+                                                                    <span class="affected-item">@loc.Name</span>
+                                                                }
                                                             }
-                                                        }
-                                                    </div>
-                                                }
-                                                @if (evt.AffectedNPCIds.Any())
-                                                {
-                                                    <div class="affected-section">
-                                                        <strong>NPCs:</strong>
-                                                        @foreach (var npcId in evt.AffectedNPCIds)
-                                                        {
-                                                            var npc = World.NPCs.FirstOrDefault(n => n.Id == npcId);
-                                                            if (npc != null)
+                                                        </div>
+                                                    }
+                                                    @if (evt.AffectedNPCIds.Any())
+                                                    {
+                                                        <div class="affected-section">
+                                                            <strong>NPCs:</strong>
+                                                            @foreach (var npcId in evt.AffectedNPCIds)
                                                             {
-                                                                <span class="affected-item">@npc.Name</span>
+                                                                var npc = World.NPCs.FirstOrDefault(n => n.Id == npcId);
+                                                                if (npc != null)
+                                                                {
+                                                                    <span class="affected-item">@npc.Name</span>
+                                                                }
                                                             }
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                        @if (evt.Tags.Any())
-                                        {
-                                            <div class="tags">
-                                                @foreach (var tag in evt.Tags)
-                                                {
-                                                    <span class="tag">@tag</span>
-                                                }
-                                            </div>
-                                        }
-                                        @if (!string.IsNullOrEmpty(evt.Notes))
-                                        {
-                                            <div class="event-notes">
-                                                <em>@evt.Notes</em>
-                                            </div>
-                                        }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (evt.Tags.Any())
+                                            {
+                                                <div class="tags">
+                                                    @foreach (var tag in evt.Tags)
+                                                    {
+                                                        <span class="tag">@tag</span>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(evt.Notes))
+                                            {
+                                                <div class="event-notes">
+                                                    <em>@evt.Notes</em>
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             </div>

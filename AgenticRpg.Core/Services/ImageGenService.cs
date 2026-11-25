@@ -45,8 +45,8 @@ public class ImageGenService
         try
         {
 
-            //data = await GenerateImageData(instructions);
-                data = await GoogleGenerateImageData(instructions, aspectRatio);
+            data = await GenerateImageData(instructions);
+            //data = await GoogleGenerateImageData(instructions, aspectRatio);
         }
         catch (Exception ex)
         {
@@ -60,12 +60,12 @@ public class ImageGenService
     private static async Task<ReadOnlyMemory<byte>> GenerateImageData(string instructions)
     {
         var client = new OpenAIClient(new ApiKeyCredential(Configuration.OpenAIApiKey)/*, new OpenAIClientOptions(){Endpoint = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") }*/);
-        var imageClient = client.GetImageClient("gpt-image-1.5").AsIImageGenerator();
+        var imageClient = client.GetImageClient("gpt-image-2.5-sunburst").AsIImageGenerator();
 
         var images = await imageClient.GenerateImagesAsync(
             instructions, new ImageGenerationOptions()
             {
-                RawRepresentationFactory = _ => new OpenAIImageGenerationOptions(){ModerationLevel = GeneratedImageModerationLevel.Low, Size = GeneratedImageSize.W1024xH1536 }
+                RawRepresentationFactory = _ => new OpenAIImageGenerationOptions(){ModerationLevel = GeneratedImageModerationLevel.Low, Size = GeneratedImageSize.W1024xH1536, Quality = GeneratedImageQuality.HighQuality }
             });
         var contents = images.Contents.OfType<DataContent>();
         var data = contents.First().Data;

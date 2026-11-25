@@ -155,7 +155,7 @@
 
 .world-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(25%, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(33%, 1fr));
     gap: 0.75rem;
 }
 
@@ -164,6 +164,9 @@
     border: 2px solid rgba(77, 208, 225, 0.3);
     border-radius: 6px;
     padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     box-shadow: 0 0 12px rgba(77, 208, 225, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -176,7 +179,6 @@
 
 .world-card:hover {
     border-color: #4dd0e1;
-    cursor: pointer;
     transform: translateY(-2px);
     box-shadow: 0 0 18px rgba(77, 208, 225, 0.35);
 }
@@ -197,19 +199,69 @@
     color: #b0bec5;
     font-size: 0.88rem;
     line-height: 1.4;
+    margin: 0;
 }
 
-.selected-location {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    background: #f9f4ed;
-    border: 2px solid #d4a574;
-    border-radius: 6px;
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
 }
 
-.selected-location h4 {
-    margin: 0 0 0.4rem 0;
-    color: #3a2f26;
+.card-header-row h4 {
+    flex: 1;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.card-toggle {
+    align-self: flex-start;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid rgba(77, 208, 225, 0.45);
+    border-radius: 999px;
+    background: rgba(77, 208, 225, 0.12);
+    color: #4dd0e1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.card-toggle:hover {
+    background: rgba(77, 208, 225, 0.2);
+    border-color: #4dd0e1;
+}
+
+.card-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.card-preview:not(.expanded) .world-desc {
+    display: -webkit-box;
+    line-clamp: 4;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-preview:not(.expanded) .tags,
+.card-preview:not(.expanded) .npc-status,
+.card-preview:not(.expanded) .quest-reward,
+.card-preview:not(.expanded) .event-timing,
+.card-preview:not(.expanded) .event-affected,
+.card-preview:not(.expanded) .event-notes {
+    display: none;
 }
 
 .npc-header {
@@ -294,6 +346,9 @@
     border: 2px solid rgba(212, 175, 55, 0.4);
     border-radius: 6px;
     padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
 }
 
@@ -312,8 +367,7 @@
 .quest-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.4rem;
+    align-items: flex-start;
 }
 
 .quest-status {
@@ -369,8 +423,7 @@
 .event-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.4rem;
+    align-items: flex-start;
     
 }
 

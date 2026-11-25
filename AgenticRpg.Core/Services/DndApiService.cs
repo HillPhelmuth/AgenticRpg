@@ -16,6 +16,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using OpenAI.Chat;
+using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
+#pragma warning disable OPENAI001
 
 namespace AgenticRpg.Core.Services;
 
@@ -99,6 +102,23 @@ public class DndApiService
         }
         return result;
     }
+    public static async Task<List<DndSpell>> RetrieveSpellsAsDndSpells()
+    {
+        return DndSpell.FromFile();
+        var spellMetadata = DndSpells.FromFile();
+        var result = new List<DndSpell>();
+        foreach (var spellData in spellMetadata.Results)
+        {
+            var response = await _httpClient.GetStringAsync(spellData.Url);
+            var spellJson = JsonSerializer.Deserialize<JsonElement>(response);
+            var spell = JsonSerializer.Deserialize<DndSpell>(spellJson.GetRawText());
+            if (spell != null)
+            {
+                result.Add(spell);
+            }
+        }
+        return result;
+    }
 
     // # Reason: Keep challenge rating parsing consistent across entry points.
     private static double[] ParseChallengeRatings(string challengeRating)
@@ -146,6 +166,82 @@ public class DndApiService
         return rpgSpell;
     }
 
+    public static async Task<Spell?> ConvertSpellAsync(DndSpell spellData)
+    {
+        try
+        {
+            var prompt =
+                $"""
+                 Convert spells described in D&D format into the target JSON schema (ResponseFormat) by matching D&D fields to their closest corresponding JSON fields.  
+                 Carefully reason through the mapping of fields step by step before producing the final output.  
+                 Think explicitly about:  
+                 - Which D&D fields map directly and which require adaptation or supplementation.  
+                 - D&D components (V,S,M), classes, and levels mapping to schema enumerations or integer levels.  
+                 - Handling spell effects (healing, damage, buffs, debuffs, utility), area of effect, dice expressions, and duration conversions.  
+                 - Ensuring all required fields in the schema are completed, assigning null or best-fit values where D&D leaves data out.  
+                 - For nested fields like Effect, reason through each substype's mapping before output.  
+                 Do not output your final JSON answer until all fields and mappings are planned and checked.
+                 
+                 For every request, persist until all objectives are fully met.  
+                 Chain-of-thought reason internally about the mapping and any necessary rewrites or assumptions.
+                 
+                 Output Format:  
+                 The complete answer MUST be valid JSON matching the ResponseFormat schema, and must NOT be wrapped in a code block.
+                 
+                 **Example Conversion Step-by-Step Reasoning:**  
+                 - D&D field: Name -> JSON.Name  
+                 - D&D field: Level -> JSON.Level (0 = cantrip)  
+                 - D&D field: Classes -> JSON.SpellClass ("WizardAndWarMage" for wizard-like, "ClericAndPaladin" for any spells that contain cleric in "classes" array)  
+                 - D&D field: School -> JSON.School  
+                 - D&D field: Casting Time -> JSON.CastingTime  
+                 - D&D field: Range -> JSON.Range  
+                 - D&D field: Duration -> JSON.Duration  
+                 - D&D field: Components V,S,M -> JSON.Components (e.g., ["V","S","M"])  
+                 - D&D spell description/effect -> JSON.Description, JSON.EffectText  
+                 - For effect: If healing/damage, parse dice (1d8 etc), assign EffectType, EffectDice, AreaOfEffect; assign magnitude for static effects such as buffs.  
+                 - Fill any missing required fields with null or most reasonable default, using schema enums.
+
+                 **Spell**
+                 ```
+                 {JsonSerializer.Serialize(spellData, new JsonSerializerOptions() { WriteIndented = true })}
+                 ```
+                 """;
+            var config = AgentStaticConfiguration.Default;
+            var client = new OpenAIClient(new ApiKeyCredential(config.OpenRouterApiKey!),
+                new OpenAIClientOptions()
+                {
+                    Endpoint = new Uri(config.OpenRouterEndpoint),
+                    ClientLoggingOptions = new ClientLoggingOptions()
+                    {
+                        LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole()),
+                        EnableMessageLogging = true, EnableLogging = true, EnableMessageContentLogging = true
+                    }
+                });
+            var chatClient = client.GetChatClient("openai/gpt-oss-120b").AsIChatClient();
+            var agent = chatClient.AsAIAgent(new ChatClientAgentOptions()
+            {
+                Name = "Spell Converter",
+                Description = "Converts D&D spells to RPG spells in JSON format.",
+                ChatOptions = new ChatOptions()
+                {
+                    Instructions = prompt,
+                    ResponseFormat = ChatResponseFormat.ForJsonSchema<Spell>(),
+                    RawRepresentationFactory = _ => new OpenRouterChatCompletionOptions()
+                    {
+                        Provider = new Provider() { Sort = "throughput" },
+                        ReasoningEffortLevel = ChatReasoningEffortLevel.High
+                    }
+                }
+            });
+            var response = await agent.RunAsync<Spell>();
+            var rpgSpell = response.Result;
+            return rpgSpell;
+        }
+        catch
+        {
+            return null;
+        }
+    }
     private static async Task<RpgMonster?> ConvertMonsterAsync(DndMonster monster)
     {
         try
@@ -470,7 +566,7 @@ public class DndSpells
 
     public static DndSpells FromFile()
     {
-        return FileHelper.ExtractFromAssembly<DndSpells>("DndSpellsList.json");
+        return FileHelper.ExtractFromAssembly<DndSpells>("5e-SRD-Spells.json");
     }
 }
 
@@ -488,126 +584,4 @@ public class SpellMetadata
     [JsonPropertyName("url")]
     public string Url { get; set; }
 }
-public class DndSpell
-{
-    [JsonPropertyName("index")]
-    public string Index { get; set; }
 
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-
-    [JsonPropertyName("desc")]
-    public List<string> Desc { get; set; }
-
-    [JsonPropertyName("higher_level")]
-    public List<string> HigherLevel { get; set; }
-
-    [JsonPropertyName("range")]
-    public string Range { get; set; }
-
-    [JsonPropertyName("components")]
-    public List<string> Components { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("material")]
-    public string Material { get; set; }
-
-    [JsonPropertyName("ritual")]
-    public bool Ritual { get; set; }
-
-    [JsonPropertyName("duration")]
-    public string Duration { get; set; }
-
-    [JsonPropertyName("concentration")]
-    public bool Concentration { get; set; }
-
-    [JsonPropertyName("casting_time")]
-    public string CastingTime { get; set; }
-
-    [JsonPropertyName("level")]
-    public long Level { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("attack_type")]
-    public string AttackType { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("damage")]
-    public DndSpellDamage Damage { get; set; }
-
-    [JsonPropertyName("school")]
-    public School School { get; set; }
-
-    [JsonPropertyName("classes")]
-    public List<School> Classes { get; set; }
-
-    [JsonPropertyName("subclasses")]
-    public List<School> Subclasses { get; set; }
-
-    [JsonPropertyName("url")]
-    public string Url { get; set; }
-
-    [JsonPropertyName("updated_at")]
-    public DateTimeOffset UpdatedAt { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("dc")]
-    public DnDDc Dc { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("area_of_effect")]
-    public AreaOfEffect AreaOfEffect { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("heal_at_slot_level")]
-    public Dictionary<string, string> HealAtSlotLevel { get; set; }
-}
-
-public class AreaOfEffect
-{
-    [JsonPropertyName("type")]
-    public string Type { get; set; }
-
-    [JsonPropertyName("size")]
-    public long Size { get; set; }
-}
-
-public class School
-{
-    [JsonPropertyName("index")]
-    public string Index { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-
-    [JsonPropertyName("url")]
-    public string Url { get; set; }
-}
-
-public class DndSpellDamage
-{
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("damage_type")]
-    public School DamageType { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("damage_at_slot_level")]
-    public Dictionary<string, string> DamageAtSlotLevel { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("damage_at_character_level")]
-    public Dictionary<string, string> DamageAtCharacterLevel { get; set; }
-}
-
-public class DnDDc
-{
-    [JsonPropertyName("dc_type")]
-    public School DcType { get; set; }
-
-    [JsonPropertyName("dc_success")]
-    public string DcSuccess { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("desc")]
-    public string Desc { get; set; }
-}

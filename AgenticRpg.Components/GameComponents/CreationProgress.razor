@@ -1,0 +1,12 @@
+<details class="creation-progress">
+    <summary>@(Step is { } step ? $"Setup · {Labels[step - 1]} ({step}/4)" : "Creation details")</summary>
+    <div class="creation-progress-details">
+        @if (Step is { } current) { <SetupProgress Step="current" /> }
+        <div class="creation-status">@ChildContent</div>
+    </div>
+</details>
+@code {
+    [Parameter] public int? Step { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private static readonly string[] Labels = ["World", "Campaign", "Character", "Ready up"];
+}

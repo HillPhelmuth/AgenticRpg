@@ -28,7 +28,7 @@ public partial class Game : IAsyncDisposable
     [Inject] private IGameStateService GameStateService { get; set; } = default!;
     [Inject] private ILogger<Game> Logger { get; set; } = default!;
     [Inject] private NavigationManager NavManager { get; set; } = default!;
-   
+
 
     private Campaign? Campaign { get; set; }
     private Character? CurrentCharacter { get; set; }
@@ -37,13 +37,15 @@ public partial class Game : IAsyncDisposable
     private List<ChatMessage> ChatMessages { get; set; } = [];
     private readonly Dictionary<string, ChatMessage> _messageLookup = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ChatMessage> _streamMessageLookup = new(StringComparer.OrdinalIgnoreCase);
+    private bool SubmissionConfirmed;
     private bool IsProcessing { get; set; }
+    private readonly RuntimeChatState _runtimeChat = new();
     private string? ErrorMessage { get; set; }
-    private bool IsConnected { get; set; }
     private string ActiveTab { get; set; } = "story";
     private bool ShowPartyView { get; set; }
     private new UserInput? UserInputRef { get; set; }
-    private MobileView CurrentMobileView { get; set; } = MobileView.Game;
+    private MobileView CurrentMobileView { get; set; } = MobileView.Chat;
+    private readonly HashSet<string> _unreadResponses = [];
     private bool ShowModelMenu { get; set; }
     [Inject]
     private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
@@ -98,223 +100,68 @@ public partial class Game : IAsyncDisposable
 
             // Connect to SignalR hub
             await HubService.StartAsync();
+            Track(HubService.OnMessageUpdated(HandleRuntimeMessage));
+            Track(HubService.OnRecovered(HandleRecovered));
 
             // Subscribe to all game events
-            HubService.OnReceiveMessage(HandleReceiveMessage);
-            HubService.OnStateUpdated(HandleStateUpdated);
-            HubService.OnNarrativeAdded(HandleNarrativeAdded);
-            HubService.OnCombatStarted(HandleCombatStarted);
-            HubService.OnTurnChanged(HandleTurnChanged);
-            HubService.OnMessageStatusChanged(HandleMessageStatusChanged);
-            HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
-            HubService.OnMessageStreamToken(HandleMessageStreamToken);
-            HubService.OnMessageStreamCompleted(HandleMessageStreamCompleted);
-            HubService.OnSuggestedActionsUpdated(HandleSuggestedActionsUpdated);
+            Track(HubService.OnStateUpdated(HandleStateUpdated));
+            Track(HubService.OnNarrativeAdded(HandleNarrativeAdded));
+            Track(HubService.OnCombatStarted(HandleCombatStarted));
+            Track(HubService.OnTurnChanged(HandleTurnChanged));
 
             // Join campaign
-            await HubService.JoinCampaignAsync(
+            var recovery = await HubService.JoinCampaignAsync(
                 CampaignId,
                 CurrentUserId,
                 CurrentCharacter.Id,
-                CurrentCharacter.Name
+                CurrentCharacter.Name, ScopeLeaseId
             );
-            IsConnected = true;
+            HandleRecovered(recovery);
 
             // Load complete game state from server
-            GameState = await GameStateService.GetGameStateAsync(CampaignId);
+            if (recovery.GameState is not null) HandleStateUpdated(recovery.GameState);
             if (GameState == null)
             {
                 ErrorMessage = "Failed to load game state.";
                 return;
             }
-            if (Campaign?.OwnerId == CurrentUserId)
-                await HubService.SendMessageAsync(CampaignId, CurrentUserId, "Introduce yourself and either summarize the current game-state, or begin the new campaign by describing the world.");
+            if (Campaign?.OwnerId == CurrentUserId && !recovery.HasAcceptedRequests && recovery.Messages.Count == 0)
+                await HubService.SendMessageAsync(CampaignId, CurrentUserId, "Introduce yourself and either summarize the current game-state, or begin the new campaign by describing the world.", clientMessageId: $"intro-{CampaignId}");
+            SubmissionConfirmed = true;
             if (Logger.IsEnabled(LogLevel.Information))
                 Logger.LogInformation("Joined game for campaign {CampaignId} as character {CharacterId}", CampaignId, CurrentCharacter.Id);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to initialize game");
-            ErrorMessage = $"Failed to load game: {ex}";
+            ErrorMessage = "Unable to load game. Reload state and try again.";
         }
     }
 
 
-    private void HandleReceiveMessage(string playerId, AgentResponse message, DateTime timestamp)
-    {
-        if (playerId == CurrentUserId)
-        {
-            // Already rendered locally
-            return;
-        }
 
-        if (!string.IsNullOrEmpty(message.Id) && _streamMessageLookup.TryGetValue(message.Id, out var streamedMessage))
-        {
-            streamedMessage.Content = message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message;
-            streamedMessage.Timestamp = timestamp;
-            streamedMessage.PlayerId = playerId;
-            streamedMessage.PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId);
-            _streamMessageLookup.Remove(message.Id);
-            InvokeAsync(StateHasChanged);
-            return;
-        }
 
-        // Receive messages from Game Master or other players
-        ChatMessages.Add(new ChatMessage
-        {
-            Id = message.Id,
-            Content = message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message,
-            IsUser = playerId == CurrentUserId,
-            Timestamp = timestamp,
-            PlayerId = playerId,
-            PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId)
-        });
 
-        //_ = PlaySpeechAsync(message.FormattedResponse?.MessageToPlayers ?? message.Error ?? message.Message);
-        InvokeAsync(StateHasChanged);
-    }
 
-    private void HandleMessageStreamStarted(string messageId, string playerId, DateTime timestamp)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
-        {
-            return;
-        }
 
-        var streamMessage = new ChatMessage
-        {
-            Id = messageId,
-            Content = string.Empty,
-            IsUser = false,
-            Timestamp = timestamp,
-            PlayerName = playerId == CurrentUserId ? "You" : GetPlayerName(playerId),
-            IsStreaming = true
-        };
 
-        ChatMessages.Add(streamMessage);
-        _streamMessageLookup[messageId] = streamMessage;
-        InvokeAsync(StateHasChanged);
-    }
 
-    private void HandleMessageStreamToken(string messageId, string agentType, string token)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrEmpty(token))
-        {
-            return;
-        }
 
-        if (!_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            streamMessage = new ChatMessage
-            {
-                Id = messageId,
-                Content = string.Empty,
-                IsUser = false,
-                Timestamp = DateTime.UtcNow,
-                PlayerName = string.IsNullOrWhiteSpace(agentType) ? "Game Master" : agentType
-            };
 
-            ChatMessages.Add(streamMessage);
-            _streamMessageLookup[messageId] = streamMessage;
-        }
 
-        ChatMessages.LastOrDefault()?.IsStreaming = true;
-        ChatMessages.LastOrDefault()?.Content += token;
-        InvokeAsync(StateHasChanged);
-        if (!string.IsNullOrWhiteSpace(agentType))
-        {
-            streamMessage.PlayerName = agentType;
-        }
 
-        
-    }
 
-    private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || !_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            return;
-        }
-        streamMessage.IsStreaming = false;
-        if (!string.IsNullOrWhiteSpace(note))
-        {
-            streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
-                ? $"Error communicating with {agentType}: {note}"
-                : streamMessage.Content;
-            
-        }
-        _streamMessageLookup.Remove(messageId);
-        InvokeAsync(StateHasChanged);
-    }
 
-    private void HandleSuggestedActionsUpdated(string messageId, List<SuggestedAction> suggestedActions)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || suggestedActions.Count == 0)
-        {
-            return;
-        }
-
-        var playerName = CurrentCharacter?.Name;
-        var actionsForPlayer = suggestedActions
-            .Where(x => string.IsNullOrWhiteSpace(playerName) || x.Player.Equals(playerName, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(x => x.Suggestions)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        if (actionsForPlayer.Count == 0)
-        {
-            return;
-        }
-
-        if (_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            streamMessage.SuggestedActions = actionsForPlayer;
-            InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        var existingMessage = ChatMessages.FirstOrDefault(x => string.Equals(x.Id, messageId, StringComparison.OrdinalIgnoreCase));
-        if (existingMessage is null)
-        {
-            return;
-        }
-
-        existingMessage.SuggestedActions = actionsForPlayer;
-        InvokeAsync(StateHasChanged);
-    }
-
-    
-
-    private void HandleMessageStatusChanged(string messageId, string status, int? position, string? note)
-    {
-        if (string.IsNullOrEmpty(messageId))
-        {
-            return;
-        }
-
-        if (!_messageLookup.TryGetValue(messageId, out var existingMessage))
-        {
-            return;
-        }
-
-        if (!Enum.TryParse<MessageProcessingStatus>(status, out var parsedStatus))
-        {
-            return;
-        }
-
-        existingMessage.Status = parsedStatus;
-        existingMessage.QueuePosition = position;
-        existingMessage.StatusNote = note;
-        InvokeAsync(StateHasChanged);
-    }
 
     private void HandleStateUpdated(GameState newState)
     {
+        if (IsDisposed || newState.CampaignId != CampaignId) return;
         Logger.LogInformation("Game state updated");
 
         // Update game state from server
+        if (GameState is not null && GameState.Version > newState.Version) return;
         GameState = newState;
+        Campaign = newState.Campaign;
         Logger.LogInformation($"Game state updated: {JsonSerializer.Serialize(GameState)}");
         // Update current character from the updated game state
         // First try by character ID if we have it
@@ -362,7 +209,7 @@ public partial class Game : IAsyncDisposable
         // Add narrative to game state
         if (GameState != null)
         {
-            GameState.RecentNarratives.Add(narrative);
+            if (GameState.RecentNarratives.All(n => n.Id != narrative.Id)) GameState.RecentNarratives.Add(narrative);
 
             // If on story tab, refresh to show new narrative
             InvokeAsync(StateHasChanged);
@@ -416,19 +263,66 @@ public partial class Game : IAsyncDisposable
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task SendMessage(string message)
+    private async void HandleRuntimeMessage(RuntimeMessage message)
     {
-        if (string.IsNullOrWhiteSpace(message))
+        if (IsDisposed || message.ScopeId != CampaignId) return;
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (IsDisposed) return;
+                ObserveRuntime(message, CurrentUserId);
+                var changed = _runtimeChat.Apply(ChatMessages, message, CurrentUserId, CurrentCharacter?.Name);
+                if (changed && CurrentMobileView != MobileView.Chat && !string.IsNullOrEmpty(message.Content)) _unreadResponses.Add(message.Id);
+                IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(CampaignId ?? string.Empty, CurrentUserId);
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex) { Logger.LogWarning(ex, "Response refresh failed"); }
+    }
+
+    private async void HandleRecovered(ScopeRecoverySnapshot snapshot)
+    {
+        if (IsDisposed || snapshot.ScopeId != CampaignId) return;
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (IsDisposed) return;
+                if (snapshot.GameState is not null) HandleStateUpdated(snapshot.GameState);
+                RememberRecovery(snapshot);
+                foreach (var message in snapshot.Messages)
+                {
+                    ObserveRuntime(message, CurrentUserId);
+                    _runtimeChat.Apply(ChatMessages, message, CurrentUserId, CurrentCharacter?.Name);
+                }
+                IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(CampaignId ?? string.Empty, CurrentUserId);
+
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex) { Logger.LogWarning(ex, "Session recovery failed"); }
+    }
+
+    private Task SendMessage(string message) => SendMessageCore(message);
+    private Task RetryMessage(ChatMessage message) => SendMessageCore(message.Content, message.IsAuthoritative || message.WasRejected ? null : message.ClientMessageId, message.ActionIntent);
+    private Task CancelResponse() => CancelPending(_runtimeChat, CampaignId!, CurrentUserId);
+
+    private async Task SendMessageCore(string message, string? retryId = null, PlayerActionIntent? intent = null)
+    {
+        SubmissionConfirmed = false;
+        if (string.IsNullOrWhiteSpace(message) || IsProcessing || ReviewRequired || !HubConnected)
             return;
 
         IsProcessing = true;
 
-        var clientMessageId = Guid.NewGuid().ToString();
+        var clientMessageId = retryId ?? Guid.NewGuid().ToString();
         var chatMessage = new ChatMessage
         {
             Id = clientMessageId,
             ClientMessageId = clientMessageId,
             Content = message,
+            ActionIntent = intent,
             IsUser = true,
             Timestamp = DateTime.UtcNow,
             PlayerId = CurrentUserId,
@@ -437,6 +331,7 @@ public partial class Game : IAsyncDisposable
             QueuePosition = 0
         };
 
+        ChatMessages.RemoveAll(m => m.Id == clientMessageId);
         ChatMessages.Add(chatMessage);
         _messageLookup[clientMessageId] = chatMessage;
 
@@ -445,17 +340,20 @@ public partial class Game : IAsyncDisposable
         try
         {
             // Send message to Game Master Agent via SignalR
-            await HubService.SendMessageAsync(CampaignId, CurrentUserId, message, AgentType.None, clientMessageId);
+            if (intent is null) await HubService.SendMessageAsync(CampaignId, CurrentUserId, message, AgentType.None, clientMessageId);
+            else await HubService.SendActionAsync(CampaignId, CurrentUserId, message, intent, clientMessageId);
+            SubmissionConfirmed = true;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error sending message");
             chatMessage.Status = MessageProcessingStatus.Failed;
-            chatMessage.StatusNote = ex.Message;
+            chatMessage.WasRejected = ex is Microsoft.AspNetCore.SignalR.HubException;
+            chatMessage.StatusNote = chatMessage.WasRejected ? ex.Message : "Delivery not confirmed. Reconnect to check the action.";
             ChatMessages.Add(new ChatMessage
             {
                 Id = Guid.NewGuid().ToString(),
-                Content = $"Error communicating with Game Master: {ex.Message}",
+                Content = chatMessage.WasRejected ? ex.Message : "Message delivery was not confirmed. Your text is retained; reconnect and retry safely.",
                 IsUser = false,
                 Timestamp = DateTime.UtcNow,
                 PlayerName = "System"
@@ -463,7 +361,7 @@ public partial class Game : IAsyncDisposable
         }
         finally
         {
-            IsProcessing = false;
+            IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(CampaignId ?? string.Empty, CurrentUserId);
             StateHasChanged();
         }
     }
@@ -479,7 +377,7 @@ public partial class Game : IAsyncDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to update character");
-            ErrorMessage = $"Failed to save character changes: {ex.Message}";
+            ErrorMessage = "Unable to save character changes. Reload state and try again.";
         }
     }
 
@@ -523,6 +421,7 @@ public partial class Game : IAsyncDisposable
     private void SetMobileView(MobileView view)
     {
         CurrentMobileView = view;
+        if (view == MobileView.Chat) _unreadResponses.Clear();
         StateHasChanged();
     }
 
@@ -536,17 +435,17 @@ public partial class Game : IAsyncDisposable
         ShowModelMenu = false;
     }
 
-    private async void LeaveCampaign()
+    private async Task LeaveCampaign()
     {
         try
         {
-            await HubService.LeaveCampaignAsync(CampaignId, CurrentUserId, CharacterId!);
+            await HubService.LeaveCampaignAsync(CampaignId, CurrentUserId, CurrentCharacter!.Id);
             NavManager.NavigateTo("/startup");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error leaving campaign");
-            ErrorMessage = $"Failed to leave campaign: {ex.Message}";
+            ErrorMessage = "Unable to leave campaign. Reload state and try again.";
         }
     }
 
@@ -557,22 +456,11 @@ public partial class Game : IAsyncDisposable
         return character?.Name ?? "Game Master";
     }
 
-    public async ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        try
-        {
-            if (IsConnected)
-            {
-                await HubService.LeaveCampaignAsync(CampaignId, CurrentUserId, CharacterId!);
-            }
-
-            _speechCts?.Cancel();
-            _speechCts?.Dispose();
-            await AudioInterop.StopAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error during disposal");
-        }
+        DisposeSubscriptions();
+        try { if (!string.IsNullOrEmpty(CampaignId)) await HubService.DetachScopeAsync(CampaignId, ScopeLeaseId); }
+        catch (Exception ex) { Logger.LogWarning(ex, "Scope detach failed"); }
+        finally { await base.DisposeAsync(); }
     }
 }

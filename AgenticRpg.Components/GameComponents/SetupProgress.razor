@@ -1,0 +1,8 @@
+<nav class="setup-progress" aria-label="Adventure setup progress">
+    @for (var index = 1; index <= 4; index++)
+    { <span class="@(index == Step ? "current" : index < Step ? "complete" : "")" aria-current="@(index == Step ? "step" : null)">@index. @Labels[index - 1]</span> }
+</nav>
+@code {
+    [Parameter] public int Step { get; set; } = 1;
+    private static readonly string[] Labels = ["World", "Campaign", "Character", "Ready up"];
+}

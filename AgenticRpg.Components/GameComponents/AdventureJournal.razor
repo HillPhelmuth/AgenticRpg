@@ -1,0 +1,28 @@
+@using AgenticRpg.Core.Models
+@using AgenticRpg.Core.Models.Game
+@using AgenticRpg.Core.Models.Enums
+<section aria-label="Adventure journal">
+    <h2>Journal</h2>
+    @foreach (var group in Quests.GroupBy(q => q.Status == QuestStatus.Completed ? "Completed quests" : q.Status is QuestStatus.Failed or QuestStatus.Abandoned ? "Failed and abandoned quests" : "Active and available quests"))
+    {
+        <h3>@group.Key</h3>
+        @foreach (var quest in group)
+        {
+            <article class="journal-entry">
+                <h4>@quest.Name @(quest.Id == State.Campaign.PrimaryQuest?.Id ? "(Primary)" : "")</h4>
+                <p>@quest.Description</p><small>@quest.Status</small>
+                <ul>@foreach (var objective in quest.Objectives) { <li>@(quest.CompletedObjectives.GetValueOrDefault(objective) ? "✓" : "○") @objective</li> }</ul>
+            </article>
+        }
+    }
+    @if (!Quests.Any()) { <p>No quests recorded. Apparently even trouble hasn't found you yet.</p> }
+    <h3>Recent discoveries</h3>
+    @foreach (var entry in State.RecentNarratives.Where(n => n.Visibility == NarrativeVisibility.Global || n.Visibility == NarrativeVisibility.CharacterSpecific && n.TargetCharacterId == CharacterId).DistinctBy(n => n.Id).Reverse().Take(20))
+    { <article class="journal-entry">@entry.Content</article> }
+    @if (State.RecentNarratives.Count == 0) { <p>Nothing discovered yet. Try looking around.</p> }
+</section>
+@code {
+    [Parameter, EditorRequired] public GameState State { get; set; } = default!;
+    [Parameter] public string? CharacterId { get; set; }
+    private IEnumerable<Quest> Quests => (State.Campaign.PrimaryQuest is { } primary ? new[] { primary } : Array.Empty<Quest>()).Concat(State.World.SideQuests).DistinctBy(q => q.Id);
+}

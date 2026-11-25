@@ -1,5 +1,22 @@
 # Tasks
 
+## 2026-03-14
+- [x] Update character creation wizard and cleric/paladin spell prompt lists to include all level 1 spells from the JSON data files.
+- [x] Shorten character creation wizard and cleric/paladin spell prompt descriptions to single-sentence summaries.
+
+## 2026-03-15
+- [x] Remove all spell objects with `-REMOVE` in `Id` from `AgenticRpg.Core/Data/RpgWizardSpellList.json`.
+- [x] Add a handoff guidance markdown table for CharacterManager, ShopKeeper, and Combat in `AgenticRpg.Core/Agents/Tools/GameMasterTools.Handoff.cs`.
+- [x] Implement campaign status derivation and distinguish join, leave, and disconnect handling for multiplayer campaigns.
+
+## 2026-03-18
+- [x] Add an icon-only modify-world button to startup menu world cards that navigates to campaign world editing.
+
+## 2026-03-27
+- [x] Compact WorldDetails cards to preview 3-4 lines with per-card expand/collapse.
+- [x] Add startup menu delete confirmations for owned characters and campaigns.
+- [x] Implement the OpenRouter video generation service wrapper in `AgenticRpg.Core/Services/OpenRouterVideoGenService.cs`.
+
 ## 2026-03-07
 - [x] Add responsive styling for the home page in `AgenticRpg.Client/Pages/Home.razor.css`.
 

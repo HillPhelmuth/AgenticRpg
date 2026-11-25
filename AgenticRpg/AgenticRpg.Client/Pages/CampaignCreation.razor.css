@@ -266,7 +266,7 @@ textarea.form-input {
     flex-shrink: 0;
 }
 
-.chat-container > :first-child {
+.chat-container ::deep .chat-view {
     flex: 1;
     min-height: 0;
 }
@@ -482,3 +482,45 @@ textarea.form-input {
     }
 }
 
+
+/* The viewport budget includes headers, journey progress and draft status. */
+.campaign-creation { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+.creation-header, .mobile-view-toggle { flex-shrink: 0; }
+.creation-header { flex-wrap: wrap; gap: .75rem 1.5rem; }
+.header-actions { gap: .75rem; flex-wrap: wrap; }
+.creation-content { flex: 1; min-height: 0; height: auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.world-panel, .chat-panel { min-width: 0; min-height: 0; }
+.world-panel { scrollbar-width: thin; scrollbar-color: #67838d #111827; }
+.world-panel::-webkit-scrollbar { width: 8px; }
+.world-panel::-webkit-scrollbar-track { background: #111827; }
+.world-panel::-webkit-scrollbar-thumb { background: #67838d; border-radius: 4px; }
+.campaign-form-mode .creation-content { grid-template-columns: minmax(0, 1fr); }
+.campaign-form-mode .world-panel { border-right: 0; }
+.campaign-form-mode .world-panel > * { width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; }
+.campaign-form-mode .mobile-view-toggle { display: none; }
+.world-placeholder { color: #b0bec5; background: #111827; }
+.form-checkbox { accent-color: #70c4d3; }
+@media (max-width: 767px) {
+    .creation-content { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .header-actions { justify-content: flex-start; }
+    .header-actions .menu-button { width: auto; }
+    .chat-panel { min-height: 0; }
+    .world-panel, .chat-panel { height: 100%; }
+}
+
+.campaign-advanced { border: 1px solid #344451; border-radius: 6px; padding: .75rem; margin: 1rem 0; }
+.campaign-advanced summary { color: #80deea; cursor: pointer; font-weight: 600; }
+.campaign-advanced[open] summary { margin-bottom: .75rem; }
+
+.chat-container { overflow-y: auto; }
+@media (max-width: 767px) { .chat-container { padding: .5rem; gap: .5rem; } }
+@media (max-width: 767px) { .chat-subtitle { display: none; } .chat-header { padding: .5rem .75rem; } }
+.creation-header { position: relative; z-index: 20; }
+@media (max-width: 767px) {
+    .creation-header { flex-direction: row; padding: .5rem; gap: .4rem .5rem; }
+    .creation-header h1 { flex: 1; margin: 0; text-align: right; }
+    .header-actions { width: 100%; gap: .5rem; }
+    .mobile-view-toggle { padding: .25rem .5rem; }
+    .toggle-btn { padding: .4rem; min-height: 44px; }
+    .chat-panel { padding: .5rem; }
+}

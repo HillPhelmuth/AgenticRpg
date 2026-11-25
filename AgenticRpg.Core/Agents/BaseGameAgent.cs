@@ -2,6 +2,7 @@ using AgenticRpg.Core.Agents.Llms;
 using AgenticRpg.Core.Agents.Threads;
 using AgenticRpg.Core.Helpers;
 using AgenticRpg.Core.Models;
+using AgenticRpg.Core.Services;
 using AgenticRpg.Core.Models.Enums;
 using Azure.Identity;
 using Google.GenAI;
@@ -17,6 +18,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenAI.Responses;
 using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 using FunctionInvocationContext = Microsoft.Extensions.AI.FunctionInvocationContext;
 
@@ -40,45 +42,18 @@ public abstract class BaseGameAgent(
 
                                                      For each player, first give detailed reasoning behind why each suggestion is appropriate, considering game state, player objectives, and previous interactions. Ensure that Reasoning sections precede the listed suggestions for every player. 
 
-                                                     Persist in reasoning through each player's situation individually and only finalize your answer when all players' actions have been addressed with clear rationale and complete sets of suggestions.
-                                                     
                                                      **Output Format:**
                                                      - The entire output is a single JSON object conforming to the above schema.
                                                      - The Reasoning field must contain a separate, clearly labeled section (e.g., "Player1:", "Player2:") for each player, explaining the logic behind the three suggestions for that player, placed before their corresponding suggestions.
-                                                     - Each object in suggestedActions must include the player name and exactly three actionable, relevant suggestions (as chat input strings) tailored to the current state.
+                                                     - Each object in suggestedActions must include the player name and exactly three actionable, relevant suggestions (as chat input strings) tailored to the current state but based on the latest agent message.
                                                      - Do not include markdown or code blocks.
                                                      
-                                                     Example:
-                                                     
-                                                     {
-                                                       "Reasoning": "Player1: Player1 is low on resources and should focus on recovery or negotiation. Suggestion 1 allows resource trading; Suggestion 2 proposes an alliance; Suggestion 3 explores scavenging. Player2: Player2 controls a pivotal position and can either defend, expand influence, or negotiate. Suggestions focus on each option, taking into account recent alliance offers.",
-                                                       "suggestedActions": [
-                                                         {
-                                                           "player": "Player1",
-                                                           "suggestions": [
-                                                             "Offer to trade resources with Player2.",
-                                                             "Propose an alliance with another player.",
-                                                             "Search the area for additional supplies."
-                                                           ]
-                                                         },
-                                                         {
-                                                           "player": "Player2",
-                                                           "suggestions": [
-                                                             "Strengthen defenses at your current location.",
-                                                             "Negotiate terms with Player1 about their alliance proposal.",
-                                                             "Expand territory into an adjacent area."
-                                                           ]
-                                                         }
-                                                       ]
-                                                     }
-                                                     
-                                                     (If there are more players or game complexity, extend the Reasoning and suggestedActions arrays accordingly. In actual use, Reasoning per player should be more detailed than this example.)
                                                      
                                                      Important:  
                                                      - Reasoning for each player MUST appear BEFORE their respective suggestions.  
                                                      - ALL output must be in the specified JSON schema.  
-                                                     - Provide exactly three suggestions per player, as valid chat input strings.
-                                                     - Keep suggestions simple. They should be actionable steps a player can take in the game, not complex strategies or vague ideas.
+                                                     - Provide three to five suggestions per player, as valid chat input strings.
+                                                     - **Keep suggestions simple.** They should be actionable steps a player can take in the game, not complex strategies or vague ideas or requests for additional information.
                                                      - NEVER suggest the player to request behavior changes from the agent (e.g., "Tell the Game Master to be nicer") as a suggested action. The suggestions should always be actionable steps the player can take within the game, not requests for the agent to alter its behavior.
                                                      
                                                      REMEMBER: The suggestions will be turned directly into chat inputs for the players, and thus cannot contain variables or further direction to the player as your suggestion will end up going straight to the agent. 
@@ -88,7 +63,7 @@ public abstract class BaseGameAgent(
     protected readonly AgentType agentType = agentType;
     protected readonly ILogger _logger = loggerFactory?.CreateLogger("BaseGameAgent") ?? throw new ArgumentNullException(nameof(loggerFactory));
     internal AIAgent? Agent { get; set; }
-
+    private const string HandoffContextKey = "HandoffContext";
     private readonly IAgentSessionStore _agentSessionStore = agentSessionStore ?? throw new ArgumentNullException(nameof(agentSessionStore));
 
     private readonly SemaphoreSlim _threadLock = new(1, 1);
@@ -143,8 +118,8 @@ public abstract class BaseGameAgent(
     protected virtual async Task InitializeAgentAsync(string? model = null)
     {
         var requestedModel = string.IsNullOrWhiteSpace(model) ? _config.BaseModelName : model;
-
-        var useOpenRouter = !requestedModel.StartsWith("gpt-");
+        var isOpenAIProvidor = requestedModel.Contains("gpt-") && !requestedModel.Contains("oss");
+        var useOpenRouter = !isOpenAIProvidor;
         if (!useOpenRouter)
             requestedModel = requestedModel.Replace("openai/", "");
         _currentModel = requestedModel;
@@ -170,7 +145,7 @@ public abstract class BaseGameAgent(
             }
 
             // Get chat client for the specified deployment and convert to IChatClient
-            var chatClient = client.GetChatClient(_currentModel).AsIChatClient();
+            var chatClient = client.GetResponsesClient();
 
             // Get tools from derived class
             var tools = GetTools()?.DistinctBy(x => x.Name).ToList();
@@ -181,6 +156,7 @@ public abstract class BaseGameAgent(
             Agent = chatClient.AsAIAgent(
                 options: new ChatClientAgentOptions()
                 {
+                    //Model = _currentModel,
                     Description = Description,
                     Name = agentType.ToString(),
                     ChatOptions = new ChatOptions
@@ -188,7 +164,7 @@ public abstract class BaseGameAgent(
                         Tools = tools,
                         RawRepresentationFactory = _ => CreateRawChatCompletionOptions(useOpenRouter, enableReasoning)
                     }
-                }).AsBuilder().Use(FunctionCallMiddleware).Build();
+                }, model: _currentModel).AsBuilder().Use(FunctionCallMiddleware).Build();
 
             await Task.CompletedTask;
         }
@@ -198,14 +174,57 @@ public abstract class BaseGameAgent(
         }
         async ValueTask<object?> FunctionCallMiddleware(AIAgent agent, FunctionInvocationContext context, Func<FunctionInvocationContext, CancellationToken, ValueTask<object?>> next, CancellationToken cancellationToken)
         {
+            RequestExecution.Token.ThrowIfCancellationRequested();
+            if (RequestExecution.Current is { ActionIntent: not null } request &&
+                context.Function.Name is "ExecutePlayerWeaponAttack" or "ExecutePlayerSpellAttack" or "EquipItem" or "ApplyRest" or "UseInventoryItem")
+            {
+                var state = await _contextProvider.GetGameStateAsync(request.CampaignId) ?? throw new InvalidOperationException("Campaign not found.");
+                var actor = state.Characters.FirstOrDefault(c => c.Id == request.CharacterId && c.PlayerId == request.PlayerId)
+                    ?? throw new InvalidOperationException("Character access denied.");
+                _ = PlayerActionRules.Describe(state, actor, request.ActionIntent);
+                foreach (var key in new[] { "attackerId", "characterId" })
+                    if (context.Arguments.TryGetValue(key, out var id) && id?.ToString() != actor.Id && id?.ToString() != actor.Name)
+                        throw new InvalidOperationException("Resolve the action for the requesting character only.");
+                if (context.Arguments.TryGetValue("campaignId", out var campaignId) && campaignId?.ToString() != request.CampaignId)
+                    throw new InvalidOperationException("Campaign access denied.");
+                if (request.ActionIntent.TargetId is { } selectedTarget && context.Arguments.TryGetValue("targetId", out var targetId))
+                {
+                    var targetName = state.Characters.FirstOrDefault(c => c.Id == selectedTarget)?.Name
+                        ?? state.CurrentCombat?.EnemyMonsters.FirstOrDefault(m => m.Id == selectedTarget)?.Name
+                        ?? state.World.NPCs.FirstOrDefault(n => n.Id == selectedTarget)?.Name;
+                    if (targetId?.ToString() != selectedTarget && targetId?.ToString() != targetName)
+                        throw new InvalidOperationException("Resolve the action for the selected target.");
+                }
+                var selectedItem = actor.Inventory.FirstOrDefault(i => i.Id == request.ActionIntent.SelectionId);
+                if (context.Arguments.TryGetValue("itemId", out var itemId) && itemId?.ToString() != selectedItem?.Id ||
+                    context.Arguments.TryGetValue("itemName", out var itemName) && itemName?.ToString() != selectedItem?.Name)
+                    throw new InvalidOperationException("Use the selected inventory item.");
+                if (request.ActionIntent.Slot is { } slot && context.Arguments.TryGetValue("equipSlot", out var suppliedSlot) &&
+                    suppliedSlot?.ToString() != slot.ToString() && suppliedSlot?.ToString() != ((int)slot).ToString())
+                    throw new InvalidOperationException("Use the selected equipment slot.");
+                foreach (var selection in new[] { "weapon", "spell" })
+                    if (context.Arguments.TryGetValue(selection, out var supplied))
+                    {
+                        var json = JsonSerializer.SerializeToElement(supplied);
+                        var expectedId = selection == "weapon" ? actor.Equipment.MainHand?.Id : request.ActionIntent.SelectionId;
+                        var expectedName = selection == "weapon" ? actor.Equipment.MainHand?.Name : actor.KnownSpells.FirstOrDefault(s => s.Id == expectedId)?.Name;
+                        if (json.ValueKind != JsonValueKind.Object || !json.EnumerateObject().Any(p =>
+                            p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) && p.Value.ToString() == expectedId ||
+                            p.Name.Equals("Name", StringComparison.OrdinalIgnoreCase) && p.Value.ToString() == expectedName))
+                            throw new InvalidOperationException("Use the selected weapon or spell.");
+                    }
+            }
             var functionName = context!.Function.Name;
             _logger.LogInformation("Function {FunctionName} - Pre-Invoked. Arguments: {Arguments}",
                 functionName, JsonSerializer.Serialize(context.Arguments, new JsonSerializerOptions { WriteIndented = true }));
             object? result = null;
             try
             {
-                result = await next(context, cancellationToken);
+                // Once a tool starts, let its state writes finish. Dice waits observe the request token separately.
+                result = await next(context, CancellationToken.None);
+                RequestExecution.Token.ThrowIfCancellationRequested();
                 //var resultJson = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+                if (result is null) return result;
                 var resultDictionary = ReflectionHelpers.GetPublicPropertyNamesAndTypes(result);
                 var resultBuilder = new StringBuilder("\n----------------------------\nOutput metadata:\n-----------------------------");
                 foreach (var kvp in resultDictionary)
@@ -214,6 +233,7 @@ public abstract class BaseGameAgent(
                 }
                 _logger.LogInformation("Function {FunctionName} - Post-Invoke. Result: {Result}", functionName, resultBuilder.ToString());
             }
+            catch (OperationCanceledException) when (RequestExecution.Token.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Function {FunctionName} - Exception occurred", functionName);
@@ -297,7 +317,7 @@ public abstract class BaseGameAgent(
             await _threadLock.WaitAsync();
             try
             {
-                agentSession ??= await _agentSessionStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.CreateSessionAsync());
+                agentSession ??= await _agentSessionStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.CreateSessionAsync(), async json => await Agent!.DeserializeSessionAsync(json));
             }
             finally
             {
@@ -310,7 +330,7 @@ public abstract class BaseGameAgent(
             {
                 options = await OptionsWithInstructions(sessionState);
             }
-            var result = await Agent.RunAsync(fullMessage, agentSession, options);
+            var result = await Agent.RunAsync(fullMessage, agentSession, options, RequestExecution.Token);
             //var formattedResponse = await AgentFormattedResponse(agentSession, fullMessage, options, gameState, sessionState);
             var response = result.Text;
             var items = result.Messages.Where(x => x.Role == ChatRole.Assistant).ToList();
@@ -326,7 +346,7 @@ public abstract class BaseGameAgent(
 
             // Add assistant response to history
             var serializedThread = await Agent.SerializeSessionAsync(agentSession);
-            await File.WriteAllTextAsync($"agentThread_{agentType}.json", serializedThread.GetRawText());
+            _agentSessionStore.Stage(idOrSessionId, AgentType, serializedThread);
             return new AgentResponse
             {
                 Success = true,
@@ -337,6 +357,7 @@ public abstract class BaseGameAgent(
                 }
             };
         }
+        catch (OperationCanceledException) when (RequestExecution.Token.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             return new AgentResponse
@@ -404,7 +425,7 @@ public abstract class BaseGameAgent(
         await _threadLock.WaitAsync();
         try
         {
-            agentSession ??= await _agentSessionStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.CreateSessionAsync());
+            agentSession ??= await _agentSessionStore.GetOrCreate(idOrSessionId, AgentType, async () => await Agent!.CreateSessionAsync(), async json => await Agent!.DeserializeSessionAsync(json));
         }
         finally
         {
@@ -420,7 +441,7 @@ public abstract class BaseGameAgent(
         var outputBuilder = new StringBuilder();
         bool? isLegacyStructuredOutput = null;
 
-        await foreach (var token in Agent.RunStreamingAsync(fullMessage, agentSession, options))
+        await foreach (var token in Agent.RunStreamingAsync(fullMessage, agentSession, options, RequestExecution.Token))
         {
             if (string.IsNullOrEmpty(token.Text)) continue;
 
@@ -441,6 +462,8 @@ public abstract class BaseGameAgent(
                 yield return token.Text;
             }
         }
+        var serializedThread = await Agent.SerializeSessionAsync(agentSession);
+        _agentSessionStore.Stage(idOrSessionId, AgentType, serializedThread);
         var output = NormalizeLegacyStructuredOutput(outputBuilder.ToString());
 
         if (isLegacyStructuredOutput == true && !string.IsNullOrWhiteSpace(output))
@@ -523,16 +546,20 @@ public abstract class BaseGameAgent(
             ClientLoggingOptions = new ClientLoggingOptions { LoggerFactory = loggerFactory, EnableLogging = true, EnableMessageContentLogging = true },
             Endpoint = new Uri(_config.OpenRouterEndpoint)
         };
-        var client = new OpenAIClient(new ApiKeyCredential(_config.OpenRouterApiKey), optionsOptions).GetChatClient("gpt-oss-120b:nitro");
+        var client = new OpenAIClient(new ApiKeyCredential(_config.OpenRouterApiKey), optionsOptions).GetChatClient("anthropic/claude-haiku-5.5");
         var suggestionAgent = client.AsAIAgent(new ChatClientAgentOptions()
         {
             Name = "SuggestionAgent",
             Description =
-                "Agent that generates suggested actions for players based on the current game state and agent response. Aim for 3 suggestions per player.",
+                "Agent that generates suggested actions for players based on the current game state and agent response. Aim for 3 to 5 suggestions per player.",
             ChatOptions = new ChatOptions()
             {
                 ResponseFormat = ChatResponseFormat.ForJsonSchema<AgentSuggestedActions>(),
-                Instructions = SuggestAgentInstructions
+                Instructions = SuggestAgentInstructions,
+                Reasoning = new ReasoningOptions()
+                {
+                    Effort = ReasoningEffort.Low
+                }
             }
         });
 
@@ -540,12 +567,16 @@ public abstract class BaseGameAgent(
             ? BuildContextPrompt(gameState)
             : BuildSessionContextPrompt(sessionState!);
 
-        return (await suggestionAgent.RunAsync<AgentSuggestedActions>($"""
+        var agentResponse = await suggestionAgent.RunAsync<AgentSuggestedActions>($"""
              **Game Context:**
              {context}
-             **Agent Response:** 
+             **Agent Response:** If the below response from the agent contains suggestions for player actions, extract those and provide them verbatim in the output.
+             '''
              {output}
-             """)).Result;
+             '''
+             """, cancellationToken: RequestExecution.Token);
+        _logger.LogInformation("Generated suggested actions (RAW):\n----------\n{AgentResponse}\n----------\n", agentResponse.Text);
+        return agentResponse.Result;
     }
 
     internal async Task<ChatClientAgentRunOptions> OptionsWithInstructions(GameState? gameState)
@@ -677,24 +708,17 @@ public abstract class BaseGameAgent(
         return variables;
     }
 
-    protected virtual Task<SessionState?> ProcessSessionStateChangesAsync(
-        SessionState currentState,
-        string agentResponse,
-        string userMessage)
-    {
-        //await Task.CompletedTask;
-        return Task.FromResult(currentState)!; // No state changes by default
-    }
-
     [Description("When you have completed your task, use this tool to hand control back to GameMaster agent")]
-    protected async Task HandbackToGameMaster([Description("Active campaign Id")] string campaignId, [Description("Provide the game master a summary of your interaction with players. Provide any information that might be relevant to the game master.")] string chatSummary)
+    protected async Task<string> HandbackToGameMaster([Description("Active campaign Id")] string campaignId, [Description("Provide the game master a summary of your interaction with players. Provide any information that might be relevant to the game master.")] string chatSummary)
     {
         var gameState = await _contextProvider.GetGameStateAsync(campaignId);
         if (gameState != null)
         {
+            gameState.Metadata[HandoffContextKey] = new HandoffIntent { Context=chatSummary, TargetAgent = nameof(AgentType.GameMaster), Reason = "Task completed"};
             gameState.ActiveAgentType = AgentType.GameMaster;
             await _contextProvider.UpdateGameStateAsync(gameState);
         }
+        return $"Handed back control to GameMaster agent for campaign '{campaignId}'.";
     }
 }
 

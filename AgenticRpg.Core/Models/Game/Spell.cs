@@ -41,12 +41,12 @@ public class Spell
 
     public static List<Spell> GetAllWizardSpellsFromFile()
     {
-        return FileHelper.ExtractFromAssembly<List<Spell>>("WizardSpellsList.json") ?? [];
+        return FileHelper.ExtractFromAssembly<List<Spell>>("RpgWizardSpellList.json") ?? [];
     }
 
     public static List<Spell> GetAllClericSpellsFromFile()
     {
-        return FileHelper.ExtractFromAssembly<List<Spell>>("ClericSpellList.json") ?? [];
+        return FileHelper.ExtractFromAssembly<List<Spell>>("RpgClericSpellList.json") ?? [];
     }
 }
 [JsonConverter(typeof(JsonStringEnumConverter))]

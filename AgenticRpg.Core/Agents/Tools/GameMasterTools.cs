@@ -48,6 +48,7 @@ public partial class GameMasterTools(
             AIFunctionFactory.Create(UpdateWorldDetails),
             AIFunctionFactory.Create(HandoffToAgent),
             AIFunctionFactory.Create(ApplyRest),
+            AIFunctionFactory.Create(UseInventoryItem),
             AIFunctionFactory.Create(AddNpcOrQuest)
         ];
     }
@@ -185,6 +186,12 @@ public partial class GameMasterTools(
 
         gameState.CurrentCombat = combat;
         gameState.ActiveAgent = "Combat";
+        gameState.Metadata["HandoffContext"] = new HandoffIntent
+        {
+            TargetAgent = "Combat",
+            Context = $"Combat initiated with {monsters.Count} monsters: {string.Join(", ", monsters.Select(m => m.Name))}. Encounter description: {encounterDescription}",
+            Reason = "Player initiated combat. Transitioning to Combat Agent for encounter management."
+        };
         await stateManager.UpdateCampaignStateAsync(gameState);
 
         return JsonSerializer.Serialize(new InitiateCombatResult
@@ -217,7 +224,6 @@ public partial class GameMasterTools(
                 });
             }
             var campaignState = await stateManager.GetCampaignStateAsync(campaignId);
-            campaignState.Campaign.Status = CampaignStatus.Active;
             var narrative = new Narrative
             {
                 CampaignId = campaignId,

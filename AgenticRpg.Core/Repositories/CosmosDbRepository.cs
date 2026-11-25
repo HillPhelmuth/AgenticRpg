@@ -176,6 +176,12 @@ public abstract class CosmosDbRepository<T> where T : class
         {
             return false;
         }
+        catch (CosmosException ex)
+        {
+            // Log exception or handle other status codes as needed
+            Console.WriteLine($"Cosmos DB exception: {ex.StatusCode} - {ex.Message}");
+            throw;
+        }
     }
 
     /// <summary>

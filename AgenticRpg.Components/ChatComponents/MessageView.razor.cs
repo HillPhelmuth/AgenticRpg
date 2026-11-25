@@ -31,12 +31,6 @@ public partial class MessageView
         _editContent = Message.Content;
     }
 
-    protected override bool ShouldRender()
-    {
-        Console.WriteLine($"Checking ShouldRender - Is Streaming: {Message.IsStreaming} Is Last Message: {IsLastMessage}");
-        return Message.IsStreaming || IsLastMessage;
-    }
-
     private string ConvertMarkdownToHtml(string markdown)
     {
         if (string.IsNullOrWhiteSpace(markdown))
@@ -76,12 +70,22 @@ public partial class MessageView
         }
     }
 
+    private string GetPhaseLabel() => Message.Phase switch
+    {
+        AgenticRpg.Core.Models.ProcessingPhase.WaitingForDice => "Waiting for dice",
+        AgenticRpg.Core.Models.ProcessingPhase.Completed => "Completed",
+        AgenticRpg.Core.Models.ProcessingPhase.Cancelling => "Stopping…",
+        AgenticRpg.Core.Models.ProcessingPhase.Cancelled => "Cancelled",
+        null => Message.Status.HasValue ? GetStatusLabel(Message.Status.Value) : "",
+        _ => Message.Phase.ToString()!
+    };
     private string GetStatusCss(MessageProcessingStatus status) => status switch
     {
         MessageProcessingStatus.Queued => "status-queued",
         MessageProcessingStatus.Processing => "status-processing",
         MessageProcessingStatus.Completed => "status-completed",
         MessageProcessingStatus.Failed => "status-failed",
+        MessageProcessingStatus.Interrupted => "status-failed",
         _ => string.Empty
     };
 
@@ -91,6 +95,7 @@ public partial class MessageView
         MessageProcessingStatus.Processing => "Processing",
         MessageProcessingStatus.Completed => "Resolved",
         MessageProcessingStatus.Failed => "Failed",
+        MessageProcessingStatus.Interrupted => "Interrupted",
         _ => ""
     };
 
@@ -105,7 +110,7 @@ public partial class MessageView
         {
             MessageProcessingStatus.Queued when Message.QueuePosition.HasValue =>
                 Message.QueuePosition.Value <= 0 ? "Next" : $"{Message.QueuePosition.Value} ahead",
-            MessageProcessingStatus.Processing => "Resolving",
+            MessageProcessingStatus.Processing => null,
             MessageProcessingStatus.Failed when string.IsNullOrEmpty(Message.StatusNote) => "Retry?",
             _ => null
         };

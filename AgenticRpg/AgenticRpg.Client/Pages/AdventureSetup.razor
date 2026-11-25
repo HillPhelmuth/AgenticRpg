@@ -1,0 +1,67 @@
+@page "/adventure-setup"
+@attribute [Authorize]
+@using AgenticRpg.Core.Models
+<PageTitle>Start New Adventure</PageTitle>
+<div class="adventure-setup rpg-onboarding">
+    <div class="setup-content">
+        <header class="setup-header">
+            <a class="back-link" href="/startup">← Back to menu</a>
+            <h1>Start New Adventure</h1>
+            <p>Four steps. Surely even you can manage that.</p>
+        </header>
+        <SetupProgress Step="@(!string.IsNullOrEmpty(CampaignId) ? 3 : !string.IsNullOrEmpty(WorldId) ? 2 : 1)" />
+        @if (_loading)
+        {
+            <section class="setup-panel setup-status" role="status"><p>Loading your options. Practice patience.</p></section>
+        }
+        else if (_error is not null)
+        {
+            <section class="setup-panel setup-status"><p role="alert">@_error</p><button class="onboarding-control" @onclick="Load">Retry</button></section>
+        }
+        else if (!string.IsNullOrEmpty(CampaignId))
+        {
+            <div class="setup-options">
+                <section class="setup-panel">
+                    <h2>Choose your character</h2>
+                    <p>Bring an existing liability along.</p>
+                    <label for="setup-character">Existing character</label>
+                    <select class="onboarding-field" id="setup-character" @bind="_characterId"><option value="">Choose a character</option>@foreach (var character in _characters.Where(c => string.IsNullOrEmpty(c.CampaignId) || c.CampaignId == CampaignId)) { <option value="@character.Id">@character.Name</option> }</select>
+                    <button class="onboarding-control" disabled="@(_busy || string.IsNullOrEmpty(_characterId))" @onclick="UseCharacter">Use Character</button>
+                </section>
+                <section class="setup-panel">
+                    <h2>Quick Create</h2><p>Let the AI make your questionable decisions.</p>
+                    <div class="starter-options">
+                        @foreach (var starter in StarterCreation.Characters) { <button class="onboarding-control" @key="starter" disabled="@_busy" @onclick="() => CreateCharacter(starter)">@starter</button> }
+                    </div>
+                    <div class="guided-option"><p>Prefer to make your own mistakes?</p><button class="onboarding-control secondary-button" disabled="@_busy" @onclick="() => CreateCharacter(null)">Guided Create</button></div>
+                </section>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(WorldId))
+        {
+            <section class="setup-panel">
+                <h2>Create your campaign</h2><p>Give this impending disaster a name and objective.</p>
+                <button class="onboarding-control" @onclick="CreateCampaign">Create Campaign</button>
+            </section>
+        }
+        else
+        {
+            <div class="setup-options">
+                <section class="setup-panel">
+                    <h2>Choose your world</h2>
+                    <p>Return to a place you've already ruined.</p>
+                    <label for="setup-world">Existing world</label>
+                    <select class="onboarding-field" id="setup-world" @bind="_worldId"><option value="">Choose a world</option>@foreach (var world in _worlds) { <option value="@world.Id">@world.Name</option> }</select>
+                    <button class="onboarding-control" disabled="@(string.IsNullOrEmpty(_worldId))" @onclick="UseWorld">Use World</button>
+                </section>
+                <section class="setup-panel">
+                    <h2>Quick Create</h2><p>Three flavours of trouble. Pick one.</p>
+                    <div class="starter-options">
+                        @foreach (var starter in StarterCreation.Worlds) { <button class="onboarding-control" @key="starter" @onclick="() => CreateWorld(starter)">@starter</button> }
+                    </div>
+                    <div class="guided-option"><p>Prefer to make your own mistakes?</p><button class="onboarding-control secondary-button" @onclick="() => CreateWorld(null)">Guided Create</button></div>
+                </section>
+            </div>
+        }
+    </div>
+</div>

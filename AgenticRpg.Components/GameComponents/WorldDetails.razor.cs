@@ -6,6 +6,11 @@ namespace AgenticRpg.Components.GameComponents;
 
 public partial class WorldDetails
 {
+    private const string LocationCardKind = "location";
+    private const string NpcCardKind = "npc";
+    private const string QuestCardKind = "quest";
+    private const string LoreCardKind = "lore";
+
     /// <summary>
     /// The world data to display.
     /// </summary>
@@ -22,8 +27,7 @@ public partial class WorldDetails
     [Parameter] public int InitialPage { get; set; } = 1;
 
     private int CurrentPage { get; set; } = 1;
-
-    private Location? SelectedLocation { get; set; }
+    private HashSet<string> ExpandedCards { get; } = [];
 
     protected override void OnInitialized()
     {
@@ -37,14 +41,33 @@ public partial class WorldDetails
         if (World != null)
         {
             CurrentPage = InitialPage;
+            ExpandedCards.Clear();
         }
     }
 
-    private void SelectLocation(Location location)
+    private bool IsExpanded(string cardKind, string id)
     {
-        // Track the selected location for context details.
-        SelectedLocation = location;
-        StateHasChanged();
+        return ExpandedCards.Contains(GetCardKey(cardKind, id));
+    }
+
+    private void ToggleExpanded(string cardKind, string id)
+    {
+        var cardKey = GetCardKey(cardKind, id);
+
+        if (!ExpandedCards.Add(cardKey))
+        {
+            ExpandedCards.Remove(cardKey);
+        }
+    }
+
+    private static string GetToggleText(bool isExpanded)
+    {
+        return isExpanded ? "Show Less" : "Show More";
+    }
+
+    private static string GetCardKey(string cardKind, string id)
+    {
+        return $"{cardKind}:{id}";
     }
 
     private void SetPage(int page)

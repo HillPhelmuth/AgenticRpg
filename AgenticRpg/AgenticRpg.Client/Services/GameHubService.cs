@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Microsoft.JSInterop;
 using AgenticRpg.Core.Agents;
 using AgenticRpg.Core.Hubs;
 using AgenticRpg.Core.Models;
@@ -12,19 +13,41 @@ namespace AgenticRpg.Client.Services;
 
 public class GameHubService : IGameHubService, IAsyncDisposable
 {
+    private readonly IJSRuntime? _js;
+    private IJSObjectReference? _draftModule;
+    private readonly Dictionary<string, PendingSubmission> _pendingSubmissions = [];
     private readonly ILogger<GameHubService> _logger;
     private readonly HubConnection? _connection;
     private readonly HubConnection? _submitConnection;
     private readonly SemaphoreSlim _submitConnectionStartLock = new(1, 1);
     private readonly IRollDiceService _rollDiceService;
     private string? _currentPlayerId;
+    private ActiveScope? _activeScope;
+    private readonly SemaphoreSlim _scopeLock = new(1, 1);
+    private readonly Dictionary<string, RuntimeMessage> _messages = [];
+    private readonly List<RuntimeMessage> _recoveryBuffer = [];
+    private bool _recovering;
+    private readonly List<Action> _scopeEventBuffer = [];
+    private readonly HashSet<string> _openDiceRequests = [];
+    private readonly Dictionary<string, List<Guid>> _diceWindows = [];
+    private readonly HashSet<string> _obsoleteDiceRequests = [];
+    private readonly Dictionary<string, RollDiceResults> _rolledWindows = [];
+    private readonly Dictionary<string, List<RollDiceResults>> _unsentDice = [];
+    private event Action<RuntimeMessage>? MessageUpdated;
+    private event Action<ScopeRecoverySnapshot>? Recovered;
+    private event Action<GameConnectionStatus>? StatusChanged;
+    public GameConnectionStatus ConnectionStatus { get; private set; } = GameConnectionStatus.Disconnected;
+    public bool HasPending(string scopeId, string playerId) => _messages.Values.Any(m => m.ScopeId == scopeId && m.PlayerId == playerId && (!m.IsComplete || m.Failure?.Code == "checkpoint_failed"));
+    private sealed record ActiveScope(string Id, string PlayerId, string CharacterId, string Name, bool IsSession, string LeaseId);
+
 
 
     public event EventHandler<List<RollDiceResults>>? OnDiceRollResult;
 
     public GameHubService(IRollDiceService rollDiceService, IConfiguration configuration,
-        ILogger<GameHubService> logger, NavigationManager navigationManager)
+        ILogger<GameHubService> logger, NavigationManager navigationManager, IJSRuntime? js = null)
     {
+        _js = js;
         _logger = logger;
         _rollDiceService = rollDiceService;
         var hubUrl = navigationManager.ToAbsoluteUri("/hubs/game");
@@ -42,24 +65,30 @@ public class GameHubService : IGameHubService, IAsyncDisposable
             .WithAutomaticReconnect()
             .Build();
 
-        _connection?.Reconnecting += error =>
+        _connection.Reconnecting += error =>
         {
-            _logger.LogWarning("Connection reconnecting: {Error}", error?.Message);
+            _recovering = true;
+            SetStatus(GameConnectionStatus.Reconnecting);
             return Task.CompletedTask;
         };
-
-        _connection?.Reconnected += connectionId =>
+        _connection.Reconnected += async connectionId =>
         {
-            _logger.LogInformation("Connection reconnected: {ConnectionId}", connectionId);
+            try { await RecoverAsync(); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to restore active session");
+                SetStatus(GameConnectionStatus.Disconnected);
+            }
+        };
+        _connection.Closed += error =>
+        {
+            SetStatus(GameConnectionStatus.Disconnected);
             return Task.CompletedTask;
         };
-
-        _connection?.Closed += error =>
-        {
-            _logger.LogError("Connection closed: {Error}", error?.Message);
-            return Task.CompletedTask;
-        };
-        _connection?.On<DiceRollRequest>("RequestDiceRoll", HandleDiceRollRequestAsync);
+        _connection.On<RuntimeMessage>("MessageUpdated", HandleMessageUpdated);
+        _connection.On<string>("DiceRequestClosed", CloseDiceRequest);
+        _connection?.On<DiceRollRequest>("RequestDiceRoll", request => { _ = HandleDiceRollRequestAsync(request); });
+        _submitConnection.Reconnected += async _ => await FlushDiceAsync();
     }
 
     public async Task StartAsync()
@@ -68,11 +97,13 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         {
             try
             {
+                SetStatus(GameConnectionStatus.Connecting);
                 await _connection!.StartAsync();
                 _logger.LogInformation("SignalR connection started");
             }
             catch (Exception ex)
             {
+                SetStatus(GameConnectionStatus.Disconnected);
                 _logger.LogError(ex, "Error starting SignalR connection");
                 throw;
             }
@@ -132,68 +163,219 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         }
     }
 
-    public async Task JoinSessionAsync(string sessionId, string playerId, string sessionName)
+    public Task<ScopeRecoverySnapshot> JoinSessionAsync(string sessionId, string playerId, string sessionName, string? leaseId = null) =>
+        JoinAsync(new(sessionId, playerId, string.Empty, sessionName, true, leaseId ?? Guid.NewGuid().ToString("N")));
+
+    public Task<ScopeRecoverySnapshot> JoinCampaignAsync(string campaignId, string playerId, string characterId, string playerName, string? leaseId = null) =>
+        JoinAsync(new(campaignId, playerId, characterId, playerName, false, leaseId ?? Guid.NewGuid().ToString("N")));
+
+    private async Task<ScopeRecoverySnapshot> JoinAsync(ActiveScope scope)
     {
+        await _scopeLock.WaitAsync();
         try
         {
-            _currentPlayerId = playerId;
-            await _connection!.SendAsync("JoinSession", sessionId, playerId, sessionName);
-            _logger.LogInformation("Joined session {SessionId}", sessionId);
+            _activeScope = scope;
+            _currentPlayerId = scope.PlayerId;
+            _recovering = true;
+            var snapshot = scope.IsSession
+                ? await _connection!.InvokeAsync<ScopeRecoverySnapshot>("JoinSession", scope.Id, scope.PlayerId, scope.Name, scope.LeaseId)
+                : await _connection!.InvokeAsync<ScopeRecoverySnapshot>("JoinCampaign", scope.Id, scope.PlayerId, scope.CharacterId, scope.Name, scope.LeaseId);
+            foreach (var message in snapshot.Messages) ApplyMessage(message);
+            if (_js is not null) _draftModule ??= await _js.InvokeAsync<IJSObjectReference>("import", "./_content/AgenticRpg.Components/ChatComponents/draftInput.js");
+            if (!scope.IsSession && _draftModule is not null)
+                await _draftModule.InvokeVoidAsync("set", $"rpg-draft:{Uri.EscapeDataString(scope.PlayerId)}:last-adventure", JsonSerializer.Serialize(new { CampaignId = scope.Id, CharacterId = scope.CharacterId }));
+            if (_draftModule is not null)
+            {
+                var key = $"rpg-draft:{Uri.EscapeDataString(scope.PlayerId)}:outbox:{scope.Id}";
+                var pending = await _draftModule.InvokeAsync<string>("get", key);
+                var old = !string.IsNullOrEmpty(pending) ? JsonSerializer.Deserialize<PendingSubmission>(pending) : _pendingSubmissions.GetValueOrDefault(key);
+                if (old is not null && snapshot.Messages.Any(m => m.PlayerId == scope.PlayerId && m.ClientMessageId == old.Id))
+                {
+                    _pendingSubmissions.Remove(key);
+                    await _draftModule.InvokeVoidAsync("set", key, "");
+                    var composerKey = $"rpg-draft:{Uri.EscapeDataString(scope.PlayerId)}:{scope.Id}";
+                    if (await _draftModule.InvokeAsync<string>("get", composerKey) == old.Text)
+                        await _draftModule.InvokeVoidAsync("set", composerKey, "");
+                }
+                else if (old is not null) _pendingSubmissions[key] = old;
+            }
+            Recovered?.Invoke(snapshot);
+            _recovering = false;
+            foreach (var message in _recoveryBuffer.ToArray()) ApplyMessage(message);
+            _recoveryBuffer.Clear();
+            foreach (var update in _scopeEventBuffer.ToArray()) update();
+            _scopeEventBuffer.Clear();
+            var retained = snapshot.PendingDice.Select(r => r.RequestId).ToHashSet();
+            foreach (var requestId in _openDiceRequests.Where(id => !retained.Contains(id)).ToList())
+            {
+                _obsoleteDiceRequests.Add(requestId);
+                if (_diceWindows.TryGetValue(requestId, out var windows))
+                    foreach (var id in windows) _rollDiceService.Close(id, null);
+            }
+            var retainedWindows = snapshot.PendingDice.SelectMany(r => r.WindowRequestIds ?? []).ToHashSet();
+            foreach (var entry in _unsentDice.ToList())
+            {
+                entry.Value.RemoveAll(r => !retainedWindows.Contains(r.RequestId));
+                if (entry.Value.Count == 0) _unsentDice.Remove(entry.Key);
+            }
+            SetStatus(GameConnectionStatus.Connected);
+            foreach (var request in snapshot.PendingDice) _ = HandleDiceRollRequestAsync(request);
+            await FlushDiceAsync();
+            return snapshot;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Error joining session {SessionId}", sessionId);
+            SetStatus(GameConnectionStatus.Disconnected);
             throw;
         }
+        finally { _scopeLock.Release(); }
     }
 
-    public async Task JoinCampaignAsync(string campaignId, string playerId, string characterId, string playerName)
+    private async Task RecoverAsync()
     {
-        try
-        {
-            _currentPlayerId = playerId;
-            await _connection!.SendAsync("JoinCampaign", campaignId, playerId, characterId, playerName);
-            _logger.LogInformation("Joined campaign {CampaignId}", campaignId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error joining campaign {CampaignId}", campaignId);
-            throw;
-        }
+        var scope = _activeScope;
+        if (scope is not null) await JoinAsync(scope);
+        else { _recovering = false; SetStatus(GameConnectionStatus.Connected); }
     }
 
-    public async Task LeaveSessionAsync(string sessionOrCampaignId, string? playerId = null,
-        string? characterName = null)
+    public async Task RetryConnectionAsync()
     {
+        await StartAsync();
+        await RecoverAsync();
+    }
+
+    public async Task DetachScopeAsync(string scopeId, string leaseId)
+    {
+        await _scopeLock.WaitAsync();
         try
         {
-            await _connection!.SendAsync("LeaveSession", sessionOrCampaignId);
-            _logger.LogInformation("Left session/campaign {SessionId}", sessionOrCampaignId);
+            if (_activeScope?.Id != scopeId || _activeScope.LeaseId != leaseId) return;
+            _activeScope = null;
+            _recovering = false;
+            _recoveryBuffer.Clear();
+            _scopeEventBuffer.Clear();
+            if (_connection?.State == HubConnectionState.Connected)
+                await _connection.InvokeAsync("DetachScope", scopeId, leaseId);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error leaving session {SessionId}", sessionOrCampaignId);
-        }
+        finally { _scopeLock.Release(); }
     }
+
+    private void SetStatus(GameConnectionStatus status)
+    {
+        ConnectionStatus = status;
+        StatusChanged?.Invoke(status);
+    }
+
+    private void HandleMessageUpdated(RuntimeMessage message)
+    {
+        if (_recovering) { _recoveryBuffer.Add(message); return; }
+        ApplyMessage(message);
+    }
+
+    private void DispatchScopeEvent(string scopeId, Action callback)
+    {
+        if (_activeScope?.Id != scopeId) return;
+        void Apply() { if (_activeScope?.Id == scopeId) callback(); }
+        if (_recovering) _scopeEventBuffer.Add(Apply);
+        else Apply();
+    }
+
+    private void ApplyMessage(RuntimeMessage message)
+    {
+        if (_activeScope?.Id != message.ScopeId) return;
+        if (_messages.TryGetValue(message.Id, out var previous) && previous.Revision >= message.Revision) return;
+        _messages[message.Id] = message;
+        MessageUpdated?.Invoke(message);
+    }
+
+    public IDisposable OnMessageUpdated(Action<RuntimeMessage> handler)
+    {
+        MessageUpdated += handler;
+        return new Subscription(() => MessageUpdated -= handler);
+    }
+    public IDisposable OnRecovered(Action<ScopeRecoverySnapshot> handler)
+    {
+        Recovered += handler;
+        return new Subscription(() => Recovered -= handler);
+    }
+    public IDisposable OnConnectionStatusChanged(Action<GameConnectionStatus> handler)
+    {
+        StatusChanged += handler;
+        return new Subscription(() => StatusChanged -= handler);
+    }
+    private sealed class Subscription(Action unsubscribe) : IDisposable
+    {
+        private Action? _unsubscribe = unsubscribe;
+        public void Dispose() => Interlocked.Exchange(ref _unsubscribe, null)?.Invoke();
+    }
+
+    public Task LeaveSessionAsync(string scopeId, string? playerId = null, string? characterName = null) =>
+        DetachScopeAsync(scopeId, _activeScope?.LeaseId ?? string.Empty);
 
     public async Task LeaveCampaignAsync(string campaignId, string playerId, string characterId)
     {
-        await _connection!.SendAsync("LeaveCampaign", campaignId, playerId, characterId);
-        _logger.LogInformation("Left session/campaign {SessionId}", campaignId);
-        //await LeaveSessionAsync(campaignId, playerId, characterId);
+        await _connection!.InvokeAsync("LeaveCampaign", campaignId, playerId, characterId);
+        if (_activeScope?.Id == campaignId) _activeScope = null;
     }
 
-    public async Task SendMessageAsync(string campaignId, string playerId, string message, AgentType targetAgentType = AgentType.None, string? clientMessageId = null)
+    private void CloseDiceRequest(string requestId)
     {
+        _obsoleteDiceRequests.Add(requestId);
+        if (_diceWindows.Remove(requestId, out var windows))
+            foreach (var id in windows) _rollDiceService.Close(id, null);
+        _openDiceRequests.Remove(requestId);
+        _unsentDice.Remove(requestId);
+    }
+
+    public async Task CancelRequestAsync(string scopeId, string clientMessageId) =>
+        HandleMessageUpdated(await _connection!.InvokeAsync<RuntimeMessage>("CancelRequest", scopeId, clientMessageId));
+    public Task SendActionAsync(string scopeId, string playerId, string summary, PlayerActionIntent intent, string clientMessageId) =>
+        SendSubmissionAsync(scopeId, playerId, summary, AgentType.GameMaster, clientMessageId, intent);
+    private sealed record PendingSubmission(string Id, string Text, AgentType Agent, PlayerActionIntent? Intent = null);
+    public Task SendMessageAsync(string scopeId, string playerId, string message, AgentType targetAgentType = AgentType.None, string? clientMessageId = null) =>
+        SendSubmissionAsync(scopeId, playerId, message, targetAgentType, clientMessageId);
+    private async Task SendSubmissionAsync(string scopeId, string playerId, string message, AgentType targetAgentType, string? clientMessageId, PlayerActionIntent? intent = null)
+    {
+        if (ConnectionStatus != GameConnectionStatus.Connected) throw new InvalidOperationException("Reconnect before sending an action.");
+        var key = $"rpg-draft:{Uri.EscapeDataString(playerId)}:outbox:{scopeId}";
+        var id = clientMessageId ?? Guid.NewGuid().ToString("N");
+        if (_pendingSubmissions.TryGetValue(key, out var inMemory))
+        {
+            if (inMemory.Text != message || inMemory.Agent != targetAgentType || inMemory.Intent != intent)
+                throw new InvalidOperationException("Resolve the previous unconfirmed message before sending a different action.");
+            id = inMemory.Id;
+        }
+        if (_js is not null)
+        {
+            _draftModule ??= await _js.InvokeAsync<IJSObjectReference>("import", "./_content/AgenticRpg.Components/ChatComponents/draftInput.js");
+            var pending = await _draftModule.InvokeAsync<string>("get", key);
+            if (!string.IsNullOrEmpty(pending))
+            {
+                var old = JsonSerializer.Deserialize<PendingSubmission>(pending);
+                if (old is not null && (old.Text != message || old.Agent != targetAgentType || old.Intent != intent))
+                    throw new InvalidOperationException("Resolve the previous unconfirmed message before sending a different action.");
+                if (old is not null) id = old.Id;
+            }
+            await _draftModule.InvokeVoidAsync("set", key, JsonSerializer.Serialize(new PendingSubmission(id, message, targetAgentType, intent)));
+        }
+        _pendingSubmissions[key] = new(id, message, targetAgentType, intent);
+        RuntimeMessage accepted;
         try
         {
-            await _connection!.SendAsync("SendMessage", campaignId, playerId, message, targetAgentType, clientMessageId);
+            accepted = intent is null
+                ? await _connection!.InvokeAsync<RuntimeMessage>("SendMessage", scopeId, playerId, message, targetAgentType, id)
+                : await _connection!.InvokeAsync<RuntimeMessage>("SendAction", scopeId, playerId, intent, id);
         }
-        catch (Exception ex)
+        catch (Microsoft.AspNetCore.SignalR.HubException)
         {
-            _logger.LogError(ex, "Error sending message to campaign {CampaignId}", campaignId);
+            // A definitive server rejection is different from uncertain transport delivery.
+            _pendingSubmissions.Remove(key);
+            if (_draftModule is not null) await _draftModule.InvokeVoidAsync("set", key, "");
             throw;
         }
+        _pendingSubmissions.Remove(key);
+        if (_draftModule is not null) await _draftModule.InvokeVoidAsync("set", key, "");
+        HandleMessageUpdated(accepted);
     }
 
     /// <summary>
@@ -225,7 +407,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
     {
         try
         {
-            await _connection!.SendAsync("UpdateReadyStatus", campaignId, playerId, isReady);
+            await _connection!.InvokeAsync("UpdateReadyStatus", campaignId, playerId, isReady);
             _logger.LogInformation("Updated ready status: {IsReady}", isReady);
         }
         catch (Exception ex)
@@ -239,7 +421,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
     {
         try
         {
-            await _connection!.SendAsync("ChangeModel", sessionOrCampaignId, modelName);
+            await _connection!.InvokeAsync("ChangeModel", sessionOrCampaignId, modelName);
             _logger.LogInformation("Changed model for {ScopeId} to {ModelName}", sessionOrCampaignId ?? "<global>", modelName ?? "<default>");
         }
         catch (Exception ex)
@@ -250,115 +432,125 @@ public class GameHubService : IGameHubService, IAsyncDisposable
     }
 
     // Event subscription methods
-    public void OnPlayerJoined(Action<string, string, string> handler)
+    public IDisposable OnPlayerJoined(Action<string, string, string> handler)
     {
-        _connection?.On("PlayerJoined", handler);
+        return _connection!.On<string, string, string, string>("PlayerJoined", (scope, player, character, name) => DispatchScopeEvent(scope, () => handler(player, character, name)));
     }
 
-    public void OnPlayerLeft(Action<string> handler)
+    public IDisposable OnPlayerLeft(Action<string> handler)
     {
-        _connection?.On("PlayerLeft", handler);
+        return _connection!.On<string, string>("PlayerLeft", (scope, player) => DispatchScopeEvent(scope, () => handler(player)));
     }
 
-    public void OnReceiveMessage(Action<string, AgentResponse, DateTime> handler)
+    public IDisposable OnReceiveMessage(Action<string, AgentResponse, DateTime> handler)
     {
-        _connection?.On("ReceiveMessage", handler);
+        return _connection!.On("ReceiveMessage", handler);
     }
 
-    public void OnReadyStatusUpdated(Action<string, bool> handler)
+    public IDisposable OnReadyStatusUpdated(Action<string, bool> handler)
     {
-        _connection?.On("ReadyStatusUpdated", handler);
+        return _connection!.On<string, string, bool>("ReadyStatusUpdated", (scope, player, ready) => DispatchScopeEvent(scope, () => handler(player, ready)));
     }
 
-    public void OnReadyStatusSnapshot(Action<Dictionary<string, PlayerReadyStatus>> handler)
+    public IDisposable OnReadyStatusSnapshot(Action<Dictionary<string, PlayerReadyStatus>> handler)
     {
-        _connection?.On("ReadyStatusSnapshot", handler);
+        return _connection!.On<string, Dictionary<string, PlayerReadyStatus>>("ReadyStatusSnapshot", (scope, snapshot) => DispatchScopeEvent(scope, () => handler(snapshot)));
     }
 
-    public void OnAllPlayersReady(Action<bool> handler)
+    public IDisposable OnAllPlayersReady(Action<bool> handler)
     {
-        _connection?.On("AllPlayersReady", handler);
+        return _connection!.On<string, bool>("AllPlayersReady", (scope, ready) => DispatchScopeEvent(scope, () => handler(ready)));
     }
 
-    public void OnCampaignStarted(Action<string> handler)
+    public IDisposable OnCampaignStarted(Action<string> handler)
     {
-        _connection?.On("CampaignStarted", handler);
+        return _connection!.On<string>("CampaignStarted", scope => DispatchScopeEvent(scope, () => handler(scope)));
     }
 
-    public void OnStateUpdated(Action<GameState> handler)
+    public IDisposable OnStateUpdated(Action<GameState> handler)
     {
-        _connection?.On("StateUpdated", handler);
+        return _connection!.On<GameState>("StateUpdated", state => DispatchScopeEvent(state.CampaignId, () => handler(state)));
     }
 
-    public void OnSessionStateUpdated(Action<SessionState> handler)
+    public IDisposable OnSessionStateUpdated(Action<SessionState> handler)
     {
-        _connection?.On("SessionStateUpdated", handler);
+        return _connection!.On<SessionState>("SessionStateUpdated", state => DispatchScopeEvent(state.SessionId, () => handler(state)));
     }
 
-    public void OnSessionCompleted(Action<string, string> handler)
+    public IDisposable OnSessionCompleted(Action<string, string> handler)
     {
-        _connection?.On("SessionCompleted", handler);
+        return _connection!.On<string, string>("SessionCompleted", (scope, result) => DispatchScopeEvent(scope, () => handler(scope, result)));
     }
 
-    public void OnNarrativeAdded(Action<Narrative> handler)
+    public IDisposable OnNarrativeAdded(Action<Narrative> handler)
     {
-        _connection?.On("NarrativeAdded", handler);
+        return _connection!.On<string, Narrative>("NarrativeAdded", (scope, narrative) => DispatchScopeEvent(scope, () => handler(narrative)));
     }
 
-    public void OnCombatStarted(Action<CombatEncounter> handler)
+    public IDisposable OnCombatStarted(Action<CombatEncounter> handler)
     {
-        _connection?.On("CombatStarted", handler);
+        return _connection!.On<CombatEncounter>("CombatStarted", encounter => DispatchScopeEvent(encounter.CampaignId, () => handler(encounter)));
     }
 
-    public void OnTurnChanged(Action<string, string> handler)
+    public IDisposable OnTurnChanged(Action<string, string> handler)
     {
-        _connection?.On("TurnChanged", handler);
+        return _connection!.On("TurnChanged", handler);
     }
 
-    public void OnMessageStatusChanged(Action<string, string, int?, string?> handler)
+    public IDisposable OnMessageStatusChanged(Action<string, string, int?, string?> handler)
     {
-        _connection?.On("MessageStatusChanged", handler);
+        return _connection!.On("MessageStatusChanged", handler);
     }
 
-    public void OnMessageStreamStarted(Action<string, string, DateTime> handler)
+    public IDisposable OnMessageStreamStarted(Action<string, string, DateTime> handler)
     {
-        _connection?.On("MessageStreamStarted", handler);
+        return _connection!.On("MessageStreamStarted", handler);
     }
 
-    public void OnMessageStreamToken(Action<string, string, string> handler)
+    public IDisposable OnMessageStreamToken(Action<string, string, string> handler)
     {
-        _connection?.On("MessageStreamToken", handler);
+        return _connection!.On("MessageStreamToken", handler);
     }
 
-    public void OnMessageStreamCompleted(Action<string, string, string?> handler)
+    public IDisposable OnMessageStreamCompleted(Action<string, string, string?> handler)
     {
-        _connection?.On("MessageStreamCompleted", handler);
+        return _connection!.On("MessageStreamCompleted", handler);
     }
 
-    public void OnSuggestedActionsUpdated(Action<string, List<SuggestedAction>> handler)
+    public IDisposable OnSuggestedActionsUpdated(Action<string, List<SuggestedAction>> handler)
     {
-        _connection?.On("SuggestedActionsUpdated", handler);
+        return _connection!.On("SuggestedActionsUpdated", handler);
     }
 
     public async Task SubmitDiceRollResultAsync(List<RollDiceResults> results)
     {
-        try
-        {
-            _logger.LogInformation("Submitted dice roll result for request {RequestId} rolls: {Rolls}", results.Count, JsonSerializer.Serialize(results.Select(x => x.Results)));
-            await EnsureSubmitConnectionStartedAsync().ConfigureAwait(false);
-            await _submitConnection!.InvokeAsync("SubmitDiceRollResult", new RollDiceResultsList { Results = results }).ConfigureAwait(false);
-            //OnDiceRollResult?.Invoke(this, results);
+        if (results.Count == 0) return;
+        var key = results[0].RequestId;
+        foreach (var result in results) _rolledWindows[result.RequestId] = result;
+        _unsentDice[key] = results;
+        await FlushDiceAsync();
+    }
 
-        }
-        catch (Exception ex)
+    private async Task FlushDiceAsync()
+    {
+        foreach (var entry in _unsentDice.ToArray())
         {
-            _logger.LogError(ex, "Error submitting dice roll result");
-            throw;
+            try
+            {
+                await EnsureSubmitConnectionStartedAsync();
+                if (_submitConnection!.State != HubConnectionState.Connected) return;
+                await _submitConnection.InvokeAsync("SubmitDiceRollResult", new RollDiceResultsList { Results = entry.Value });
+                _unsentDice.Remove(entry.Key);
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Dice results retained until reconnect"); }
         }
     }
 
     private async Task HandleDiceRollRequestAsync(DiceRollRequest request)
     {
+        if (_obsoleteDiceRequests.Contains(request.RequestId) || _activeScope?.Id != request.SessionId ||
+            (!string.IsNullOrEmpty(request.PlayerId) && request.PlayerId != _currentPlayerId) ||
+            !_openDiceRequests.Add(request.RequestId)) return;
         try
         {
             if (!string.IsNullOrWhiteSpace(request.PlayerId) &&
@@ -377,11 +569,23 @@ public class GameHubService : IGameHubService, IAsyncDisposable
             _logger.LogInformation("Received dice roll request {RequestId} for player {TargetPlayerId}; current player is {CurrentPlayerId} for session {SessionId}, {Json}",
                 request.RequestId, request.PlayerId, _currentPlayerId, request.SessionId, JsonSerializer.Serialize(request));
 
+            if (request.WindowRequestIds is { Count: > 0 } ids)
+            {
+                var rolled = ids.Where(_rolledWindows.ContainsKey).Select(id => _rolledWindows[id]).ToList();
+                if (rolled.Count > 0) await SubmitDiceRollResultAsync(rolled);
+                request.WindowRequestIds = ids.Where(id => !_rolledWindows.ContainsKey(id)).ToList();
+                request.NumberOfRollWindows = request.WindowRequestIds.Count;
+                if (request.NumberOfRollWindows == 0) return;
+            }
             var parameters = request.Parameters ?? new RollDiceParameters();
+            if (_obsoleteDiceRequests.Contains(request.RequestId)) return;
             var windowOptions = request.WindowOptions ?? new RollDiceWindowOptions();
 
-            var results = await _rollDiceService.RequestDiceRoll(request.SessionId, parameters, windowOptions, request.NumberOfRollWindows)
-                .ConfigureAwait(false);
+            var existingWindows = _rollDiceService.DieRollReferences.Select(r => r.Id).ToHashSet();
+            var rolling = _rollDiceService.RequestDiceRoll(request.SessionId, parameters, windowOptions, request.NumberOfRollWindows);
+            _diceWindows[request.RequestId] = _rollDiceService.DieRollReferences.Where(r => !existingWindows.Contains(r.Id)).Select(r => r.Id).ToList();
+            var results = await rolling.ConfigureAwait(false);
+            if (_obsoleteDiceRequests.Contains(request.RequestId)) return;
 
             // Normalize to a non-null list while preserving count so the server can complete
             // every pending window.
@@ -408,6 +612,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         }
         catch (Exception ex)
         {
+            if (_obsoleteDiceRequests.Contains(request.RequestId)) return;
             _logger.LogError(ex, "Failed handling dice roll request {RequestId}", request.RequestId);
 
             if (request.WindowRequestIds is { Count: > 0 } windowIds)
@@ -427,6 +632,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
                 await SubmitDiceRollResultAsync([failedResult]).ConfigureAwait(false);
             }
         }
+        finally { _openDiceRequests.Remove(request.RequestId); _diceWindows.Remove(request.RequestId); _obsoleteDiceRequests.Remove(request.RequestId); }
     }
 
     public async ValueTask DisposeAsync()
@@ -442,6 +648,7 @@ public class GameHubService : IGameHubService, IAsyncDisposable
         }
 
         _submitConnectionStartLock.Dispose();
+        _scopeLock.Dispose();
     }
 }
 

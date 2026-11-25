@@ -12,7 +12,7 @@
 </div>
 <AuthorizeView>
     <Authorized>
-        <div class="startup-menu">
+        <div class="startup-menu rpg-onboarding">
             <div class="startup-header">
                 <h1>Skynet RPG</h1>
                 <button @onclick="Refresh" class="btn-refresh"><i class="bi bi-arrow-clockwise"></i></button>
@@ -35,6 +35,39 @@
             else
             {
                 <div class="menu-content">
+                    <section class="menu-section adventure-entry">
+                        <h2>Your next bad decision</h2>
+                        <div class="entry-actions">
+                            <button class="onboarding-control" disabled="@_continuing" @onclick="ContinueAdventure">Continue Adventure</button>
+                            <button class="onboarding-control" @onclick="() => _showJoinCode = !_showJoinCode">Join with Code</button>
+                            <button class="onboarding-control" @onclick="StartNewAdventure">Start New Adventure</button>
+                        </div>
+                        @if (_continueSelection)
+                        {
+                            <div class="entry-form">
+                                <p>Choose a campaign and character. Yes, both.</p>
+                                <label>Campaign <select class="onboarding-field" @bind="_continueCampaignId"><option value="">Choose a campaign</option>@foreach (var campaign in Campaigns) { <option value="@campaign.Id">@campaign.Name</option> }</select></label>
+                                <label>Character <select class="onboarding-field" @bind="_continueCharacterId"><option value="">Choose a character</option>@foreach (var character in AllPlayerCharacters.Where(c => string.IsNullOrEmpty(c.CampaignId) || c.CampaignId == _continueCampaignId)) { <option value="@character.Id">@character.Name</option> }</select></label>
+                                <button class="onboarding-control" disabled="@(string.IsNullOrEmpty(_continueCampaignId) || string.IsNullOrEmpty(_continueCharacterId))" @onclick="ContinueSelected">Enter Adventure</button>
+                                <button class="onboarding-control" disabled="@(string.IsNullOrEmpty(_continueCampaignId))" @onclick="CreateJoiningCharacter">Create a Character</button>
+                            </div>
+                        }
+                        @if (_showJoinCode)
+                        {
+                            <div class="entry-form">
+                                <label>Invitation code <input class="onboarding-field" @bind="InvitationCodeInput" placeholder="Someone actually invited you?" /></label>
+                                <button class="onboarding-control" @onclick="AddInvitationCampaign">Join Adventure</button>
+                                <p role="status">@InvitationCodeMessage @InvitationCodeError</p>
+                            </div>
+                        }
+                    </section>
+                    @if (Drafts.Count > 0)
+                    {
+                        <section class="menu-section"><h2>Continue creating</h2>
+                        @foreach (var draft in Drafts)
+                        { <div class="character-card"><span>@draft.SessionType: @draft.Name — saved @draft.LastSavedAt?.ToLocalTime().ToString("g")</span><button class="onboarding-control" @onclick="() => ResumeDraft(draft)">Resume</button><button class="onboarding-control secondary-button" @onclick="() => DiscardDraft(draft)">Discard</button></div> }
+                        </section>
+                    }
                     <!-- My Characters Section -->
                     <div class="menu-section">
                         <div class="section-header">
@@ -70,12 +103,17 @@
                                                 <p class="campaign-tag">In Campaign</p>
                                             }
                                         </div>
-                                        <button class="btn-view-sheet" @onclick="() => ShowCharacterIntro(character)" @onclick:stopPropagation="true" title="View Character Intro Video">
-                                            ▶️
-                                        </button>
-                                        <button class="btn-view-sheet" @onclick="() => ShowCharacterSheet(character)" @onclick:stopPropagation="true" title="View Character Sheet">
-                                            👁️
-                                        </button>
+                                        <div class="card-actions">
+                                            <button class="btn-view-sheet card-action-button" @onclick="() => ShowCharacterIntro(character)" @onclick:stopPropagation="true" title="View Character Intro Video" aria-label="View intro video for @character.Name">
+                                                ▶️
+                                            </button>
+                                            <button class="btn-view-sheet card-action-button" @onclick="() => ShowCharacterSheet(character)" @onclick:stopPropagation="true" title="View Character Sheet" aria-label="View character sheet for @character.Name">
+                                                👁️
+                                            </button>
+                                            <button class="btn-view-sheet card-action-button btn-delete" @onclick="() => PromptDeleteCharacter(character)" @onclick:stopPropagation="true" title="Delete Character" aria-label="Delete @character.Name">
+                                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -122,6 +160,9 @@
                                                 </span>
                                                 <button class="btn-view-sheet" @onclick="@(() => ShowWorldDetails(world))" @onclick:stopPropagation="true" title="View World Deets">
                                                     👁️
+                                                </button>
+                                                <button class="btn-view-sheet btn-world-edit" @onclick="@(() => ModifyCampaignWorld(world.Id))" @onclick:stopPropagation="true" title="Modify @world.Name" aria-label="Modify @world.Name">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
                                                 </button>
                                                 @if (world.Id == SelectedWorld?.Id)
                                                 {
@@ -194,6 +235,14 @@
                                                     @campaign.PlayerIds.Distinct().Count() / @campaign.MaxPlayers players
                                                 </span>
                                             </div>
+                                            @if (CurrentUserId == campaign.OwnerId)
+                                            {
+                                                <div class="card-actions campaign-actions">
+                                                    <button class="btn-view-sheet card-action-button btn-delete" @onclick="() => PromptDeleteCampaign(campaign)" @onclick:stopPropagation="true" title="Delete Campaign" aria-label="Delete @campaign.Name">
+                                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                                    </button>
+                                                </div>
+                                            }
                                         </div>
                                     </div>
                                 }
@@ -369,6 +418,31 @@
                 <div class="loading-container">
                     <div class="loading-spinner"></div>
                     <p style="color:white">Creating Video...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (_showDeleteConfirmationModal)
+{
+    <div class="modal-overlay" @onclick="CloseDeleteConfirmationModal">
+        <div class="modal-content confirmation-modal" @onclick:stopPropagation="true">
+            <div class="modal-body confirmation-modal-body">
+                <h2>@DeleteConfirmationTitle</h2>
+                <p class="confirmation-message">@DeleteConfirmationMessage</p>
+                @if (!string.IsNullOrWhiteSpace(DeleteConfirmationWarning))
+                {
+                    <p class="confirmation-warning">@DeleteConfirmationWarning</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(_deleteConfirmationError))
+                {
+                    <p class="confirmation-error">@_deleteConfirmationError</p>
+                }
+                <div class="confirmation-actions">
+                    <button class="btn-secondary" @onclick="CloseDeleteConfirmationModal" disabled="@_isDeleteInProgress">Cancel</button>
+                    <button class="btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_isDeleteInProgress">
+                        @(_isDeleteInProgress ? "Deleting..." : "Delete")
+                    </button>
                 </div>
             </div>
         </div>

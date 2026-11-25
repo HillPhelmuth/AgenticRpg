@@ -1,3 +1,4 @@
+using AgenticRpg.Core.Services;
 using AgenticRpg.Core.Hubs;
 using AgenticRpg.Core.Models;
 using AgenticRpg.Core.Repositories;
@@ -19,7 +20,7 @@ public class GameStateManager(
     ICharacterRepository characterRepository,
     IWorldRepository worldRepository,
     ILogger<GameStateManager> logger,
-    INarrativeRepository narrativeRepository, IGameStateRepository gameStateRepository, IHubContext<GameHub> hubContext)
+    INarrativeRepository narrativeRepository, IGameStateRepository gameStateRepository, IHubContext<GameHub> hubContext, PlayerStateBroadcaster broadcaster)
     : IGameStateManager
 {
     private readonly ConcurrentDictionary<string, GameState> _stateCache = new();
@@ -75,6 +76,11 @@ public class GameStateManager(
             }
         }
 
+        state.Campaign.ActiveAndConnectedPlayerIds = state.Campaign.ActiveAndConnectedPlayerIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
         state.Characters ??= [];
 
         var expectedCharacterIds = state.Campaign.CharacterIds?.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList() ?? [];
@@ -124,7 +130,7 @@ public class GameStateManager(
       
         state.LastUpdated = DateTime.UtcNow;
         state.Version++;
-        await hubContext.Clients.Group(GameHub.GetCampaignGroupName(state.CampaignId)).SendAsync("StateUpdated", state, cancellationToken);
+        await broadcaster.StateAsync(state, cancellationToken);
         
         _stateCache.AddOrUpdate(state.CampaignId, state, (key, oldValue) => state);
         
@@ -236,6 +242,8 @@ public class GameStateManager(
             var gameState = await gameStateRepository.GetStateByCampaignIdAsync(campaignId, cancellationToken);
             if (gameState != null)
             {
+                NormalizeTransientCampaignState(gameState.Campaign);
+
                 // Add to cache
                 _stateCache.AddOrUpdate(campaignId, gameState, (key, oldValue) => gameState);
                 logger.LogInformation("Successfully loaded state from storage for campaign: {CampaignId}", campaignId);
@@ -269,6 +277,8 @@ public class GameStateManager(
                 LastUpdated = DateTime.UtcNow,
                 RecentNarratives = narratives.Where(x => x.Visibility == NarrativeVisibility.Global).OrderByDescending(n => n.Timestamp).Take(10).Concat(narratives.Where(x => x.Visibility == NarrativeVisibility.GMOnly)).ToList(),
             };
+
+            NormalizeTransientCampaignState(state.Campaign);
             
             // Add to cache
             _stateCache.AddOrUpdate(campaignId, state, (key, oldValue) => state);
@@ -289,5 +299,17 @@ public class GameStateManager(
     protected virtual void OnStateChanged(GameStateChangedEventArgs e)
     {
         StateChanged?.Invoke(this, e);
+    }
+
+    private static void NormalizeTransientCampaignState(Campaign campaign)
+    {
+        campaign.ActiveAndConnectedPlayerIds = [];
+
+        foreach (var readyStatus in campaign.PlayerReadyStatuses.Values)
+        {
+            readyStatus.ConnectionId = null;
+            readyStatus.IsReady = false;
+            readyStatus.ReadyAt = null;
+        }
     }
 }

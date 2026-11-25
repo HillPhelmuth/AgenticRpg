@@ -13,6 +13,10 @@ namespace AgenticRpg.Client.Pages;
 
 public partial class CampaignCreation : IAsyncDisposable
 {
+    [SupplyParameterFromQuery(Name = "journey")] public bool StartNewAdventure { get; set; }
+    [SupplyParameterFromQuery(Name = "starter")] public string? QuickStarter { get; set; }
+    [SupplyParameterFromQuery(Name = "sessionId")] public string? ResumeSessionId { get; set; }
+
     [Parameter]
     [SupplyParameterFromQuery(Name = "worldId")]
     public string? WorldId { get; set; }
@@ -31,10 +35,13 @@ public partial class CampaignCreation : IAsyncDisposable
     private SessionState? CurrentSessionState { get; set; }
     private List<ChatMessage> ChatMessages { get; set; } = [];
     private readonly Dictionary<string, ChatMessage> _streamMessageLookup = new(StringComparer.OrdinalIgnoreCase);
+    private bool SubmissionConfirmed;
     private bool IsProcessing { get; set; }
+    private readonly RuntimeChatState _runtimeChat = new();
     private string? SaveMessage { get; set; }
     private bool IsSaveError { get; set; }
-    private bool IsConnected { get; set; }
+    private bool _isSaving;
+    private bool _completionNavigated;
     private CampaignSettings _createCampaignSettings = new();
 
     // TODO: Get from authentication/user context
@@ -52,11 +59,18 @@ public partial class CampaignCreation : IAsyncDisposable
         Chat
     }
 
-    private bool CanSaveCampaign =>
-        !string.IsNullOrWhiteSpace(CampaignName) &&
-        CurrentWorld != null &&
-        !string.IsNullOrWhiteSpace(CurrentWorld.Name) &&
-        (!string.IsNullOrEmpty(WorldId) || !string.IsNullOrEmpty(SessionId));
+    private string SaveButtonLabel => WorldOnly ? (string.IsNullOrEmpty(WorldId) ? "Save World" : "Save Changes") : "Create Campaign";
+    private bool CanSaveCampaign => CurrentSessionState?.IsCompleted != true && CurrentWorld is not null && !string.IsNullOrWhiteSpace(CurrentWorld.Name)
+        && (WorldOnly ? !string.IsNullOrEmpty(SessionId) : !string.IsNullOrWhiteSpace(CampaignName) && !string.IsNullOrEmpty(WorldId) && !string.IsNullOrEmpty(SessionId));
+
+    protected override void OnParametersSet()
+    {
+        if (CurrentSessionState is null) return;
+        if (ResumeSessionId is not null && ResumeSessionId != CurrentSessionState.SessionId)
+        { NavManager.NavigateTo(NavManager.Uri, forceLoad: true); return; }
+        WorldOnly = CurrentSessionState.SessionType == SessionType.WorldBuilding;
+        WorldId = CurrentSessionState.Context.OriginalWorldId;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,51 +100,71 @@ public partial class CampaignCreation : IAsyncDisposable
                     {
                         CampaignName = $"Campaign in {CurrentWorld.Name}";
                     }
-                    // Skip world building session creation
-                    return;
+
                 }
             }
 
-            // Create world building session via API
-            var sessionResponse = await HttpClient.PostAsJsonAsync("/api/sessions", new CreateSessionRequest
+            if (string.IsNullOrEmpty(ResumeSessionId))
             {
-                SessionType = SessionType.WorldBuilding, // WorldBuilding = 1
-                PlayerId = CurrentUserId
-            });
+                // Create world building session via API
+                var createSessionRequest = new CreateSessionRequest
+                {
+                    SessionType = WorldOnly ? SessionType.WorldBuilding : SessionType.CampaignSetup,
+                    PlayerId = CurrentUserId, StartNewAdventure = StartNewAdventure, QuickStarter = QuickStarter
+                };
+                if (!string.IsNullOrEmpty(WorldId))
+                {
+                    createSessionRequest.WorldId = WorldId;
+                }
+                var sessionResponse = await HttpClient.PostAsJsonAsync("/api/sessions", createSessionRequest);
 
-            if (!sessionResponse.IsSuccessStatusCode)
-            {
-                SaveMessage = "Failed to create session. Please refresh and try again.";
-                IsSaveError = true;
-                return;
+                if (!sessionResponse.IsSuccessStatusCode)
+                {
+                    SaveMessage = "Failed to create session. Please refresh and try again.";
+                    IsSaveError = true;
+                    return;
+                }
+
+                CurrentSessionState = await sessionResponse.Content.ReadFromJsonAsync<SessionState>();
+                if (CurrentSessionState == null)
+                {
+                    SaveMessage = "Failed to initialize session.";
+                    IsSaveError = true;
+                    return;
+                }
+
+                SessionId = CurrentSessionState.SessionId;
+                Logger.LogInformation("Created world building session: {SessionId}", SessionId);
             }
-
-            CurrentSessionState = await sessionResponse.Content.ReadFromJsonAsync<SessionState>();
-            if (CurrentSessionState == null)
+            else
             {
-                SaveMessage = "Failed to initialize session.";
-                IsSaveError = true;
-                return;
+                CurrentSessionState = await HttpClient.GetFromJsonAsync<SessionState>($"/api/sessions/{Uri.EscapeDataString(ResumeSessionId)}") ?? throw new InvalidOperationException("Draft not found.");
+                SessionId = CurrentSessionState.SessionId;
             }
-
-            SessionId = CurrentSessionState.SessionId;
-            Logger.LogInformation("Created world building session: {SessionId}", SessionId);
-
+            WorldOnly = CurrentSessionState!.SessionType == SessionType.WorldBuilding;
+            WorldId = CurrentSessionState.Context.OriginalWorldId;
+            CurrentWorld = CurrentSessionState.Context.DraftWorld;
+            if (CurrentSessionState.Context.DraftCampaign is { } draft)
+            { CampaignName = draft.Name; CampaignDescription = draft.Description; _createCampaignSettings = draft.Settings; }
+            if (string.IsNullOrEmpty(ResumeSessionId)) NavManager.NavigateTo(NavManager.GetUriWithQueryParameter("sessionId", SessionId), replace: true);
+            StartNewAdventure = CurrentSessionState.Context.StartNewAdventure;
+            QuickStarter = CurrentSessionState.Context.QuickStarter;
             // Connect to SignalR hub
             await HubService.StartAsync();
+            Track(HubService.OnMessageUpdated(HandleRuntimeMessage));
+            Track(HubService.OnRecovered(HandleRecovered));
 
             // Subscribe to session state updates
-            HubService.OnSessionStateUpdated(HandleSessionStateUpdated);
-            HubService.OnSessionCompleted(HandleSessionCompleted);
-            HubService.OnMessageStreamStarted(HandleMessageStreamStarted);
-            HubService.OnMessageStreamToken(HandleMessageStreamToken);
-            HubService.OnMessageStreamCompleted(HandleMessageStreamCompleted);
-            HubService.OnSuggestedActionsUpdated(HandleSuggestedActionsUpdated);
+            Track(HubService.OnSessionStateUpdated(HandleSessionStateUpdated));
+            Track(HubService.OnSessionCompleted(HandleSessionCompleted));
 
             // Join session for real-time updates
-            await HubService.JoinSessionAsync(SessionId, CurrentUserId, "World Creator");
-            IsConnected = true;
-            await HubService.SendMessageAsync(SessionId, CurrentUserId, "Introduce yourself, your purpose and begin the world building process", AgentType.WorldBuilder);
+            var recovery = await HubService.JoinSessionAsync(SessionId, CurrentUserId, "World Creator", ScopeLeaseId);
+            HandleRecovered(recovery);
+
+            if (WorldOnly && !recovery.HasAcceptedRequests && recovery.Messages.Count == 0 && recovery.SessionState?.IsCompleted != true)
+                await HubService.SendMessageAsync(SessionId, CurrentUserId, QuickStarter is not null ? StarterCreation.Prompt(false, QuickStarter) : "Introduce yourself, your purpose and begin the world building process", AgentType.WorldBuilder, $"{(QuickStarter is null ? "intro" : "quick")}-{SessionId}");
+            SubmissionConfirmed = true;
 
         }
         catch (Exception ex)
@@ -158,7 +192,9 @@ public partial class CampaignCreation : IAsyncDisposable
 
     private void HandleSessionStateUpdated(SessionState sessionState)
     {
+        if (IsDisposed || sessionState.SessionId != SessionId) return;
         // Update session state and extract draft world
+        if (CurrentSessionState is not null && CurrentSessionState.LastUpdatedAt > sessionState.LastUpdatedAt) return;
         CurrentSessionState = sessionState;
 
         if (sessionState?.Context?.DraftWorld != null)
@@ -170,186 +206,110 @@ public partial class CampaignCreation : IAsyncDisposable
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleSessionCompleted(string sessionId, string resultEntityId)
+    private async void HandleSessionCompleted(string sessionId, string resultEntityId)
     {
-        Logger.LogInformation("Session {SessionId} completed with world {WorldId}",
-            sessionId, resultEntityId);
-
-        // Session completed - navigate back
-        InvokeAsync(async () =>
-        {
-            await Task.Delay(500);
-            NavManager.NavigateTo("/startup");
-        });
-    }
-
-    private void HandleReceiveMessage(string playerId, AgentResponse message, DateTime timestamp)
-    {
-        // Receive AI responses from World Builder Agent
-        if (playerId != CurrentUserId)
-        {
-            if (!string.IsNullOrEmpty(message.Id) && _streamMessageLookup.TryGetValue(message.Id, out var streamMessage))
-            {
-                streamMessage.Content = message.FormattedResponse?.MessageToPlayers ?? message.Message;
-                streamMessage.Timestamp = timestamp;
-                streamMessage.PlayerId = playerId;
-                streamMessage.PlayerName = "World Builder AI";
-                _streamMessageLookup.Remove(message.Id);
-                InvokeAsync(StateHasChanged);
-                return;
-            }
-
-            ChatMessages.Add(new ChatMessage
-            {
-                Id = message.Id,
-                Content = message.FormattedResponse?.MessageToPlayers ?? message.Message,
-                IsUser = false,
-                Timestamp = timestamp,
-                PlayerId = playerId,
-                PlayerName = "World Builder AI"
-            });
-            InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private void HandleSuggestedActionsUpdated(string messageId, List<SuggestedAction> suggestedActions)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || suggestedActions.Count == 0)
-        {
-            return;
-        }
-
-        var actions = suggestedActions
-            .SelectMany(x => x.Suggestions)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        if (actions.Count == 0)
-        {
-            return;
-        }
-
-        if (_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            streamMessage.SuggestedActions = actions;
-            InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        var existingMessage = ChatMessages.FirstOrDefault(x => string.Equals(x.Id, messageId, StringComparison.OrdinalIgnoreCase));
-        if (existingMessage is null)
-        {
-            return;
-        }
-
-        existingMessage.SuggestedActions = actions;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleMessageStreamStarted(string messageId, string playerId, DateTime timestamp)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || _streamMessageLookup.ContainsKey(messageId))
-        {
-            return;
-        }
-
-        var streamMessage = new ChatMessage
-        {
-            Id = messageId,
-            Content = string.Empty,
-            IsUser = false,
-            Timestamp = timestamp,
-            PlayerName = "World Builder AI",
-            IsStreaming = true
-        };
-
-        ChatMessages.Add(streamMessage);
-        _streamMessageLookup[messageId] = streamMessage;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleMessageStreamToken(string messageId, string agentType, string token)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrEmpty(token))
-        {
-            return;
-        }
-
-        if (!_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            streamMessage = new ChatMessage
-            {
-                Id = messageId,
-                Content = string.Empty,
-                IsUser = false,
-                Timestamp = DateTime.UtcNow,
-                PlayerName = "World Builder AI",
-                IsStreaming = true
-            };
-
-            ChatMessages.Add(streamMessage);
-            _streamMessageLookup[messageId] = streamMessage;
-        }
-        ChatMessages.LastOrDefault()?.IsStreaming = true;
-        ChatMessages.LastOrDefault()?.Content += token;
-        InvokeAsync(StateHasChanged);
-
-    }
-
-    private void HandleMessageStreamCompleted(string messageId, string agentType, string? note)
-    {
-        if (string.IsNullOrWhiteSpace(messageId) || !_streamMessageLookup.TryGetValue(messageId, out var streamMessage))
-        {
-            return;
-        }
-
-        streamMessage.IsStreaming = false;
-
-        if (!string.IsNullOrWhiteSpace(note))
-        {
-            streamMessage.Content = string.IsNullOrWhiteSpace(streamMessage.Content)
-                ? $"Error communicating with {agentType}: {note}"
-                : streamMessage.Content;
-
-        }
-
-        _streamMessageLookup.Remove(messageId);
-        InvokeAsync(StateHasChanged);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
+        if (IsDisposed || sessionId != SessionId || _completionNavigated) return;
+        _completionNavigated = true;
         try
         {
-            if (IsConnected && !string.IsNullOrEmpty(SessionId))
+            await InvokeAsync(async () =>
             {
-                await HubService.LeaveSessionAsync(SessionId);
-            }
+                SaveMessage = "Saved successfully!";
+                IsSaveError = false;
+                StateHasChanged();
+                await Task.Delay(500);
+                if (IsDisposed) return;
+                NavManager.NavigateTo(StartNewAdventure ? $"/adventure-setup?{(WorldOnly ? "worldId" : "campaignId")}={Uri.EscapeDataString(resultEntityId)}" : "/startup");
+            });
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error during disposal");
-        }
+        catch (Exception ex) { Logger.LogWarning(ex, "Completion navigation failed"); }
     }
 
-    private async Task SendMessage(string message)
+
+
+
+
+
+
+
+
+
+
+    public override async ValueTask DisposeAsync()
     {
-        if (string.IsNullOrWhiteSpace(message))
+        DisposeSubscriptions();
+        try { if (!string.IsNullOrEmpty(SessionId)) await HubService.DetachScopeAsync(SessionId, ScopeLeaseId); }
+        catch (Exception ex) { Logger.LogWarning(ex, "Scope detach failed"); }
+        finally { await base.DisposeAsync(); }
+    }
+
+    private async void HandleRuntimeMessage(RuntimeMessage message)
+    {
+        if (IsDisposed || message.ScopeId != SessionId) return;
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (IsDisposed) return;
+                ObserveRuntime(message, CurrentUserId);
+                _runtimeChat.Apply(ChatMessages, message, CurrentUserId, null);
+                IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(SessionId ?? string.Empty, CurrentUserId);
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex) { Logger.LogWarning(ex, "Response refresh failed"); }
+    }
+
+    private async void HandleRecovered(ScopeRecoverySnapshot snapshot)
+    {
+        if (IsDisposed || snapshot.ScopeId != SessionId) return;
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (IsDisposed) return;
+                if (snapshot.SessionState is not null) HandleSessionStateUpdated(snapshot.SessionState);
+                RememberRecovery(snapshot);
+                foreach (var message in snapshot.Messages)
+                {
+                    ObserveRuntime(message, CurrentUserId);
+                    _runtimeChat.Apply(ChatMessages, message, CurrentUserId, null);
+                }
+                IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(SessionId ?? string.Empty, CurrentUserId);
+                if (snapshot.SessionState is { IsCompleted: true, ResultEntityId: not null } session)
+                    SaveMessage = $"Already saved: {session.ResultEntityId}";
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex) { Logger.LogWarning(ex, "Session recovery failed"); }
+    }
+
+    private Task SendMessage(string message) => SendMessageCore(message);
+    private Task RetryMessage(ChatMessage message) => SendMessageCore(message.Content, message.IsAuthoritative || message.WasRejected ? null : message.ClientMessageId);
+    private Task CancelResponse() => CancelPending(_runtimeChat, SessionId!, CurrentUserId);
+
+    private async Task SendMessageCore(string message, string? retryId = null)
+    {
+        SubmissionConfirmed = false;
+        if (CurrentSessionState?.IsCompleted == true || ReviewRequired || string.IsNullOrWhiteSpace(message) || IsProcessing || _isSaving || !HubConnected)
             return;
 
         IsProcessing = true;
+        var clientMessageId = retryId ?? Guid.NewGuid().ToString();
 
         // Add user message
-        ChatMessages.Add(new ChatMessage
+        var chatMessage = new ChatMessage
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = clientMessageId,
+            ClientMessageId = clientMessageId,
             Content = message,
             IsUser = true,
             Timestamp = DateTime.UtcNow,
             PlayerId = CurrentUserId,
-            PlayerName = "You"
-        });
+            PlayerName = "You", Status = AgenticRpg.Core.Messaging.MessageProcessingStatus.Queued
+        };
+        ChatMessages.RemoveAll(m => m.Id == clientMessageId);
+        ChatMessages.Add(chatMessage);
 
         StateHasChanged();
 
@@ -361,17 +321,21 @@ public partial class CampaignCreation : IAsyncDisposable
                 throw new InvalidOperationException("Session not initialized");
             }
 
-            await HubService.SendMessageAsync(SessionId, CurrentUserId, message, AgentType.WorldBuilder);
+            await HubService.SendMessageAsync(SessionId, CurrentUserId, message, AgentType.WorldBuilder, clientMessageId);
+            SubmissionConfirmed = true;
 
             // The response will come through the HandleReceiveMessage callback
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error sending message to AI");
+            chatMessage.Status = AgenticRpg.Core.Messaging.MessageProcessingStatus.Failed;
+            chatMessage.WasRejected = ex is Microsoft.AspNetCore.SignalR.HubException;
+            chatMessage.StatusNote = chatMessage.WasRejected ? ex.Message : "Delivery not confirmed. Reconnect to check the action.";
             ChatMessages.Add(new ChatMessage
             {
                 Id = Guid.NewGuid().ToString(),
-                Content = $"Error communicating with AI: {ex.Message}",
+                Content = chatMessage.WasRejected ? ex.Message : "Message delivery was not confirmed. Your text is retained; reconnect and retry safely.",
                 IsUser = false,
                 Timestamp = DateTime.UtcNow,
                 PlayerName = "System"
@@ -379,7 +343,7 @@ public partial class CampaignCreation : IAsyncDisposable
         }
         finally
         {
-            IsProcessing = false;
+            IsProcessing = _runtimeChat.HasPending(CurrentUserId) || HubService.HasPending(SessionId ?? string.Empty, CurrentUserId);
             StateHasChanged();
         }
     }
@@ -404,79 +368,69 @@ public partial class CampaignCreation : IAsyncDisposable
         }
     }
 
-    private async Task SaveCampaign()
+    private readonly SemaphoreSlim _draftSaveGate = new(1, 1);
+    private async Task SaveDraft()
     {
-        if (!CanSaveCampaign || CurrentWorld == null)
-            return;
-
+        await _draftSaveGate.WaitAsync();
         try
         {
-            SaveMessage = "Saving campaign...";
-            IsSaveError = false;
-            StateHasChanged();
-
-            string worldId;
-
-            // Check if we're using an existing world or need to finalize from session
-            if (!string.IsNullOrEmpty(WorldId))
+        if (WorldOnly || CurrentSessionState is null || CurrentSessionState.IsCompleted || string.IsNullOrEmpty(SessionId)) return;
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/sessions/{SessionId}/campaign-draft");
+        request.Headers.TryAddWithoutValidation("If-Match", CurrentSessionState.Revision.ToString());
+        request.Content = JsonContent.Create(new Campaign { Name = CampaignName, Description = CampaignDescription,
+            WorldId = WorldId!, Settings = _createCampaignSettings, SelectedModel = _createCampaignSettings.DefaultModel });
+        using var response = await HttpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) { IsSaveError = true; SaveMessage = "Changes not saved. Reload the draft or retry saving."; return; }
+        CurrentSessionState = await response.Content.ReadFromJsonAsync<SessionState>();
+        SaveMessage = null; IsSaveError = false;
+        }
+        catch (Exception ex) { Logger.LogWarning(ex, "Draft autosave failed"); IsSaveError = true; SaveMessage = "Changes not saved. Your draft remains available; retry saving."; }
+        finally { _draftSaveGate.Release(); }
+    }
+    private async Task SaveCampaign()
+    {
+        if (ReviewRequired || !CanSaveCampaign || CurrentWorld is null || IsProcessing || _isSaving || !HubConnected) return;
+        _isSaving = true;
+        SaveMessage = "Saving...";
+        IsSaveError = false;
+        try
+        {
+            if (WorldOnly)
             {
-                // Using existing world
-                worldId = WorldId;
-            }
-            else if (!string.IsNullOrEmpty(SessionId))
-            {
-                // Finalize the world from the session
-                var worldResponse = await HttpClient.PostAsync($"/api/sessions/{SessionId}/finalize-world", null);
-
-                if (!worldResponse.IsSuccessStatusCode)
-                {
-                    var errorContent = await worldResponse.Content.ReadAsStringAsync();
-                    throw new Exception($"Failed to finalize world: {errorContent}");
-                }
-
-                var worldResult = await worldResponse.Content.ReadFromJsonAsync<FinalizeWorldResult>();
-                worldId = worldResult?.WorldId ?? CurrentWorld.Id;
+                var response = await HttpClient.PostAsync($"/api/sessions/{SessionId}/finalize-world", null);
+                if (!response.IsSuccessStatusCode) throw new InvalidOperationException(await response.Content.ReadAsStringAsync());
+                var result = await response.Content.ReadFromJsonAsync<FinalizeWorldResult>();
+                HandleSessionCompleted(SessionId!, result?.WorldId ?? CurrentWorld.Id);
             }
             else
             {
-                throw new InvalidOperationException("No world or session available to create campaign");
+                await SaveDraft();
+                if (IsSaveError) return;
+                var response = await HttpClient.PostAsync($"/api/sessions/{SessionId}/finalize-campaign", null);
+                if (!response.IsSuccessStatusCode) throw new InvalidOperationException(await response.Content.ReadAsStringAsync());
+                var result = await response.Content.ReadFromJsonAsync<CampaignResult>();
+                HandleSessionCompleted(SessionId!, result?.CampaignId ?? string.Empty);
             }
-
-            // Create campaign with the finalized world
-            var campaign = new Campaign
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = CampaignName,
-                Description = CampaignDescription,
-                OwnerId = CurrentUserId,
-                WorldId = worldId,
-                Status = CampaignStatus.Setup,
-                Settings = _createCampaignSettings,
-                SelectedModel = _createCampaignSettings.DefaultModel
-
-            };
-
-            await CampaignService.CreateCampaignAsync(campaign);
-
-            SaveMessage = "Campaign saved successfully!";
-            Logger.LogInformation("Campaign {CampaignId} created with world {WorldId}", campaign.Id, worldId);
-
-            // Navigate back to startup menu after short delay
-            await Task.Delay(1500);
-            NavManager.NavigateTo("/startup");
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to save campaign");
-            SaveMessage = $"Failed to save: {ex.Message}";
+            SaveMessage = "Changes not saved. Your draft is available; retry saving.";
             IsSaveError = true;
+            Logger.LogError(ex, "Failed to save world or campaign");
         }
+        finally { _isSaving = false; }
     }
 
     // Result type for API response
+    private sealed class CampaignResult { public string CampaignId { get; set; } = string.Empty; }
     private class FinalizeWorldResult
     {
         public string WorldId { get; set; } = string.Empty;
+    }
+
+    private void OpenCompletedResult()
+    {
+        NavManager.NavigateTo(StartNewAdventure ? $"/adventure-setup?{(WorldOnly ? "worldId" : "campaignId")}={Uri.EscapeDataString(CurrentSessionState?.ResultEntityId ?? "")}" : "/startup");
     }
 
     private void GoBack()

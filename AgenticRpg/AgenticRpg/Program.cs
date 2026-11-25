@@ -8,6 +8,7 @@ using AgenticRpg.Core.Agents.Threads;
 using AgenticRpg.Core.Helpers;
 using AgenticRpg.Core.Hubs;
 using AgenticRpg.Core.Models;
+using AgenticRpg.Core.Models.Enums;
 using AgenticRpg.Core.Models.Game;
 using AgenticRpg.Core.Repositories;
 using AgenticRpg.Core.Rules;
@@ -39,6 +40,7 @@ services
         options.ClientId = builder.Configuration["Auth0:ClientId"]!;
     });
 services.AddCascadingAuthenticationState();
+services.AddAuthorization();
 //// Configure authentication and authorization for API endpoints.
 //services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
@@ -68,7 +70,7 @@ services.AddCascadingAuthenticationState();
 services.AddSignalR();
 
 // Configure Cosmos DB Client
-var cosmosClient = new CosmosClient(builder.Configuration["ConnectionStrings:CosmosDBConnection"], new CosmosClientOptions()
+services.AddSingleton(sp => new CosmosClient(sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDBConnection"], new CosmosClientOptions()
 {
     UseSystemTextJsonSerializerWithOptions = new JsonSerializerOptions()
     {
@@ -78,8 +80,7 @@ var cosmosClient = new CosmosClient(builder.Configuration["ConnectionStrings:Cos
         IgnoreReadOnlyProperties = true,
         PropertyNameCaseInsensitive = true
     }
-});
-services.AddSingleton(cosmosClient);
+}));
 services.AddHttpClient();
 // Register Agent Configuration and Context Provider
 var config = new AgentConfiguration() { OpenAIApiKey = builder.Configuration["OpenAI:ApiKey"]!, OpenRouterApiKey = builder.Configuration["OpenRouter:ApiKey"]! };
@@ -98,6 +99,20 @@ services.AddScoped<IGameStateService, GameStateService>();
 services.AddRollDiceHubService();
 
 var app = builder.Build();
+app.Use(async (context, next) =>
+{
+    try { await next(context); }
+    catch (Exception ex) when (context.Request.Path.StartsWithSegments("/api/sessions") || context.Request.Path.StartsWithSegments("/api/scopes"))
+    {
+        app.Logger.LogError(ex, "Recovery/save request failed: {CorrelationId}", context.TraceIdentifier);
+        if (context.Response.HasStarted) throw;
+        context.Response.StatusCode = ex is RecoveryConflictException ? 409 : 503;
+        await context.Response.WriteAsJsonAsync(new PlayerFacingError(ex is RecoveryConflictException ? "stale_draft" : "save_unavailable",
+            ex is RecoveryConflictException ? "This draft changed. Reload it before saving." : "Changes not saved. Your draft is available for retry.",
+            context.TraceIdentifier, ex is RecoveryConflictException ? RecoveryAction.ReloadState : RecoveryAction.RetrySave));
+    }
+});
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -111,6 +126,16 @@ else
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// API failures must retain their status instead of re-executing a Razor POST with antiforgery validation.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/hubs"))
+    {
+        var statusPages = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodePagesFeature>();
+        if (statusPages is not null) statusPages.Enabled = false;
+    }
+    await next(context);
+});
 app.UseHttpsRedirection();
 
 //app.UseCors("ClientCors");
@@ -143,17 +168,25 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(AgenticRpg.Client._Imports).Assembly);
 app.MapHub<GameHub>("/hubs/game");
 var dice = app.MapGroup("api/dice").WithTags("Dice");
-dice.MapPost("/", async (IRollDiceService diceRollerService, [FromBody] DiceRollRequest request) =>
+dice.MapPost("/", async (IRollDiceService diceRollerService, [FromBody] DiceRollRequest request,
+    ClaimsPrincipal user, ISessionStateManager sessions, PlayerCampaignAccessService accessService) =>
 {
+    var playerId = PlayerIdentity.GetId(user);
+    var session = await sessions.GetSessionStateAsync(request.SessionId);
+    var allowed = session is not null ? session.PlayerId == playerId
+        : (await accessService.ResolveAsync(request.SessionId, playerId)).CharacterId is not null;
+    if (!allowed) return Results.Forbid();
+    request.PlayerId = playerId;
     Console.WriteLine($"Dice Roll Request from API:\n\n {JsonSerializer.Serialize(request)}");
     var diceParameters = request.Parameters ?? new RollDiceParameters();
-    diceParameters.Set("DieType",request.DieType);
+    diceParameters.Set("PlayerId", playerId);
+    diceParameters.Set("DieType", request.DieType);
     diceParameters.Set("NumberOfRolls", request.NumberOfRollWindows);
     diceParameters.Set("NumberOfDice", request.NumberOfDice);
     diceParameters.Set("IsManual", true);
     var result = await diceRollerService.RequestDiceRoll(request.SessionId, diceParameters, numberOfRollWindows: request.NumberOfRollWindows);
     return Results.Ok(result);
-});
+}).RequireAuthorization();
 #region Campaign Endpoints
 
 // ============================================================================
@@ -211,7 +244,7 @@ campaigns.MapGet("/{id}", async (
         return Results.NotFound();
     }
 
-    if (campaign.OwnerId == userId)
+    if (campaign.OwnerId == userId || campaign.InvitedUserIds.Contains(userId) || campaign.PlayerIds.Contains(userId))
     {
         return Results.Ok(campaign);
     }
@@ -231,7 +264,7 @@ campaigns.MapGet("/owner/{ownerId}", async (
         ClaimsPrincipal user,
         ICampaignRepository repo) =>
 {
-    
+
     var userId = GetCurrentUserId(user);
     Console.WriteLine($"User Id: {userId}");
     if (string.IsNullOrWhiteSpace(userId))
@@ -303,7 +336,7 @@ campaigns.MapPost("/", async (
         campaign.Settings = new CampaignSettings();
     }
 
-    var questDescription = campaign.Settings.PrimaryQuestDescription;
+    var questDescription = campaign.Settings.GeneratePrimaryQuest ? campaign.Settings.PrimaryQuestDescription : "Create a Primary quest for the campaign that fits the theme of the provided World and is specific to the Characters.";
     if (string.IsNullOrWhiteSpace(questDescription))
     {
         questDescription = campaign.Description;
@@ -377,6 +410,37 @@ campaigns.MapPut("/{id}", async (
 campaigns.MapDelete("/{id}", async (
         string id,
         ClaimsPrincipal user,
+        ICampaignRepository repo, GameRuntimeCoordinator runtime) =>
+{
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var existing = await repo.GetByIdAsync(id);
+    if (existing is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (!string.Equals(existing.OwnerId, userId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
+    if (runtime.HasPending(id)) return Results.Conflict();
+    var success = await repo.DeleteAsync(id);
+    if (success) await runtime.DeleteScopeAsync(id);
+    return success ? Results.NoContent() : Results.NotFound();
+}).WithName("DeleteCampaign")
+    .Produces(StatusCodes.Status204NoContent)
+    .Produces(StatusCodes.Status404NotFound);
+
+// POST /api/campaigns/{id}/delete - Compatibility delete route for hosts that reject HTTP DELETE
+campaigns.MapPost("/{id}/delete", async (
+        string id,
+        ClaimsPrincipal user,
         ICampaignRepository repo) =>
 {
     var userId = GetCurrentUserId(user);
@@ -398,9 +462,10 @@ campaigns.MapDelete("/{id}", async (
 
     var success = await repo.DeleteAsync(id);
     return success ? Results.NoContent() : Results.NotFound();
-}).WithName("DeleteCampaign")
+}).WithName("DeleteCampaignCompat")
     .Produces(StatusCodes.Status204NoContent)
-    .Produces(StatusCodes.Status404NotFound);
+    .Produces(StatusCodes.Status404NotFound)
+    .DisableAntiforgery();
 
 
 #endregion
@@ -411,7 +476,7 @@ campaigns.MapDelete("/{id}", async (
 // ============================================================================
 
 var characters = app.MapGroup("/api/characters")
-    .WithTags("Characters");
+    .WithTags("Characters").RequireAuthorization();
 
 // GET /api/characters/{id} - Get character by ID
 characters.MapGet("/{id}", async (
@@ -435,7 +500,7 @@ characters.MapGet("/createVideo/{id}", async (string id, ICharacterRepository re
     var promptTypes = Enum.GetValues<IntroPromptType>().ToList();
     var random = new Random();
     var selectedPromptType = promptTypes[random.Next(promptTypes.Count)];
-    var videoUrl = await VideoGenService.GenerateCharacterIntroVideo(character, selectedPromptType);
+    var videoUrl = await OpenRouterVideoGenService.GenerateCharacterIntroVideo(character, selectedPromptType);
     character.IntroVidUrl = videoUrl;
     await repo.UpdateAsync(character);
 
@@ -481,8 +546,11 @@ characters.MapGet("/player/{playerId}", async (
 // POST /api/characters - Create new character
 characters.MapPost("/", async (
         [FromBody] Character character,
-        ICharacterRepository repo) =>
+        ICharacterRepository repo, ClaimsPrincipal user, ICampaignRepository campaigns) =>
 {
+    character.Id = Guid.NewGuid().ToString();
+    character.PlayerId = PlayerIdentity.GetId(user)!;
+    if (!await CanAssignCharacterAsync(character.CampaignId, character.PlayerId, campaigns)) return Results.Forbid();
     var created = await repo.CreateAsync(character);
     return Results.Created($"/api/characters/{created.Id}", created);
 })
@@ -494,7 +562,7 @@ characters.MapPost("/", async (
 characters.MapPut("/{id}", async (
         string id,
         [FromBody] Character character,
-        ICharacterRepository repo) =>
+        ICharacterRepository repo, ClaimsPrincipal user, ICampaignRepository campaigns) =>
 {
     if (id != character.Id)
     {
@@ -507,6 +575,9 @@ characters.MapPut("/{id}", async (
         return Results.NotFound();
     }
 
+    if (existing.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    character.PlayerId = existing.PlayerId;
+    if (!await CanAssignCharacterAsync(character.CampaignId, character.PlayerId, campaigns)) return Results.Forbid();
     var updated = await repo.UpdateAsync(character);
     return Results.Ok(updated);
 })
@@ -518,14 +589,64 @@ characters.MapPut("/{id}", async (
 // DELETE /api/characters/{id} - Delete character
 characters.MapDelete("/{id}", async (
         string id,
+        ClaimsPrincipal user,
         ICharacterRepository repo) =>
 {
+    var userId = GetCurrentUserId(user);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var existing = await repo.GetByIdAsync(id);
+    if (existing is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (!string.Equals(existing.PlayerId, userId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
     var success = await repo.DeleteAsync(id);
     return success ? Results.NoContent() : Results.NotFound();
 })
     .WithName("DeleteCharacter")
     .Produces(StatusCodes.Status204NoContent)
     .Produces(StatusCodes.Status404NotFound);
+
+// POST /api/characters/{id}/delete - Compatibility delete route for hosts that reject HTTP DELETE
+characters.MapPost("/{id}/delete", async (
+        string id,
+        ClaimsPrincipal user,
+        ICharacterRepository repo) =>
+{
+    var userId = GetCurrentUserId(user);
+    Console.WriteLine($"User Id: {userId} for Delete Character");
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var existing = await repo.GetByIdAsync(id);
+    if (existing is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (!string.Equals(existing.PlayerId, userId, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
+    var success = await repo.DeleteAsync(id);
+    return success ? Results.NoContent() : Results.NotFound();
+})
+    .WithName("DeleteCharacterCompat")
+    .Produces(StatusCodes.Status204NoContent)
+    .Produces(StatusCodes.Status404NotFound)
+    .DisableAntiforgery();
 
 #endregion
 
@@ -622,8 +743,12 @@ worlds.MapGet("/{id}/quests", async (
 // POST /api/worlds - Create new world
 worlds.MapPost("/", async (
         [FromBody] World world,
-        IWorldRepository repo) =>
+        IWorldRepository repo, ClaimsPrincipal user) =>
 {
+    var playerId = PlayerIdentity.GetId(user);
+    if (playerId is null) return Results.Unauthorized();
+    world.Id = Guid.NewGuid().ToString();
+    world.CreatorId = playerId;
     var created = await repo.CreateAsync(world);
     return Results.Created($"/api/worlds/{created.Id}", created);
 })
@@ -635,7 +760,7 @@ worlds.MapPost("/", async (
 worlds.MapPut("/{id}", async (
         string id,
         [FromBody] World world,
-        IWorldRepository repo) =>
+        IWorldRepository repo, ClaimsPrincipal user) =>
 {
     if (id != world.Id)
     {
@@ -648,6 +773,9 @@ worlds.MapPut("/{id}", async (
         return Results.NotFound();
     }
 
+    if (existing.CreatorId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    world.CreatorId = existing.CreatorId;
+    world.CreatedAt = existing.CreatedAt;
     var updated = await repo.UpdateAsync(world);
     return Results.Ok(updated);
 })
@@ -675,52 +803,44 @@ worlds.MapDelete("/{id}", async (
 // ============================================================================
 
 var narratives = app.MapGroup("/api/narratives")
-    .WithTags("Narratives");
+    .WithTags("Narratives").RequireAuthorization();
 
-// GET /api/narratives/{id} - Get narrative by ID
-narratives.MapGet("/{id}", async (
-        string id,
-        INarrativeRepository repo) =>
+narratives.MapGet("/{id}", async (string id, INarrativeRepository repo, ClaimsPrincipal user,
+    PlayerCampaignAccessService accessService, IPlayerStateProjector projector) =>
 {
     var narrative = await repo.GetByIdAsync(id);
-    return narrative is not null ? Results.Ok(narrative) : Results.NotFound();
-})
-    .WithName("GetNarrativeById")
-    .Produces<Narrative>()
-    .Produces(StatusCodes.Status404NotFound);
+    if (narrative is null) return Results.NotFound();
+    var access = await accessService.ResolveAsync(narrative.CampaignId, PlayerIdentity.GetId(user));
+    return access.Allowed && projector.CanSee(narrative, access.CharacterId) ? Results.Ok(narrative) : Results.NotFound();
+}).WithName("GetNarrativeById");
 
-// GET /api/narratives/campaign/{campaignId} - Get narratives for a campaign
-narratives.MapGet("/campaign/{campaignId}", async (
-        string campaignId,
-        INarrativeRepository repo,
-        [FromQuery] int skip = 0,
-        [FromQuery] int take = 50) =>
+narratives.MapGet("/campaign/{campaignId}", async (string campaignId, INarrativeRepository repo, ClaimsPrincipal user,
+    PlayerCampaignAccessService accessService, IPlayerStateProjector projector, [FromQuery] int take = 50) =>
 {
-    var result = await repo.GetByCampaignIdAsync(campaignId, take);
-    return Results.Ok(result);
-})
-    .WithName("GetNarrativesByCampaign")
-    .Produces<IEnumerable<Narrative>>();
+    var access = await accessService.ResolveAsync(campaignId, PlayerIdentity.GetId(user));
+    if (!access.Allowed) return Results.Forbid();
+    var entries = await repo.GetByCampaignIdAsync(campaignId, Math.Clamp(take, 1, 1000));
+    return Results.Ok(entries.Where(n => projector.CanSee(n, access.CharacterId)).DistinctBy(n => n.Id));
+}).WithName("GetNarrativesByCampaign");
 
-// GET /api/narratives/campaign/{campaignId}/character/{characterId} - Get narratives visible to a character
-narratives.MapGet("/campaign/{campaignId}/character/{characterId}", async (
-        string campaignId,
-        string characterId,
-        INarrativeRepository repo,
-        [FromQuery] int skip = 0,
-        [FromQuery] int take = 50) =>
+narratives.MapGet("/campaign/{campaignId}/character/{characterId}", async (string campaignId, string characterId,
+    INarrativeRepository repo, ClaimsPrincipal user, PlayerCampaignAccessService accessService,
+    IPlayerStateProjector projector, [FromQuery] int skip = 0, [FromQuery] int take = 50) =>
 {
-    var result = await repo.GetVisibleToCharacterAsync(campaignId, characterId, skip, take);
-    return Results.Ok(result);
-})
-    .WithName("GetNarrativesVisibleToCharacter")
-    .Produces<IEnumerable<Narrative>>();
+    var access = await accessService.ResolveAsync(campaignId, PlayerIdentity.GetId(user), characterId);
+    if (!access.Allowed) return Results.Forbid();
+    var entries = await repo.GetVisibleToCharacterAsync(campaignId, access.CharacterId!, Math.Max(0, skip), Math.Clamp(take, 1, 1000));
+    return Results.Ok(entries.Where(n => projector.CanSee(n, access.CharacterId)).DistinctBy(n => n.Id));
+}).WithName("GetNarrativesVisibleToCharacter");
 
 // POST /api/narratives - Create new narrative
 narratives.MapPost("/", async (
         [FromBody] Narrative narrative,
-        INarrativeRepository repo) =>
+        INarrativeRepository repo, ClaimsPrincipal user, PlayerCampaignAccessService accessService, IPlayerStateProjector projector) =>
 {
+    var access = await accessService.ResolveAsync(narrative.CampaignId, PlayerIdentity.GetId(user));
+    if (!access.Allowed || !access.IsOwner || !projector.CanSee(narrative, access.CharacterId)) return Results.Forbid();
+    narrative.Id = Guid.NewGuid().ToString();
     var created = await repo.CreateAsync(narrative);
     return Results.Created($"/api/narratives/{created.Id}", created);
 })
@@ -731,9 +851,16 @@ narratives.MapPost("/", async (
 // POST /api/narratives/batch - Create multiple narratives
 narratives.MapPost("/batch", async (
         [FromBody] IEnumerable<Narrative> narrativeList,
-        INarrativeRepository repo) =>
+        INarrativeRepository repo, ClaimsPrincipal user, PlayerCampaignAccessService accessService, IPlayerStateProjector projector) =>
 {
-    var created = await repo.CreateBatchAsync(narrativeList);
+    var entries = narrativeList.ToList();
+    foreach (var entry in entries)
+    {
+        var access = await accessService.ResolveAsync(entry.CampaignId, PlayerIdentity.GetId(user));
+        if (!access.Allowed || !access.IsOwner || !projector.CanSee(entry, access.CharacterId)) return Results.Forbid();
+        entry.Id = Guid.NewGuid().ToString();
+    }
+    var created = await repo.CreateBatchAsync(entries);
     return Results.Created("/api/narratives/batch", created);
 })
     .WithName("CreateNarrativesBatch")
@@ -743,9 +870,11 @@ narratives.MapPost("/batch", async (
 // DELETE /api/narratives/campaign/{campaignId}/cleanup - Clean up old narratives
 narratives.MapDelete("/campaign/{campaignId}/cleanup", async (
         string campaignId,
-        INarrativeRepository repo,
+        INarrativeRepository repo, ClaimsPrincipal user, PlayerCampaignAccessService accessService,
         [FromQuery] int keepCount = 1000) =>
 {
+    var access = await accessService.ResolveAsync(campaignId, PlayerIdentity.GetId(user));
+    if (!access.Allowed || !access.IsOwner) return Results.Forbid();
     var deletedCount = await repo.DeleteOldEntriesAsync(campaignId, keepCount);
     return Results.Ok(new { DeletedCount = deletedCount });
 })
@@ -761,15 +890,18 @@ narratives.MapDelete("/campaign/{campaignId}/cleanup", async (
 // ============================================================================
 
 var gameStates = app.MapGroup("/api/gamestate")
-    .WithTags("GameState").WithHttpLogging(HttpLoggingFields.All);
+    .WithTags("GameState").RequireAuthorization();
 
 // GET /api/gamestate/{campaignId} - Get complete game state for a campaign
 gameStates.MapGet("/{campaignId}", async (
         string campaignId,
-        IGameStateManager stateManager) =>
+        IGameStateManager stateManager, ClaimsPrincipal user,
+        PlayerCampaignAccessService accessService, IPlayerStateProjector projector) =>
 {
+    var access = await accessService.ResolveAsync(campaignId, PlayerIdentity.GetId(user));
+    if (!access.Allowed) return Results.Forbid();
     var state = await stateManager.GetCampaignStateAsync(campaignId);
-    return state is null ? Results.NotFound() : Results.Ok(state);
+    return state is null ? Results.NotFound() : Results.Ok(projector.Project(state, access.CharacterId));
 })
     .WithName("GetGameState")
     .Produces<GameState>()
@@ -778,8 +910,12 @@ gameStates.MapGet("/{campaignId}", async (
 // POST /api/gamestate/{campaignId}/save - Force save game state to persistent storage
 gameStates.MapPost("/{campaignId}/save", async (
         string campaignId,
-        IGameStateManager stateManager) =>
+        IGameStateManager stateManager, ClaimsPrincipal user, ICampaignRepository campaigns, ICharacterRepository characters) =>
 {
+    var playerId = PlayerIdentity.GetId(user);
+    var campaign = await campaigns.GetByIdAsync(campaignId);
+    if (campaign is null) return Results.NotFound();
+    if (campaign.OwnerId != playerId && !(await characters.GetByPlayerIdAsync(playerId!)).Any(c => c.CampaignId == campaignId)) return Results.Forbid();
     var success = await stateManager.SaveStateAsync(campaignId);
     return success ? Results.Ok() : Results.Problem("Failed to save game state");
 })
@@ -796,26 +932,87 @@ gameStates.MapPost("/{campaignId}/save", async (
 // ============================================================================
 
 var sessions = app.MapGroup("/api/sessions")
-    .WithTags("Sessions");
+    .WithTags("Sessions").RequireAuthorization();
 
 // POST /api/sessions - Create new session
 sessions.MapPost("/", async (
         [FromBody] CreateSessionRequest request,
-        ISessionStateManager sessionManager) =>
+        ISessionStateManager sessionManager, IWorldRepository worlds, ClaimsPrincipal user, ICampaignRepository campaigns) =>
 {
+      request.PlayerId = PlayerIdentity.GetId(user)!;
+    if (request.QuickStarter is not null)
+    {
+        try { _ = StarterCreation.Prompt(request.SessionType == SessionType.CharacterCreation, request.QuickStarter); }
+        catch (ArgumentException) { return Results.BadRequest("Unknown starter choice."); }
+    }
+    if (!string.IsNullOrEmpty(request.CampaignId))
+    {
+        var campaign = await campaigns.GetByIdAsync(request.CampaignId);
+        if (campaign is null || !(campaign.OwnerId == request.PlayerId || campaign.InvitedUserIds.Contains(request.PlayerId)))
+            return Results.Forbid();
+    }
+    if (request.WorldId != null)
+    {
+        var world = await worlds.GetByIdAsync(request.WorldId);
+        if (world is null) return Results.NotFound();
+        if (request.SessionType == SessionType.WorldBuilding && world.CreatorId != request.PlayerId) return Results.Forbid();
+        var worldSession = await sessionManager.CreateSessionAsync(request.SessionType, request.PlayerId, world);
+        worldSession.Context.CampaignId = request.CampaignId;
+    worldSession.Context.StartNewAdventure = request.StartNewAdventure;
+    worldSession.Context.QuickStarter = request.QuickStarter;
+        await sessionManager.UpdateSessionStateAsync(worldSession);
+        return Results.Created($"/api/sessions/{worldSession.SessionId}", worldSession);
+    }
     var session = await sessionManager.CreateSessionAsync(request.SessionType, request.PlayerId);
+    session.Context.CampaignId = request.CampaignId;
+    session.Context.StartNewAdventure = request.StartNewAdventure;
+    session.Context.QuickStarter = request.QuickStarter;
+    await sessionManager.UpdateSessionStateAsync(session);
     return Results.Created($"/api/sessions/{session.SessionId}", session);
 })
     .WithName("CreateSession")
     .Produces<SessionState>(StatusCodes.Status201Created);
 
+sessions.MapGet("/", async (IRecoveryRepository recovery, ClaimsPrincipal user) =>
+{
+    var owner = PlayerIdentity.GetId(user);
+    if (string.IsNullOrEmpty(owner)) return Results.Unauthorized();
+    var records = await recovery.ListAsync(kind: "session", ownerId: owner);
+    return Results.Ok(records.Select(d => d.Read<SessionState>()).Where(d => !d.IsCompleted)
+        .OrderByDescending(d => d.LastSavedAt).Select(d => new DraftSummary(d.SessionId, d.SessionType,
+            d.Context.DraftCharacter?.Name ?? d.Context.DraftCampaign?.Name ?? d.Context.DraftWorld?.Name ?? "Untitled draft", d.LastSavedAt)));
+});
+app.MapGet("/api/scopes/{id}/transcript", async (string id, string? cursor, string? characterId,
+    ISessionStateManager sessions, PlayerCampaignAccessService access, GameRuntimeCoordinator runtime, ClaimsPrincipal user) =>
+{
+    var player = PlayerIdentity.GetId(user);
+    var session = await sessions.GetSessionStateAsync(id);
+    var permission = session is null ? await access.ResolveAsync(id, player, characterId) : null;
+    if (session is not null ? session.PlayerId != player : permission?.Allowed != true) return Results.Forbid();
+    try { return Results.Ok(await runtime.TranscriptAsync(id, cursor, characterId: permission?.CharacterId)); }
+    catch (ArgumentException) { return Results.BadRequest(); }
+}).RequireAuthorization();
+
+app.MapPost("/api/scopes/{id}/review", async (string id, ISessionStateManager sessions,
+    PlayerCampaignAccessService access, GameRuntimeCoordinator runtime, ClaimsPrincipal user) =>
+{
+    var player = PlayerIdentity.GetId(user)!;
+    var session = await sessions.GetSessionStateAsync(id);
+    if (session is not null ? session.PlayerId != player : !(await access.ResolveAsync(id, player)).Allowed) return Results.Forbid();
+    await runtime.ReviewAsync(id, player);
+    return Results.NoContent();
+}).RequireAuthorization();
+
 // GET /api/sessions/{id} - Get session by ID
 sessions.MapGet("/{id}", async (
         string id,
-        ISessionStateManager sessionManager) =>
+        ISessionStateManager sessionManager, ISessionCompletionService completion, ClaimsPrincipal user) =>
 {
     var session = await sessionManager.GetSessionStateAsync(id);
-    return session is not null ? Results.Ok(session) : Results.NotFound();
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    await completion.ReconcileAsync(id);
+    return Results.Ok(session);
 })
     .WithName("GetSessionById")
     .Produces<SessionState>()
@@ -824,8 +1021,14 @@ sessions.MapGet("/{id}", async (
 // DELETE /api/sessions/{id} - Delete session
 sessions.MapDelete("/{id}", async (
         string id,
-        ISessionStateManager sessionManager) =>
+        ISessionStateManager sessionManager, GameRuntimeCoordinator runtime, ScopeOperationLocks locks, ClaimsPrincipal user) =>
 {
+    using var lease = await locks.AcquireCompletionAsync(id);
+    var session = await sessionManager.GetSessionStateAsync(id);
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    if (locks.HasActiveRequests(id)) return Results.Conflict();
+    await runtime.DeleteScopeAsync(id);
     await sessionManager.DeleteSessionAsync(id);
     return Results.NoContent();
 })
@@ -833,25 +1036,40 @@ sessions.MapDelete("/{id}", async (
     .Produces(StatusCodes.Status204NoContent);
 
 // POST /api/sessions/{id}/complete - Complete session
-sessions.MapPost("/{id}/complete", async (
-        string id,
-        [FromBody] CompleteSessionRequest request,
-        ISessionStateManager sessionManager) =>
+sessions.MapPost("/{id}/complete", async (string id, [FromServices] ISessionStateManager sessionManager,
+    [FromServices] ISessionCompletionService completion, [FromServices] GameRuntimeCoordinator runtime, ClaimsPrincipal user) =>
 {
-    await sessionManager.CompleteSessionAsync(id, request.ResultEntityId);
-    return Results.Ok();
-})
-    .WithName("CompleteSession")
-    .Produces(StatusCodes.Status200OK);
+    var session = await sessionManager.GetSessionStateAsync(id);
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    if (runtime.HasPending(id) && !session.IsCompleted) return Results.Conflict(new { Error = "Wait for generation to finish before saving." });
+    try
+    {
+        var result = session.SessionType switch
+        {
+            SessionType.CharacterCreation => await completion.FinalizeCharacterAsync(id, requireIdle: true),
+            SessionType.WorldBuilding => await completion.FinalizeWorldAsync(id, requireIdle: true),
+            SessionType.CampaignSetup => await completion.FinalizeCampaignAsync(id, requireIdle: true),
+            _ => throw new InvalidOperationException("Unsupported session type.")
+        };
+        return Results.Ok(new { ResultEntityId = result });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { Error = ex.Message }); }
+});
 
 // POST /api/sessions/{id}/finalize-character - Finalize and save character
 sessions.MapPost("/{id}/finalize-character", async (
         string id,
-        ISessionCompletionService completionService) =>
+        ISessionCompletionService completionService, ISessionStateManager sessions,
+        GameRuntimeCoordinator runtime, ClaimsPrincipal user) =>
 {
+    var session = await sessions.GetSessionStateAsync(id);
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    if (runtime.HasPending(id) && !session.IsCompleted) return Results.Conflict(new { Error = "Wait for generation to finish before saving." });
     try
     {
-        var characterId = await completionService.FinalizeCharacterAsync(id);
+        var characterId = await completionService.FinalizeCharacterAsync(id, requireIdle: true);
         return Results.Ok(new { CharacterId = characterId });
     }
     catch (InvalidOperationException ex)
@@ -866,11 +1084,16 @@ sessions.MapPost("/{id}/finalize-character", async (
 // POST /api/sessions/{id}/finalize-world - Finalize and save world
 sessions.MapPost("/{id}/finalize-world", async (
         string id,
-        ISessionCompletionService completionService) =>
+        ISessionCompletionService completionService, ISessionStateManager sessions,
+        GameRuntimeCoordinator runtime, ClaimsPrincipal user) =>
 {
+    var session = await sessions.GetSessionStateAsync(id);
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    if (runtime.HasPending(id) && !session.IsCompleted) return Results.Conflict(new { Error = "Wait for generation to finish before saving." });
     try
     {
-        var worldId = await completionService.FinalizeWorldAsync(id);
+        var worldId = await completionService.FinalizeWorldAsync(id, requireIdle: true);
         return Results.Ok(new { WorldId = worldId });
     }
     catch (InvalidOperationException ex)
@@ -882,14 +1105,39 @@ sessions.MapPost("/{id}/finalize-world", async (
     .Produces<object>(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status400BadRequest);
 
+// Store the editable campaign draft before the shared, idempotent finalizer persists it.
+sessions.MapPost("/{id}/campaign-draft", async (string id, Campaign draft, ISessionStateManager sessions,
+    ScopeOperationLocks locks, ClaimsPrincipal user, HttpRequest request) =>
+{
+    using var lease = await locks.AcquireCompletionAsync(id);
+    var session = await sessions.GetSessionStateAsync(id);
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    if (session.SessionType != SessionType.CampaignSetup) return Results.BadRequest();
+    if (session.IsCompleted) return Results.Ok();
+    if (request.Headers.TryGetValue("If-Match", out var revision) && revision != session.Revision.ToString())
+        return Results.Conflict(new PlayerFacingError("stale_draft", "This draft changed. Reload it before saving.", request.HttpContext.TraceIdentifier, RecoveryAction.ReloadState));
+    draft.OwnerId = session.PlayerId;
+    draft.Id = session.Context.DraftCampaign?.Id ?? Guid.NewGuid().ToString();
+    draft.WorldId = session.Context.OriginalWorldId ?? throw new InvalidOperationException("Select a world before saving.");
+    session.Context.DraftCampaign = draft;
+    await sessions.UpdateSessionStateAsync(session);
+    return Results.Ok(session);
+});
+
 // POST /api/sessions/{id}/finalize-campaign - Finalize and save campaign
 sessions.MapPost("/{id}/finalize-campaign", async (
         string id,
-        ISessionCompletionService completionService) =>
+        ISessionCompletionService completionService, ISessionStateManager sessions,
+        GameRuntimeCoordinator runtime, ClaimsPrincipal user) =>
 {
+    var session = await sessions.GetSessionStateAsync(id);
+    if (session is null) return Results.NotFound();
+    if (session.PlayerId != PlayerIdentity.GetId(user)) return Results.Forbid();
+    if (runtime.HasPending(id) && !session.IsCompleted) return Results.Conflict(new { Error = "Wait for generation to finish before saving." });
     try
     {
-        var campaignId = await completionService.FinalizeCampaignAsync(id);
+        var campaignId = await completionService.FinalizeCampaignAsync(id, requireIdle: true);
         return Results.Ok(new { CampaignId = campaignId });
     }
     catch (InvalidOperationException ex)
@@ -903,3 +1151,13 @@ sessions.MapPost("/{id}/finalize-campaign", async (
 #endregion
 
 app.Run();
+
+static async Task<bool> CanAssignCharacterAsync(string? campaignId, string playerId, ICampaignRepository campaigns)
+{
+    if (string.IsNullOrEmpty(campaignId)) return true;
+    var campaign = await campaigns.GetByIdAsync(campaignId);
+    return campaign is not null && (campaign.OwnerId == playerId || campaign.InvitedUserIds.Contains(playerId) || campaign.PlayerIds.Contains(playerId));
+}
+
+// Expose the entry point for in-process HTTP and SignalR integration tests.
+public partial class Program { }

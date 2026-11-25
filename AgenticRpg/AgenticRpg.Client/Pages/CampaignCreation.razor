@@ -1,16 +1,29 @@
 @page "/campaign-creation"
 @inherits RpgPageBase
-
 <PageTitle>Create Campaign - AI Agentic RPG</PageTitle>
 
-<div class="campaign-creation">
+<div class="campaign-creation @(!WorldOnly ? "campaign-form-mode" : "")">
     <div class="creation-header">
         <button @onclick="GoBack" class="btn-back">← Back to Menu</button>
 
-        <h1>Create New Campaign</h1>
+        <h1>@(WorldOnly ? (string.IsNullOrEmpty(WorldId) ? "Create World" : "Edit World") : "Create Campaign")</h1>
         <div class="header-actions">
-            <button class="menu-button" @onclick="ToggleModelMenu" title="Model settings" aria-label="Open model settings">
-                <span class="menu-icon" aria-hidden="true">☰</span>
+            @if (!WorldOnly)
+            {
+                <div class="connection-status runtime-connection">
+                    <span>@ConnectionStatusLabel</span>
+                    @if (!HubConnected) { <button class="runtime-control" @onclick="RetryConnection">Reconnect</button> }
+                    @if (!string.IsNullOrEmpty(ConnectionError)) { <span>@ConnectionError</span> }
+                </div>
+            }
+            <CreationProgress Step="@(StartNewAdventure ? (WorldOnly ? 1 : 2) : (int?)null)">
+                @if (QuickStarter is not null) { <p>Quick Create: @QuickStarter. Review the results before saving, reckless mortal.</p> }
+                @if (WorldOnly && CurrentSessionState is { IsCompleted: false } draftProgress) { <p>Creation step: @draftProgress.Context.CurrentStep · @draftProgress.Context.CompletedSteps.Count steps completed</p> }
+                @if (CurrentSessionState is { } savedSession) { <span role="status" aria-live="polite">@(savedSession.IsCompleted ? $"Saved result: {savedSession.ResultEntityId}" : savedSession.LastSavedAt is { } time ? $"Draft saved {time.ToLocalTime():g}" : "Changes not saved")</span> }
+                @if (CurrentSessionState?.IsCompleted == true) { <button class="runtime-control" @onclick="OpenCompletedResult">Continue to saved result</button> }
+            </CreationProgress>
+            <button class="menu-button" @onclick="ToggleModelMenu" title="Advanced Settings" aria-label="Open Advanced Settings">
+                <span class="menu-icon" aria-hidden="true">⚙</span> Advanced Settings
             </button>
         </div>
     </div>
@@ -18,11 +31,11 @@
     <!-- Mobile View Toggle (visible only on mobile/tablet) -->
     <div class="mobile-view-toggle">
         <button class="toggle-btn @(CurrentMobileView == MobileView.World ? "active" : "")"
-                @onclick='() => SetMobileView(MobileView.World)'>
+                @onclick="() => SetMobileView(MobileView.World)">
             🗺️ World
         </button>
-        <button class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")"
-                @onclick='() => SetMobileView(MobileView.Chat)'>
+        <button hidden="@(!WorldOnly)" class="toggle-btn @(CurrentMobileView == MobileView.Chat ? "active" : "")"
+                @onclick="() => SetMobileView(MobileView.Chat)">
             💬 Chat
         </button>
     </div>
@@ -37,31 +50,43 @@
                     <h2>Campaign Information</h2>
                     <div class="form-group">
                         <label>Campaign Name</label>
-                        <input type="text" @bind="CampaignName" placeholder="Enter campaign name..." class="form-input" />
+                        <input type="text" @bind="CampaignName" @bind:event="oninput" @bind:after="SaveDraft" placeholder="Enter campaign name..." class="form-input" />
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <input type="text" @bind="CampaignDescription" placeholder="Describe your campaign..." class="form-input"/>
+                        <input type="text" @bind="CampaignDescription" @bind:event="oninput" @bind:after="SaveDraft" placeholder="Describe your campaign..." class="form-input" />
                     </div>
                     <div class="form-group">
-                        <label>Primary Quest Description</label>
-                        <textarea @bind="@_createCampaignSettings.PrimaryQuestDescription" placeholder="Describe your campaign's primary quest..." rows="3" class="form-input"></textarea>
+                        <label>
+                            <input type="checkbox" @bind="_createCampaignSettings.GeneratePrimaryQuest" @bind:after="SaveDraft" class="form-checkbox" />
+                            Create Primary Quest for me
+                        </label>
                     </div>
+                    @if (!_createCampaignSettings.GeneratePrimaryQuest)
+                    {
+                        <div class="form-group">
+                            <label>Primary Quest Description</label>
+                            <textarea @bind="@_createCampaignSettings.PrimaryQuestDescription" @bind:event="oninput" @bind:after="SaveDraft" placeholder="Describe your campaign's primary quest..." rows="3" class="form-input"></textarea>
+                        </div>
+                    }
                     <div class="form-group">
                         <label>Max Players</label>
-                        <input type="number" @bind="MaxPlayers" min="2" max="8" class="form-input" />
+                        <input type="number" @bind="_createCampaignSettings.MaxPlayers" @bind:after="SaveDraft" min="2" max="8" class="form-input" />
                     </div>
-                    <div class="form-group">
-                        <label>Default LLM Model</label>
-                        <RpgModelSelect @bind-SelectedModel="@_createCampaignSettings.DefaultModel" HideSubmitButton="true"></RpgModelSelect>
-                    </div>
+                    <details class="campaign-advanced">
+                        <summary>Advanced Settings</summary>
+                        <div class="form-group">
+                            <label>Default LLM Model</label>
+                            <RpgModelSelect @bind-SelectedModel="@_createCampaignSettings.DefaultModel" @bind-SelectedModel:after="SaveDraft" HideSubmitButton="true"></RpgModelSelect>
+                        </div>
+                    </details>
                     <div class="form-group">
                         <label>Allow Late Joining</label>
-                        <input type="checkbox" @bind="_createCampaignSettings.AllowLateJoining" class="form-checkbox" />
+                        <input type="checkbox" @bind="_createCampaignSettings.AllowLateJoining" @bind:after="SaveDraft" class="form-checkbox" />
                     </div>
                     <div class="form-group">
                         <label>Difficulty</label>
-                        <input type="number" @bind="_createCampaignSettings.Difficulty" class="form-input" />
+                        <input type="number" @bind="_createCampaignSettings.Difficulty" @bind:after="SaveDraft" class="form-input" />
                     </div>
 
                 </div>
@@ -83,9 +108,9 @@
             <!-- Save Button -->
             <div class="action-buttons">
                 <button @onclick="SaveCampaign"
-                        disabled="@(!CanSaveCampaign)"
+                        disabled="@(!CanSaveCampaign || ReviewRequired || IsProcessing || _isSaving || !HubConnected)"
                         class="btn-save">
-                    Save Campaign
+                    @(_isSaving ? "Saving..." : SaveButtonLabel)
                 </button>
                 @if (!string.IsNullOrEmpty(SaveMessage))
                 {
@@ -95,22 +120,30 @@
         </div>
 
         <!-- Right Side: AI Chat with World Builder (only show if creating new world) -->
-        @if (string.IsNullOrEmpty(WorldId))
+        @if (WorldOnly)
         {
             <div class="chat-panel @(CurrentMobileView == MobileView.Chat ? "mobile-visible" : "mobile-hidden")">
                 <div class="chat-header">
+                    <div class="connection-status runtime-connection">
+                        @ConnectionStatusLabel
+                        @if (!HubConnected) { <button type="button" class="runtime-control" @onclick="RetryConnection">Reconnect</button> }
+                        @ConnectionError
+                    </div>
                     @* <h2>World Builder AI</h2> *@
                     <p class="chat-subtitle">Work with the AI to create your campaign world</p>
                 </div>
                 <div class="chat-container">
-                    <ChatView Messages="ChatMessages"
+                    @if (TranscriptCursor is not null) { <button class="runtime-control" @onclick="() => LoadEarlier(ChatMessages, _runtimeChat, CurrentUserId)">Load earlier messages</button> }
+                    @if (ReviewRequired) { <div class="recovery-notice" role="alert">An action was interrupted. Review the current state before continuing. <button class="runtime-control" @onclick="ConfirmReview">I reviewed the current state</button></div> }
+                    @if (!string.IsNullOrEmpty(RecoveryError)) { <div role="status" aria-live="polite">@RecoveryError</div> }
+                    <ChatView CurrentPlayerId="@CurrentUserId" OnRetry="RetryMessage" OnReloadState="RetryConnection" OnRestoreText="@(text => UserInputRef.SetValue(text))" IsProcessing="@(IsProcessing || _isSaving || !HubConnected || ReviewRequired)" Messages="ChatMessages"
                               OnMessageDeleted="HandleMessageDeleted"
                               OnMessageEdited="HandleMessageEdited"
                               OnSuggestedActionInvoked="SendMessage" OnSpeakText="PlaySpeechAsync" IsPlaybackActive="_speechGenerating" CancelPlayback="CancelPlayback" />
 
-                    <UserInput @ref="UserInputRef"
-                               OnSubmit="SendMessage"
-                               IsProcessing="IsProcessing"
+                    <UserInput DraftDisabled="@(CurrentSessionState?.IsCompleted == true)" SubmissionAccepted="@(() => SubmissionConfirmed)" AccountId="@CurrentUserId" ScopeId="@SessionId" IsUnavailable="@(!HubConnected || ReviewRequired || CurrentSessionState?.IsCompleted == true)" @ref="UserInputRef"
+                               OnSubmit="SendMessage" OnCancel="CancelResponse"
+                               IsProcessing="@(IsProcessing || _isSaving)"
                                Placeholder="Describe the world you want to create..."
                                HintText="Ask the AI to generate locations, NPCs, quests, and lore for your world" />
                 </div>

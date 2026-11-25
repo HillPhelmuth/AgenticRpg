@@ -127,6 +127,11 @@ public class CharacterService : ICharacterService
         try
         {
             var response = await _httpClient.DeleteAsync($"{BaseRoute}/{id}");
+            if (response.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
+            {
+                response = await _httpClient.PostAsync($"{BaseRoute}/{id}/delete", content: null);
+            }
+
             response.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
